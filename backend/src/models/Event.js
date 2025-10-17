@@ -61,9 +61,37 @@ const eventSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    avgRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalRatings: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
+
+// Computed property helper - get available slots
+eventSchema.methods.getAvailableSlots = function () {
+  if (!this.maxParticipants) return null;
+  return Math.max(0, this.maxParticipants - this.participants.length);
+};
+
+// Check if event is full
+eventSchema.methods.isFull = function () {
+  if (!this.maxParticipants) return false;
+  return this.participants.length >= this.maxParticipants;
+};
+
+// Get capacity percentage
+eventSchema.methods.getCapacityPercentage = function () {
+  if (!this.maxParticipants) return 0;
+  return Math.round((this.participants.length / this.maxParticipants) * 100);
+};
 
 const Event = mongoose.models.Event || mongoose.model('Event', eventSchema);
 export default Event;

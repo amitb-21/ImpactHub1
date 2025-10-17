@@ -23,8 +23,9 @@ const participationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Registered', 'Attended', 'Completed', 'Cancelled'],
+      enum: ['Registered', 'Attended', 'Completed', 'Cancelled', 'Rejected'],
       default: 'Registered',
+      description: 'Registration status with event organizer verification',
     },
     pointsEarned: {
       type: Number,
@@ -33,6 +34,7 @@ const participationSchema = new mongoose.Schema(
     feedback: {
       type: String,
       default: null,
+      maxlength: 1000,
     },
     rating: {
       type: Number,
@@ -43,15 +45,38 @@ const participationSchema = new mongoose.Schema(
     verifiedAt: {
       type: Date,
       default: null,
+      description: 'When attendance was verified by organizer',
     },
     verifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+      description: 'Community organizer who verified',
+    },
+    wishlist: {
+      isSaved: {
+        type: Boolean,
+        default: false,
+        description: 'Event saved to wishlist',
+      },
+      savedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+      description: 'Why participation was rejected',
     },
   },
   { timestamps: true }
 );
 
-const Participation = mongoose.models.Participation || mongoose.model('Participation', participationSchema);
+// Compound index to prevent duplicate registrations
+participationSchema.index({ user: 1, event: 1 }, { unique: true, sparse: true });
+
+const Participation =
+  mongoose.models.Participation || mongoose.model('Participation', participationSchema);
+
 export default Participation;

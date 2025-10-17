@@ -67,6 +67,32 @@ export const validateCreateEvent = (req, res, next) => {
   next();
 };
 
+export const validateCreateRating = (req, res, next) => {
+  const { entityType, entityId, rating } = req.body;
+
+  const errors = [];
+
+  if (!entityType || !['Community', 'Event'].includes(entityType)) {
+    errors.push('Valid entityType is required (Community or Event)');
+  }
+  if (!entityId) {
+    errors.push('entityId is required');
+  }
+  if (!rating || rating < 1 || rating > 5) {
+    errors.push('Rating must be a number between 1 and 5');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: ERROR_MESSAGES.VALIDATION_ERROR,
+      errors,
+    });
+  }
+
+  next();
+};
+
 export const validateId = (paramName = 'id') => {
   return (req, res, next) => {
     const id = req.params[paramName];
@@ -103,6 +129,7 @@ export const validatePagination = (req, res, next) => {
 export default {
   validateCreateCommunity,
   validateCreateEvent,
+  validateCreateRating,
   validateId,
   validatePagination,
 };

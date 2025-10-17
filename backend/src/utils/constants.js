@@ -36,6 +36,21 @@ export const COMMUNITY_CATEGORIES = [
   'Other',
 ];
 
+export const ACTIVITY_TYPES = [
+  'event_joined',
+  'event_created',
+  'event_attended',
+  'event_saved',
+  'community_joined',
+  'community_created',
+  'badge_earned',
+  'points_earned',
+  'rating_created',
+  'verification_requested',
+  'community_verification_verified',
+  'community_verification_rejected',
+];
+
 export const ERROR_MESSAGES = {
   INVALID_TOKEN: 'Invalid or expired token',
   UNAUTHORIZED: 'Unauthorized access',
@@ -57,6 +72,7 @@ export default {
   LEVEL_THRESHOLDS,
   EVENT_CATEGORIES,
   COMMUNITY_CATEGORIES,
+  ACTIVITY_TYPES,
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
 };

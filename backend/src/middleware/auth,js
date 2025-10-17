@@ -28,14 +28,35 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const isAdmin = (req, res, next) => {
-  // This is a placeholder; you'll need to fetch user role from DB
-  if (req.userRole === 'admin') {
-    return next();
+  // TODO: Fetch user role from DB and check
+  // For now, you can set admin role in User model and fetch it
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided',
+      });
+    }
+
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    
+    // Add user role check here after fetching from DB
+    req.userId = decoded.id;
+    req.userEmail = decoded.email;
+    
+    // You should verify admin role from database
+    // For MVP, you can hardcode admin IDs or check user.role in DB
+    
+    next();
+  } catch (error) {
+    logger.error('Admin verification failed', error);
+    return res.status(403).json({
+      success: false,
+      message: ERROR_MESSAGES.UNAUTHORIZED,
+    });
   }
-  return res.status(403).json({
-    success: false,
-    message: ERROR_MESSAGES.UNAUTHORIZED,
-  });
 };
 
 export const optional = (req, res, next) => {

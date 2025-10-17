@@ -8,6 +8,21 @@ import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 
+// Helper to format event with capacity info
+const formatEventWithCapacity = (event) => {
+  const eventObj = event.toObject ? event.toObject() : event;
+  return {
+    ...eventObj,
+    capacity: {
+      total: event.maxParticipants,
+      registered: event.participants.length,
+      available: event.maxParticipants ? Math.max(0, event.maxParticipants - event.participants.length) : null,
+      isFull: event.isFull(),
+      capacityPercentage: event.getCapacityPercentage(),
+    },
+  };
+};
+
 export const createEvent = async (req, res) => {
   try {
     const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
@@ -21,6 +36,14 @@ export const createEvent = async (req, res) => {
         message: 'Community not found',
       });
     }
+
+    // Verify community is verified or allow unverified for MVP
+    // if (communityExists.verificationStatus !== 'verified') {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Only verified communities can create events',
+    //   });
+    // }
 
     const event = await Event.create({
       title,
@@ -61,10 +84,14 @@ export const createEvent = async (req, res) => {
 
     logger.success(`Event created: ${event._id}`);
 
+    const populatedEvent = await event
+      .populate('createdBy', 'name profileImage')
+      .populate('community', 'name');
+
     res.status(201).json({
       success: true,
       message: SUCCESS_MESSAGES.CREATED,
-      event: await event.populate('createdBy', 'name profileImage').populate('community', 'name'),
+      event: formatEventWithCapacity(populatedEvent),
     });
   } catch (error) {
     logger.error('Error creating event', error);
@@ -107,9 +134,12 @@ export const getEvents = async (req, res) => {
 
     const total = await Event.countDocuments(query);
 
+    // Format events with capacity info
+    const formattedEvents = events.map(formatEventWithCapacity);
+
     res.json({
       success: true,
-      data: events,
+      data: formattedEvents,
       pagination: {
         total,
         page: parseInt(page),
@@ -132,7 +162,7 @@ export const getEventById = async (req, res) => {
 
     const event = await Event.findById(id)
       .populate('createdBy', 'name profileImage')
-      .populate('community', 'name')
+      .populate('community', 'name verificationStatus avgRating')
       .populate('participants', 'name profileImage');
 
     if (!event) {
@@ -144,7 +174,7 @@ export const getEventById = async (req, res) => {
 
     res.json({
       success: true,
-      event,
+      event: formatEventWithCapacity(event),
     });
   } catch (error) {
     logger.error('Error fetching event', error);
@@ -218,7 +248,7 @@ export const joinEvent = async (req, res) => {
     res.json({
       success: true,
       message: 'Joined event successfully',
-      event,
+      event: formatEventWithCapacity(event),
     });
   } catch (error) {
     logger.error('Error joining event', error);
@@ -273,7 +303,7 @@ export const leaveEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, endDate, location, category, image, status } = req.body;
+    const { title, description, startDate, endDate, location, category, image, status, maxParticipants } = req.body;
     const userId = req.userId;
 
     const event = await Event.findById(id);
@@ -301,6 +331,7 @@ export const updateEvent = async (req, res) => {
     if (category) updateData.category = category;
     if (image) updateData.image = image;
     if (status) updateData.status = status;
+    if (maxParticipants !== undefined) updateData.maxParticipants = maxParticipants;
 
     const updated = await Event.findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'name profileImage')
@@ -311,7 +342,7 @@ export const updateEvent = async (req, res) => {
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.UPDATED,
-      event: updated,
+      event: formatEventWithCapacity(updated),
     });
   } catch (error) {
     logger.error('Error updating event', error);

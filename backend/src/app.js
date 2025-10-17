@@ -11,6 +11,9 @@ import communityRoutes from './routes/communityRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import impactRoutes from './routes/impactRoutes.js';
+import ratingRoutes from './routes/ratingRoutes.js';
+import verificationRoutes from './routes/verificationRoutes.js';
+import participationRoutes from './routes/participationRoutes.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -61,6 +64,9 @@ app.use('/communities', communityRoutes);
 app.use('/events', eventRoutes);
 app.use('/activities', activityRoutes);
 app.use('/impact', impactRoutes);
+app.use('/ratings', ratingRoutes);
+app.use('/verifications', verificationRoutes);
+app.use('/participations', participationRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
