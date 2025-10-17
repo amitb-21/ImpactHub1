@@ -1,22 +1,71 @@
 import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
+import cors from 'cors';
 import './config/passport.js';
+
+// Routes
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import communityRoutes from './routes/communityRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import activityRoutes from './routes/activityRoutes.js';
+import impactRoutes from './routes/impactRoutes.js';
+
+// Middleware
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
-app.use(express.json());
+// CORS configuration
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'impacthub-secret',
+    secret: process.env.SESSION_SECRET || 'impacthub-session-secret',
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+    },
   })
 );
+
+// Passport authentication
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// API Routes
 app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/communities', communityRoutes);
+app.use('/events', eventRoutes);
+app.use('/activities', activityRoutes);
+app.use('/impact', impactRoutes);
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 export default app;
