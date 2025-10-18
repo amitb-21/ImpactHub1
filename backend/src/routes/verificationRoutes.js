@@ -5,13 +5,15 @@ import { validateId, validatePagination } from '../middleware/validator.js';
 
 const router = express.Router();
 
+// PUBLIC ENDPOINTS
+
 // Submit verification request (community creator)
 router.post('/:communityId/submit', verifyToken, validateId('communityId'), verificationController.submitVerificationRequest);
 
 // Get verification status (anyone)
 router.get('/:communityId/status', validateId('communityId'), verificationController.getVerificationStatus);
 
-// ADMIN ENDPOINTS
+// ADMIN ONLY ENDPOINTS
 
 // Get pending verifications (admin only)
 router.get('/admin/pending', verifyToken, isAdmin, validatePagination, verificationController.getPendingVerifications);

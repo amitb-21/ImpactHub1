@@ -8,7 +8,6 @@ import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 
-// Helper to format event with capacity info
 const formatEventWithCapacity = (event) => {
   const eventObj = event.toObject ? event.toObject() : event;
   return {
@@ -23,10 +22,150 @@ const formatEventWithCapacity = (event) => {
   };
 };
 
+const getSortOrder = (sortBy) => {
+  const sortMap = {
+    recent: { createdAt: -1 },
+    upcoming: { startDate: 1 },
+    popular: { 'participants.length': -1 },
+    trending: { totalRatings: -1, avgRating: -1 },
+    rating: { avgRating: -1 },
+    oldest: { createdAt: 1 },
+  };
+  return sortMap[sortBy] || sortMap.recent;
+};
+
+export const getEvents = async (req, res) => {
+  try {
+    const {
+      category,
+      community,
+      status = 'Upcoming',
+      search,
+      page = 1,
+      limit = 10,
+      sortBy = 'recent',
+      minRating = 0,
+      dateFrom,
+      dateTo,
+      hasAvailability = false,
+      verified = false,
+      participantMin = 0,
+    } = req.query;
+
+    const { skip } = parseQueryParams({ page, limit });
+    let query = {};
+
+    if (category) {
+      const validCategories = ['Cleanup', 'Volunteering', 'Education', 'Fundraising', 'Other'];
+      if (validCategories.includes(category)) {
+        query.category = category;
+      }
+    }
+
+    if (community) {
+      query.community = community;
+    }
+
+    if (status && status !== 'All') {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      query.startDate = {};
+      if (dateFrom) {
+        query.startDate.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        query.startDate.$lte = new Date(dateTo);
+      }
+    }
+
+    if (minRating && minRating > 0) {
+      query.avgRating = { $gte: parseFloat(minRating) };
+    }
+
+    if (verified === 'true') {
+      const verifiedCommunities = await Community.find({ verificationStatus: 'verified' }).select('_id');
+      const verifiedIds = verifiedCommunities.map(c => c._id);
+      query.community = { $in: verifiedIds };
+    }
+
+    let events = await Event.find(query)
+      .populate('createdBy', 'name profileImage')
+      .populate('community', 'name verificationStatus')
+      .sort(getSortOrder(sortBy))
+      .lean();
+
+    if (hasAvailability === 'true') {
+      events = events.filter(event => {
+        if (!event.maxParticipants) return true;
+        return event.participants.length < event.maxParticipants;
+      });
+    }
+
+    if (participantMin && participantMin > 0) {
+      events = events.filter(event => event.participants.length >= parseInt(participantMin));
+    }
+
+    const total = events.length;
+    const paginatedEvents = events.slice(skip, skip + parseInt(limit));
+
+    const formattedEvents = paginatedEvents.map(event => {
+      const eventWithCapacity = {
+        ...event,
+        capacity: {
+          total: event.maxParticipants,
+          registered: event.participants.length,
+          available: event.maxParticipants 
+            ? Math.max(0, event.maxParticipants - event.participants.length) 
+            : null,
+          isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
+          capacityPercentage: event.maxParticipants 
+            ? Math.round((event.participants.length / event.maxParticipants) * 100)
+            : 0,
+        },
+      };
+      return eventWithCapacity;
+    });
+
+    res.json({
+      success: true,
+      data: formattedEvents,
+      filters: {
+        category: category || 'All',
+        status: status || 'All',
+        sortBy,
+        minRating: parseFloat(minRating) || 0,
+        hasAvailability: hasAvailability === 'true',
+        verified: verified === 'true',
+      },
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching events', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
+  }
+};
+
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
-      req.body;
+    const { title, description, community, startDate, endDate, location, category, image, maxParticipants } = req.body;
     const userId = req.userId;
 
     const communityExists = await Community.findById(community);
@@ -36,14 +175,6 @@ export const createEvent = async (req, res) => {
         message: 'Community not found',
       });
     }
-
-    // Verify community is verified or allow unverified for MVP
-    // if (communityExists.verificationStatus !== 'verified') {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Only verified communities can create events',
-    //   });
-    // }
 
     const event = await Event.create({
       title,
@@ -60,18 +191,13 @@ export const createEvent = async (req, res) => {
       status: 'Upcoming',
     });
 
-    // Award points to creator
     await awardEventCreation(userId);
-
-    // Update community event count
     await Community.findByIdAndUpdate(community, { $inc: { totalEvents: 1 } });
 
-    // Add to user's events
     await User.findByIdAndUpdate(userId, {
       $addToSet: { eventsParticipated: event._id },
     });
 
-    // Create activity record
     await Activity.create({
       user: userId,
       type: 'event_created',
@@ -95,60 +221,6 @@ export const createEvent = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error creating event', error);
-    res.status(500).json({
-      success: false,
-      message: ERROR_MESSAGES.SERVER_ERROR,
-    });
-  }
-};
-
-export const getEvents = async (req, res) => {
-  try {
-    const { category, community, page = 1, limit = 10, search, status } = req.query;
-    const { skip } = parseQueryParams({ page, limit });
-
-    let query = {};
-
-    if (category) {
-      query.category = category;
-    }
-    if (community) {
-      query.community = community;
-    }
-    if (status) {
-      query.status = status;
-    }
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const events = await Event.find(query)
-      .populate('createdBy', 'name profileImage')
-      .populate('community', 'name')
-      .sort({ startDate: 1 })
-      .limit(limit)
-      .skip(skip);
-
-    const total = await Event.countDocuments(query);
-
-    // Format events with capacity info
-    const formattedEvents = events.map(formatEventWithCapacity);
-
-    res.json({
-      success: true,
-      data: formattedEvents,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    logger.error('Error fetching events', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
@@ -216,12 +288,10 @@ export const joinEvent = async (req, res) => {
     event.participants.push(userId);
     await event.save();
 
-    // Add to user's events
     await User.findByIdAndUpdate(userId, {
       $addToSet: { eventsParticipated: id },
     });
 
-    // Create participation record
     await Participation.create({
       user: userId,
       event: id,
@@ -229,10 +299,8 @@ export const joinEvent = async (req, res) => {
       status: 'Registered',
     });
 
-    // Award points
     await awardEventParticipation(userId, id);
 
-    // Create activity record
     await Activity.create({
       user: userId,
       type: 'event_joined',
@@ -375,8 +443,6 @@ export const deleteEvent = async (req, res) => {
     }
 
     await Event.findByIdAndDelete(id);
-
-    // Update community event count
     await Community.findByIdAndUpdate(event.community, { $inc: { totalEvents: -1 } });
 
     logger.success(`Event deleted: ${id}`);

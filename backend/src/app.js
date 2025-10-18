@@ -15,7 +15,6 @@ import ratingRoutes from './routes/ratingRoutes.js';
 import verificationRoutes from './routes/verificationRoutes.js';
 import participationRoutes from './routes/participationRoutes.js';
 import eventPhotoRoutes from './routes/eventPhotoRoutes.js';
-// Add to app.js
 import adminRoutes from './routes/adminRoutes.js';
 import locationCalendarRoutes from './routes/locationCalendarRoutes.js';
 
