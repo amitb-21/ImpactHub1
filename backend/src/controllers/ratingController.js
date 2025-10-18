@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Rating from '../models/Rating.js';
 import Participation from '../models/Participation.js';
 import Community from '../models/Community.js';
@@ -147,7 +148,7 @@ export const getRatings = async (req, res) => {
       {
         $match: {
           'ratedEntity.entityType': entityType,
-          'ratedEntity.entityId': new (require('mongoose')).Types.ObjectId(entityId),
+          'ratedEntity.entityId': new mongoose.Types.ObjectId(entityId),
         },
       },
       {

@@ -44,14 +44,25 @@ router.post('/communities/:communityId/deactivate', validateId('communityId'), a
 router.post('/communities/:communityId/reactivate', validateId('communityId'), adminController.reactivateCommunity);
 
 // =====================
-// COMMUNITY MANAGER (for event creators)
+// EVENT MANAGEMENT
 // =====================
 
-// Get event participants (detailed)
-router.get('/events/:eventId/participants', validateId('eventId'), validatePagination, adminController.getEventParticipantsDetailed);
+// IMPORTANT: More specific routes FIRST (with sub-paths)
 
-// Export participants to CSV
-router.get('/events/:eventId/participants/export/csv', validateId('eventId'), adminController.exportParticipantsCSV);
+// Export participants to CSV (more specific)
+router.get(
+  '/events/:eventId/participants/export/csv',
+  validateId('eventId'),
+  adminController.exportParticipantsCSV
+);
+
+// Get event participants (less specific)
+router.get(
+  '/events/:eventId/participants',
+  validateId('eventId'),
+  validatePagination,
+  adminController.getEventParticipantsDetailed
+);
 
 // =====================
 // ANALYTICS & DASHBOARD

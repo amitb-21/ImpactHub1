@@ -34,8 +34,33 @@ const eventSchema = new mongoose.Schema(
       required: true,
     },
     location: {
-      type: String,
-      required: true,
+      address: {
+        type: String,
+        default: null,
+      },
+      city: {
+        type: String,
+        default: null,
+      },
+      state: {
+        type: String,
+        default: null,
+      },
+      zipCode: {
+        type: String,
+        default: null,
+      },
+      coordinates: {
+        type: {
+          type: String,
+          enum: ['Point'],
+          default: 'Point',
+        },
+        coordinates: {
+          type: [Number], // [longitude, latitude]
+          default: [0, 0],
+        },
+      },
     },
     category: {
       type: String,
@@ -74,6 +99,12 @@ const eventSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Geospatial index for location-based queries
+eventSchema.index({ 'location.coordinates': '2dsphere' });
+eventSchema.index({ community: 1, startDate: 1 });
+eventSchema.index({ createdBy: 1 });
+eventSchema.index({ category: 1 });
 
 // Computed property helper - get available slots
 eventSchema.methods.getAvailableSlots = function () {

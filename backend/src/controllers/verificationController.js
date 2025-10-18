@@ -11,6 +11,35 @@ export const submitVerificationRequest = async (req, res) => {
     const { communityId } = req.params;
     const { registrationNumber, foundedYear, memberCount, pastEventsCount, documents } = req.body;
 
+    // Validate required fields
+    if (!registrationNumber || registrationNumber.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration number is required',
+      });
+    }
+
+    if (!foundedYear || foundedYear < 1900 || foundedYear > new Date().getFullYear()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid founded year is required',
+      });
+    }
+
+    if (!memberCount || memberCount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member count must be at least 1',
+      });
+    }
+
+    if (pastEventsCount === undefined || pastEventsCount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Past events count must be 0 or greater',
+      });
+    }
+
     const community = await Community.findById(communityId);
 
     if (!community) {
@@ -155,6 +184,21 @@ export const verifyOrRejectCommunity = async (req, res) => {
     const { approved, rejectionReason, notes } = req.body;
     const adminId = req.userId;
 
+    // Validate input
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'approved must be a boolean',
+      });
+    }
+
+    if (!approved && (!rejectionReason || rejectionReason.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required when rejecting',
+      });
+    }
+
     const verification = await CommunityVerification.findById(verificationId);
 
     if (!verification) {
@@ -223,6 +267,12 @@ export const getVerificationHistory = async (req, res) => {
 
     let query = {};
     if (status) {
+      if (!['pending', 'verified', 'rejected'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid status filter',
+        });
+      }
       query.status = status;
     }
 

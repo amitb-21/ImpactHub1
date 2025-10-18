@@ -5,35 +5,85 @@ import { validateId, validatePagination } from '../middleware/validator.js';
 
 const router = express.Router();
 
+// IMPORTANT: Order matters - more specific routes first!
+
+// =====================
+// WISHLIST ROUTES
+// =====================
 
 // Save event to wishlist
-router.post('/:eventId/wishlist/save', verifyToken, validateId('eventId'), participationController.saveEventToWishlist);
+router.post(
+  '/:eventId/wishlist/save',
+  verifyToken,
+  validateId('eventId'),
+  participationController.saveEventToWishlist
+);
 
 // Remove event from wishlist
-router.delete('/:eventId/wishlist/remove', verifyToken, validateId('eventId'), participationController.removeEventFromWishlist);
+router.delete(
+  '/:eventId/wishlist/remove',
+  verifyToken,
+  validateId('eventId'),
+  participationController.removeEventFromWishlist
+);
 
-// Get user's wishlist (must come AFTER specific routes)
-router.get('/user/:userId/wishlist', validateId('userId'), validatePagination, participationController.getUserWishlist);
+// Get user's wishlist
+router.get(
+  '/user/:userId/wishlist',
+  validateId('userId'),
+  validatePagination,
+  participationController.getUserWishlist
+);
 
+// =====================
+// ATTENDANCE VERIFICATION ROUTES
+// =====================
 
-// ATTENDANCE VERIFICATION
 // Mark participant as attended
-router.post('/:participationId/mark-attended', verifyToken, validateId('participationId'), participationController.markAttendance);
+router.post(
+  '/:participationId/mark-attended',
+  verifyToken,
+  validateId('participationId'),
+  participationController.markAttendance
+);
 
 // Reject participant
-router.post('/:participationId/reject', verifyToken, validateId('participationId'), participationController.rejectParticipant);
+router.post(
+  '/:participationId/reject',
+  verifyToken,
+  validateId('participationId'),
+  participationController.rejectParticipant
+);
 
-// EVENT PARTICIPANTS
+// =====================
+// EVENT PARTICIPANTS ROUTES
+// =====================
 
 // Get pending/unverified participants for an event
-router.get('/event/:eventId/pending', validateId('eventId'), validatePagination, participationController.getPendingParticipants);
+router.get(
+  '/event/:eventId/pending',
+  validateId('eventId'),
+  validatePagination,
+  participationController.getPendingParticipants
+);
 
 // Get verified/attended participants for an event
-router.get('/event/:eventId/verified', validateId('eventId'), validatePagination, participationController.getVerifiedParticipants);
+router.get(
+  '/event/:eventId/verified',
+  validateId('eventId'),
+  validatePagination,
+  participationController.getVerifiedParticipants
+);
 
-// PARTICIPATION DETAILS
+// =====================
+// GENERIC ROUTE (MUST BE LAST)
+// =====================
 
-// Get participation details (must come LAST)
-router.get('/:participationId', validateId('participationId'), participationController.getParticipationDetails);
+// Get participation details (generic - MUST be after specific routes)
+router.get(
+  '/:participationId',
+  validateId('participationId'),
+  participationController.getParticipationDetails
+);
 
 export default router;
