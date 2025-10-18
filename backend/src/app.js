@@ -14,6 +14,7 @@ import impactRoutes from './routes/impactRoutes.js';
 import ratingRoutes from './routes/ratingRoutes.js';
 import verificationRoutes from './routes/verificationRoutes.js';
 import participationRoutes from './routes/participationRoutes.js';
+import eventPhotoRoutes from './routes/eventPhotoRoutes.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';

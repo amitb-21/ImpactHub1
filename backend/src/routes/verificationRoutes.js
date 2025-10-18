@@ -14,12 +14,12 @@ router.get('/:communityId/status', validateId('communityId'), verificationContro
 // ADMIN ENDPOINTS
 
 // Get pending verifications (admin only)
-router.get('/admin/pending', verifyToken, validatePagination, verificationController.getPendingVerifications);
+router.get('/admin/pending', verifyToken, isAdmin, validatePagination, verificationController.getPendingVerifications);
 
 // Approve/Reject community (admin only)
-router.post('/:verificationId/review', verifyToken, validateId('verificationId'), verificationController.verifyOrRejectCommunity);
+router.post('/:verificationId/review', verifyToken, isAdmin, validateId('verificationId'), verificationController.verifyOrRejectCommunity);
 
 // Get verification history (admin only)
-router.get('/admin/history', verifyToken, validatePagination, verificationController.getVerificationHistory);
+router.get('/admin/history', verifyToken, isAdmin, validatePagination, verificationController.getVerificationHistory);
 
 export default router;

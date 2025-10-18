@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 import { config } from '../config/env.js';
 import { ERROR_MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
@@ -27,12 +28,10 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export const isAdmin = (req, res, next) => {
-  // TODO: Fetch user role from DB and check
-  // For now, you can set admin role in User model and fetch it
+export const isAdmin = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -41,14 +40,27 @@ export const isAdmin = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, config.JWT_SECRET);
-    
-    // Add user role check here after fetching from DB
     req.userId = decoded.id;
     req.userEmail = decoded.email;
-    
-    // You should verify admin role from database
-    // For MVP, you can hardcode admin IDs or check user.role in DB
-    
+
+    // Fetch user and check role
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: ERROR_MESSAGES.UNAUTHORIZED,
+      });
+    }
+
+    req.userRole = user.role;
     next();
   } catch (error) {
     logger.error('Admin verification failed', error);
