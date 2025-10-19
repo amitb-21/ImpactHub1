@@ -30,6 +30,7 @@ const communityVerificationSchema = new mongoose.Schema(
       type: String,
       default: null,
       maxlength: 500,
+      description: 'Why verification was rejected',
     },
     documents: [
       {
@@ -53,15 +54,16 @@ const communityVerificationSchema = new mongoose.Schema(
     notes: {
       type: String,
       default: null,
+      maxlength: 1000,
+      description: 'Admin notes for internal reference',
     },
   },
   { timestamps: true }
 );
 
-// Index for faster queries - allow multiple pending requests per community
 communityVerificationSchema.index({ community: 1, status: 1 });
-communityVerificationSchema.index({ status: 1 });
-communityVerificationSchema.index({ requestedAt: -1 });
+communityVerificationSchema.index({ status: 1, requestedAt: -1 });
+communityVerificationSchema.index({ verifiedAt: -1 });
 
 // Middleware to update Community model when verification status changes
 communityVerificationSchema.post('save', async function () {

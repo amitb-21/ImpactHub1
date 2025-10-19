@@ -71,7 +71,7 @@ const communitySchema = new mongoose.Schema(
     verificationStatus: {
       type: String,
       enum: ['unverified', 'pending', 'verified', 'rejected'],
-      default: 'unverified',
+      default: 'pending', // ✅ UPDATED: Changed from 'unverified' to 'pending'
       description: 'Verification status from admin',
     },
     avgRating: {
@@ -97,6 +97,7 @@ communitySchema.index({ 'location.coordinates': '2dsphere' });
 communitySchema.index({ createdBy: 1 });
 communitySchema.index({ category: 1 });
 communitySchema.index({ verificationStatus: 1 });
+communitySchema.index({ createdAt: -1 }); 
 
 const Community = mongoose.models.Community || mongoose.model('Community', communitySchema);
 export default Community;

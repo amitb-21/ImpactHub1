@@ -2,9 +2,13 @@ import CommunityVerification from '../models/CommunityVerification.js';
 import Community from '../models/Community.js';
 import User from '../models/User.js';
 import Activity from '../models/Activity.js';
+import { awardCommunityCreation } from '../services/impactService.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import * as pointsService from '../services/pointsService.js';
+
+// PUBLIC ENDPOINTS
 
 export const submitVerificationRequest = async (req, res) => {
   try {
@@ -49,16 +53,15 @@ export const submitVerificationRequest = async (req, res) => {
       });
     }
 
-    // Check if already has verification request
+    // Check if already has a pending or approved verification
     const existingRequest = await CommunityVerification.findOne({
       community: communityId,
-      status: 'pending',
     });
 
-    if (existingRequest) {
+    if (existingRequest && existingRequest.status !== 'rejected') {
       return res.status(409).json({
         success: false,
-        message: 'Verification request already pending for this community',
+        message: `Verification request already ${existingRequest.status} for this community`,
       });
     }
 
@@ -150,7 +153,8 @@ export const getPendingVerifications = async (req, res) => {
     const verifications = await CommunityVerification.find({
       status: 'pending',
     })
-      .populate('community', 'name description location image')
+      .populate('community', 'name description location image createdBy')
+      .populate('community.createdBy', 'name email')
       .sort({ requestedAt: -1 })
       .limit(limit)
       .skip(skip);
@@ -178,28 +182,13 @@ export const getPendingVerifications = async (req, res) => {
   }
 };
 
-export const verifyOrRejectCommunity = async (req, res) => {
+export const approveCommunity = async (req, res) => {
   try {
     const { verificationId } = req.params;
-    const { approved, rejectionReason, notes } = req.body;
+    const { notes } = req.body;
     const adminId = req.userId;
 
-    // Validate input
-    if (typeof approved !== 'boolean') {
-      return res.status(400).json({
-        success: false,
-        message: 'approved must be a boolean',
-      });
-    }
-
-    if (!approved && (!rejectionReason || rejectionReason.trim().length === 0)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Rejection reason is required when rejecting',
-      });
-    }
-
-    const verification = await CommunityVerification.findById(verificationId);
+    const verification = await CommunityVerification.findById(verificationId).populate('community');
 
     if (!verification) {
       return res.status(404).json({
@@ -208,51 +197,155 @@ export const verifyOrRejectCommunity = async (req, res) => {
       });
     }
 
-    const community = await Community.findById(verification.community);
-
-    const status = approved ? 'verified' : 'rejected';
-    const updateData = {
-      status,
-      verifiedAt: new Date(),
-      verifiedBy: adminId,
-    };
-
-    if (!approved) {
-      updateData.rejectionReason = rejectionReason || 'Not specified';
+    if (verification.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot approve a ${verification.status} verification`,
+      });
     }
 
-    if (notes) {
-      updateData.notes = notes;
-    }
+    // Update verification status
+    verification.status = 'verified';
+    verification.verifiedAt = new Date();
+    verification.verifiedBy = adminId;
+    if (notes) verification.notes = notes;
+    await verification.save();
 
-    const updated = await CommunityVerification.findByIdAndUpdate(verificationId, updateData, {
-      new: true,
-    })
-      .populate('verifiedBy', 'name email')
-      .populate('community', 'name');
+    // Update community verification status
+    const community = await Community.findByIdAndUpdate(
+      verification.community._id,
+      {
+        verificationStatus: 'verified',
+      },
+      { new: true }
+    ).populate('createdBy', 'name');
 
-    // Create activity record
+    // Award points to community creator
+    await awardCommunityCreation(verification.community.createdBy);
+
+    await pointsService.awardVolunteerCommunityCreationPoints(
+      verification.community.createdBy,
+      community._id
+    );
+
+    await pointsService.awardCommunityVerificationPoints(community._id);
+
+    // Create activity records
     await Activity.create({
       user: adminId,
-      type: 'community_verification_' + status,
-      description: `${status.charAt(0).toUpperCase() + status.slice(1)} community: ${community.name}`,
+      type: 'community_verification_verified',
+      description: `Approved community verification: ${community.name}`,
       relatedEntity: {
         entityType: 'Community',
         entityId: community._id,
       },
     });
 
-    logger.success(
-      `Community ${community._id} verification ${status} by admin ${adminId}`
-    );
+    await Activity.create({
+      user: verification.community.createdBy,
+      type: 'community_verification_verified',
+      description: `Your community "${community.name}" has been verified and approved!`,
+      relatedEntity: {
+        entityType: 'Community',
+        entityId: community._id,
+      },
+    });
+
+    logger.success(`Community ${community._id} verified by admin ${adminId}`);
 
     res.json({
       success: true,
-      message: `Community ${status} successfully`,
-      verification: updated,
+      message: 'Community verified successfully! Creator awarded points.',
+      verification: await verification.populate('verifiedBy', 'name email'),
+      community,
     });
   } catch (error) {
-    logger.error('Error verifying community', error);
+    logger.error('Error approving community', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
+  }
+};
+
+export const rejectCommunity = async (req, res) => {
+  try {
+    const { verificationId } = req.params;
+    const { rejectionReason, notes } = req.body;
+    const adminId = req.userId;
+
+    // Validate rejection reason
+    if (!rejectionReason || rejectionReason.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required',
+      });
+    }
+
+    const verification = await CommunityVerification.findById(verificationId).populate('community');
+
+    if (!verification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Verification request not found',
+      });
+    }
+
+    if (verification.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot reject a ${verification.status} verification`,
+      });
+    }
+
+    // Update verification status
+    verification.status = 'rejected';
+    verification.verifiedAt = new Date();
+    verification.verifiedBy = adminId;
+    verification.rejectionReason = rejectionReason;
+    if (notes) verification.notes = notes;
+    await verification.save();
+
+    // Update community verification status
+    const community = await Community.findByIdAndUpdate(
+      verification.community._id,
+      {
+        verificationStatus: 'rejected',
+      },
+      { new: true }
+    ).populate('createdBy', 'name');
+
+    // Create activity records
+    await Activity.create({
+      user: adminId,
+      type: 'community_verification_rejected',
+      description: `Rejected community verification: ${community.name}. Reason: ${rejectionReason}`,
+      relatedEntity: {
+        entityType: 'Community',
+        entityId: community._id,
+      },
+    });
+
+    await Activity.create({
+      user: verification.community.createdBy,
+      type: 'community_verification_rejected',
+      description: `Your community "${community.name}" verification was rejected. Reason: ${rejectionReason}`,
+      relatedEntity: {
+        entityType: 'Community',
+        entityId: community._id,
+      },
+    });
+
+    logger.success(`Community ${community._id} rejected by admin ${adminId}`);
+
+    res.json({
+      success: true,
+      message: 'Community verification rejected',
+      verification: await verification.populate('verifiedBy', 'name email'),
+      community,
+    });
+  } catch (error) {
+    logger.error('Error rejecting community', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
@@ -279,7 +372,7 @@ export const getVerificationHistory = async (req, res) => {
     const verifications = await CommunityVerification.find(query)
       .populate('community', 'name image')
       .populate('verifiedBy', 'name email')
-      .sort({ verifiedAt: -1 })
+      .sort({ verifiedAt: -1, requestedAt: -1 })
       .limit(limit)
       .skip(skip);
 
@@ -308,6 +401,7 @@ export default {
   submitVerificationRequest,
   getVerificationStatus,
   getPendingVerifications,
-  verifyOrRejectCommunity,
+  approveCommunity,
+  rejectCommunity,
   getVerificationHistory,
 };

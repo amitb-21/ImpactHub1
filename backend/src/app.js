@@ -17,7 +17,7 @@ import participationRoutes from './routes/participationRoutes.js';
 import eventPhotoRoutes from './routes/eventPhotoRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import locationCalendarRoutes from './routes/locationCalendarRoutes.js';
-
+import pointsRoutes from './routes/pointsRoutes.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -74,7 +74,7 @@ app.use('/verifications', verificationRoutes);
 app.use('/participations', participationRoutes);
 app.use('/event-photos', eventPhotoRoutes);
 app.use('/location', locationCalendarRoutes);
-
+app.use('/points', pointsRoutes); // ✅ NEW
 
 // 404 handler
 app.use(notFoundHandler);

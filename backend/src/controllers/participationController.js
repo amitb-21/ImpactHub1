@@ -6,6 +6,7 @@ import { awardEventParticipation } from '../services/impactService.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import * as pointsService from '../services/pointsService.js';
 
 // Save event to wishlist
 export const saveEventToWishlist = async (req, res) => {
@@ -198,6 +199,13 @@ export const markAttendance = async (req, res) => {
       participation.user._id,
       { $inc: { points: pointsEarned } },
       { new: true }
+    );
+
+    await pointsService.awardVolunteerEventPoints(
+      participation.user._id,
+      participation.event._id,
+      pointsEarned,
+      hoursContributed
     );
 
     // Create activity record

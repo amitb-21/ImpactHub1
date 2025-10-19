@@ -7,6 +7,7 @@ import { awardEventCreation, awardEventParticipation } from '../services/impactS
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import * as pointsService from '../services/pointsService.js';
 
 const formatEventWithCapacity = (event) => {
   const eventObj = event.toObject ? event.toObject() : event;
@@ -192,6 +193,8 @@ export const createEvent = async (req, res) => {
     });
 
     await awardEventCreation(userId);
+    await pointsService.awardVolunteerEventCreationPoints(userId, event._id);
+    await pointsService.awardCommunityEventCreatedPoints(community);
     await Community.findByIdAndUpdate(community, { $inc: { totalEvents: 1 } });
 
     await User.findByIdAndUpdate(userId, {
@@ -298,6 +301,20 @@ export const joinEvent = async (req, res) => {
       community: event.community,
       status: 'Registered',
     });
+
+    // ✅ ADD THIS SECTION:
+    // Award volunteer points
+    await pointsService.awardVolunteerEventPoints(
+      userId,
+      id,
+      POINTS_CONFIG.EVENT_PARTICIPATED
+    );
+
+    // Award community points
+    await pointsService.awardCommunityMemberJoinedPoints(
+      event.community,
+      userId
+    );
 
     await awardEventParticipation(userId, id);
 

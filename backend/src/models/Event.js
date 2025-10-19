@@ -100,11 +100,29 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Geospatial index for location-based queries
 eventSchema.index({ 'location.coordinates': '2dsphere' });
 eventSchema.index({ community: 1, startDate: 1 });
 eventSchema.index({ createdBy: 1 });
 eventSchema.index({ category: 1 });
+
+eventSchema.pre('save', async function (next) {
+  try {
+    // Only check on new document creation
+    if (this.isNew && this.community) {
+      const Community = mongoose.model('Community');
+      const community = await Community.findById(this.community);
+
+      if (community && community.verificationStatus !== 'verified') {
+        throw new Error(
+          'Cannot create events for unverified communities. Community must be verified by admin first.'
+        );
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Computed property helper - get available slots
 eventSchema.methods.getAvailableSlots = function () {
