@@ -2,14 +2,18 @@ import express from 'express';
 import * as eventPhotoController from '../controllers/eventPhotoController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
+import { uploadSingle, handleUploadError, validateFileExists } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-// Upload photo to event
+// ✅ FIXED: Upload photo to event with multer middleware
 router.post(
   '/:eventId/upload',
   verifyToken,
   validateId('eventId'),
+  uploadSingle, // ✅ Multer middleware to handle file upload
+  handleUploadError, // ✅ Handle upload errors
+  validateFileExists, // ✅ Validate file was uploaded
   eventPhotoController.uploadEventPhoto
 );
 

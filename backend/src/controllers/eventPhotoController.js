@@ -2,6 +2,7 @@ import EventPhoto from '../models/EventPhoto.js';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
 import Activity from '../models/Activity.js';
+import { uploadToCloudinary } from '../services/uploadService.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
@@ -10,8 +11,16 @@ import * as socketService from '../services/socketService.js';
 export const uploadEventPhoto = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { photoUrl, photoType, description, isOfficial } = req.body;
+    const { photoType, description, isOfficial } = req.body;
     const userId = req.userId;
+
+    // ✅ FIX: Validate file exists
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No photo file provided. Please upload an image.',
+      });
+    }
 
     // Validate event exists
     const event = await Event.findById(eventId);
@@ -22,8 +31,14 @@ export const uploadEventPhoto = async (req, res) => {
       });
     }
 
-    // ✅ FIXED: Fetch user before using in socket notification
+    // ✅ FIX: Fetch user before socket notification
     const user = await User.findById(userId).select('name profileImage');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
 
     // Check if user is event creator (for official photos)
     const isEventCreator = event.createdBy.equals(userId);
@@ -32,22 +47,38 @@ export const uploadEventPhoto = async (req, res) => {
     if (!['event_preview', 'during_event', 'after_event'].includes(photoType)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid photo type',
+        message: 'Invalid photo type. Must be: event_preview, during_event, or after_event',
       });
     }
 
-    // Create photo
+    let photoUrl;
+
+    // ✅ FIX: Upload file to Cloudinary
+    try {
+      const uploadResult = await uploadToCloudinary(req.file, 'impacthub/events');
+      photoUrl = uploadResult.url;
+      logger.success(`Photo uploaded to Cloudinary: ${uploadResult.publicId}`);
+    } catch (uploadError) {
+      logger.error('Cloudinary upload failed', uploadError);
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to upload photo to cloud storage',
+        error: uploadError.message,
+      });
+    }
+
+    // Create photo record
     const photo = await EventPhoto.create({
       event: eventId,
       community: event.community,
       uploadedBy: userId,
-      photoUrl,
+      photoUrl, // URL from Cloudinary
       photoType,
       description: description || null,
       isOfficial: isOfficial && isEventCreator, // Only creator can mark as official
     });
 
-    // ✅ FIXED: Now socket notification has proper user data
+    // ✅ FIX: Now socket notification has proper user data
     socketService.notifyEventPhotoUploaded(eventId, event.community, {
       photoId: photo._id,
       photoUrl: photo.photoUrl,
@@ -107,6 +138,12 @@ export const getEventPhotos = async (req, res) => {
     let query = { event: eventId };
 
     if (photoType) {
+      if (!['event_preview', 'during_event', 'after_event'].includes(photoType)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid photo type filter',
+        });
+      }
       query.photoType = photoType;
     }
 
@@ -316,7 +353,7 @@ export const unlikePhoto = async (req, res) => {
     if (!photo.likedBy.includes(userId)) {
       return res.status(409).json({
         success: false,
-        message: 'You haven\'t liked this photo',
+        message: "You haven't liked this photo",
       });
     }
 
