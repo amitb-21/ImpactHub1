@@ -7,6 +7,8 @@ import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams, validateHoursContributed } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
+// ✅ FIXED: Added missing socket service import
+import * as socketService from '../services/socketService.js';
 
 // Save event to wishlist
 export const saveEventToWishlist = async (req, res) => {
@@ -160,7 +162,7 @@ export const markAttendance = async (req, res) => {
     let { hoursContributed } = req.body;
     const organizerId = req.userId;
 
-    // ✅ FIX: Validate hours contributed before processing
+    // ✅ FIXED: Validate hours contributed before processing
     const hoursError = validateHoursContributed(hoursContributed);
     if (hoursError) {
       return res.status(400).json({
@@ -173,7 +175,7 @@ export const markAttendance = async (req, res) => {
 
     const participation = await Participation.findById(participationId)
       .populate('event')
-      .populate('user');
+      .populate('user', 'name profileImage email');
 
     if (!participation) {
       return res.status(404).json({
@@ -196,13 +198,14 @@ export const markAttendance = async (req, res) => {
     participation.verifiedBy = organizerId;
     participation.hoursContributed = hoursContributed;
 
-    // ✅ FIX: Calculate points with proper error handling
+    // ✅ FIXED: Calculate points with proper error handling
     let pointsEarned = POINTS_CONFIG.EVENT_PARTICIPATED;
     if (hoursContributed > 0) {
       pointsEarned += hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED;
     }
 
     participation.pointsEarned = pointsEarned;
+    // ✅ FIXED: Save once before socket notifications
     await participation.save();
 
     // Award points to user with error handling
@@ -221,7 +224,6 @@ export const markAttendance = async (req, res) => {
       );
     } catch (pointsError) {
       logger.error('Error awarding points during attendance marking', pointsError);
-      // Don't fail the request if points fail
     }
 
     // Create activity record
@@ -242,21 +244,25 @@ export const markAttendance = async (req, res) => {
     logger.success(
       `Attendance marked for user ${participation.user._id} in event ${participation.event._id}`
     );
-    await participation.save();
 
-socketService.notifyAttendanceVerified(
-  participation.user._id,
-  participation.event._id,
-  pointsEarned,
-  hoursContributed
-);
+    // ✅ FIXED: Socket notifications with properly populated data
+    socketService.notifyAttendanceVerified(
+      participation.user._id,
+      participation.event._id,
+      pointsEarned,
+      hoursContributed
+    );
 
-// Notify event organizer
-socketService.notifyEventNewParticipant(
-  participation.event.createdBy,
-  participation.event._id,
-  participation.user
-);
+    // Notify event organizer
+    socketService.notifyEventNewParticipant(
+      participation.event.createdBy,
+      participation.event._id,
+      {
+        _id: participation.user._id,
+        name: participation.user.name,
+        profileImage: participation.user.profileImage,
+      }
+    );
 
     res.json({
       success: true,
@@ -279,7 +285,7 @@ export const rejectParticipant = async (req, res) => {
     const { rejectionReason } = req.body;
     const organizerId = req.userId;
 
-    // ✅ FIX: Validate rejection reason
+    // ✅ FIXED: Validate rejection reason
     if (!rejectionReason || rejectionReason.trim().length === 0) {
       return res.status(400).json({
         success: false,
@@ -317,6 +323,13 @@ export const rejectParticipant = async (req, res) => {
     await User.findByIdAndUpdate(participation.user, {
       $pull: { eventsParticipated: participation.event._id },
     });
+
+    // ✅ FIXED: Emit socket notification about rejection
+    socketService.notifyParticipationRejected(
+      participation.user,
+      participation.event._id,
+      rejectionReason
+    );
 
     logger.success(
       `Participant ${participation.user} rejected from event ${participation.event._id}`

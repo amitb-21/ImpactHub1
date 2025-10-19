@@ -7,6 +7,7 @@ import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
+import * as socketService from '../services/socketService.js';
 
 // PUBLIC ENDPOINTS
 
@@ -253,21 +254,20 @@ export const approveCommunity = async (req, res) => {
 
     logger.success(`Community ${community._id} verified by admin ${adminId}`);
 
-    await verification.save();
+    // ✅ FIXED: Now socket notifications are properly called with import
+    socketService.notifyCommunityVerification(
+      verification.community.createdBy,
+      community._id,
+      'verified',
+      `Your community "${community.name}" has been verified!`
+    );
 
-socketService.notifyCommunityVerification(
-  verification.community.createdBy,
-  community._id,
-  'verified',
-  `Your community "${community.name}" has been verified!`
-);
-
-// Notify community members
-socketService.emitToCommunity(community._id, 'community:verified', {
-  communityId: community._id,
-  communityName: community.name,
-  message: 'This community is now verified!',
-});
+    // Notify community members
+    socketService.emitToCommunity(community._id, 'community:verified', {
+      communityId: community._id,
+      communityName: community.name,
+      message: 'This community is now verified!',
+    });
 
     res.json({
       success: true,
@@ -353,6 +353,14 @@ export const rejectCommunity = async (req, res) => {
     });
 
     logger.success(`Community ${community._id} rejected by admin ${adminId}`);
+
+    // ✅ FIXED: Now socket notification is properly called
+    socketService.notifyCommunityVerification(
+      verification.community.createdBy,
+      community._id,
+      'rejected',
+      `Your community "${community.name}" verification was rejected. Reason: ${rejectionReason}`
+    );
 
     res.json({
       success: true,

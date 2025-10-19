@@ -7,6 +7,7 @@ import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
+import * as socketService from '../services/socketService.js';
 
 export const createCommunity = async (req, res) => {
   try {
@@ -227,6 +228,8 @@ export const joinCommunity = async (req, res) => {
       });
     }
 
+    const user = await User.findById(userId).select('name profileImage');
+
     community.members.push(userId);
     community.totalMembers = community.members.length;
     await community.save();
@@ -235,7 +238,7 @@ export const joinCommunity = async (req, res) => {
       $addToSet: { communitiesJoined: id },
     });
 
-    // ✅ ADD THIS:
+    // Award points for joining
     await pointsService.awardCommunityMemberJoinedPoints(id, userId);
 
     await Activity.create({
@@ -250,14 +253,11 @@ export const joinCommunity = async (req, res) => {
 
     logger.success(`User ${userId} joined community ${id}`);
 
-    await community.save();
-
-// ✅ ADD SOCKET NOTIFICATION
-socketService.notifyCommunityNewMember(community._id, {
-  _id: userId,
-  name: user.name,
-  profileImage: user.profileImage,
-});
+    socketService.notifyCommunityNewMember(community._id, {
+      _id: user._id,
+      name: user.name,
+      profileImage: user.profileImage,
+    });
 
     res.json({
       success: true,

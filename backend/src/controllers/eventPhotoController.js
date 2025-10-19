@@ -1,9 +1,11 @@
 import EventPhoto from '../models/EventPhoto.js';
 import Event from '../models/Event.js';
+import User from '../models/User.js';
 import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import * as socketService from '../services/socketService.js';
 
 export const uploadEventPhoto = async (req, res) => {
   try {
@@ -19,6 +21,9 @@ export const uploadEventPhoto = async (req, res) => {
         message: 'Event not found',
       });
     }
+
+    // ✅ FIXED: Fetch user before using in socket notification
+    const user = await User.findById(userId).select('name profileImage');
 
     // Check if user is event creator (for official photos)
     const isEventCreator = event.createdBy.equals(userId);
@@ -42,14 +47,15 @@ export const uploadEventPhoto = async (req, res) => {
       isOfficial: isOfficial && isEventCreator, // Only creator can mark as official
     });
 
+    // ✅ FIXED: Now socket notification has proper user data
     socketService.notifyEventPhotoUploaded(eventId, event.community, {
-  photoId: photo._id,
-  photoUrl: photo.photoUrl,
-  uploadedBy: {
-    name: user.name,
-    profileImage: user.profileImage,
-  },
-});
+      photoId: photo._id,
+      photoUrl: photo.photoUrl,
+      uploadedBy: {
+        name: user.name,
+        profileImage: user.profileImage,
+      },
+    });
 
     // Populate references
     const populatedPhoto = await photo

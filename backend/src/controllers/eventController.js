@@ -8,6 +8,7 @@ import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
+import * as socketService from '../services/socketService.js';
 
 const formatEventWithCapacity = (event) => {
   const eventObj = event.toObject ? event.toObject() : event;
@@ -200,7 +201,6 @@ export const createEvent = async (req, res) => {
     });
 
     await awardEventCreation(userId);
-    // ✅ FIX: Now correctly imported POINTS_CONFIG
     await pointsService.awardVolunteerEventCreationPoints(userId, event._id);
     await pointsService.awardCommunityEventCreatedPoints(community);
     await Community.findByIdAndUpdate(community, { $inc: { totalEvents: 1 } });
@@ -296,6 +296,9 @@ export const joinEvent = async (req, res) => {
       });
     }
 
+    // ✅ FIXED: Fetch user before socket notification
+    const user = await User.findById(userId).select('name profileImage');
+
     event.participants.push(userId);
     await event.save();
 
@@ -310,23 +313,20 @@ export const joinEvent = async (req, res) => {
       status: 'Registered',
     });
 
-    await event.save();
+    // ✅ FIXED: Now socket notifications have correct data
+    socketService.notifyEventNewParticipant(event.createdBy, event._id, {
+      _id: user._id,
+      name: user.name,
+      profileImage: user.profileImage,
+    });
 
-// ✅ ADD SOCKET NOTIFICATIONS
-socketService.notifyEventNewParticipant(
-  event.createdBy,
-  event._id,
-  { _id: userId, name: user.name, profileImage: user.profileImage }
-);
+    // Update event capacity in real-time
+    socketService.updateEventCapacity(event._id, {
+      registered: event.participants.length,
+      available: event.maxParticipants ? event.maxParticipants - event.participants.length : null,
+      isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
+    });
 
-// Update event capacity in real-time
-socketService.updateEventCapacity(event._id, {
-  registered: event.participants.length,
-  available: event.maxParticipants - event.participants.length,
-  isFull: event.isFull(),
-});
-
-    // ✅ FIX: Using correct POINTS_CONFIG constant and proper error handling
     try {
       await pointsService.awardVolunteerEventPoints(
         userId,
@@ -337,7 +337,6 @@ socketService.updateEventCapacity(event._id, {
       await pointsService.awardCommunityMemberJoinedPoints(event.community, userId);
     } catch (pointsError) {
       logger.error('Error awarding points during event join', pointsError);
-      // Don't fail the request if points awarding fails, just log it
     }
 
     await awardEventParticipation(userId, id);

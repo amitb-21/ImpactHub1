@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Rating from '../models/Rating.js';
+import User from '../models/User.js';
 import Participation from '../models/Participation.js';
 import Community from '../models/Community.js';
 import Event from '../models/Event.js';
@@ -7,6 +8,7 @@ import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import * as socketService from '../services/socketService.js';
 
 export const createRating = async (req, res) => {
   try {
@@ -64,6 +66,9 @@ export const createRating = async (req, res) => {
       });
     }
 
+    // ✅ FIXED: Fetch user before socket notification
+    const user = await User.findById(userId).select('name profileImage');
+
     const newRating = await Rating.create({
       ratedBy: userId,
       ratedEntity: {
@@ -75,14 +80,15 @@ export const createRating = async (req, res) => {
       isVerifiedParticipant,
     });
 
+    // ✅ FIXED: Now socket notification has proper user data
     socketService.notifyNewRating(entityType, entityId, {
-  rating: newRating.rating,
-  review: newRating.review,
-  ratedBy: {
-    name: user.name,
-    profileImage: user.profileImage,
-  },
-});
+      rating: newRating.rating,
+      review: newRating.review,
+      ratedBy: {
+        name: user.name,
+        profileImage: user.profileImage,
+      },
+    });
 
     // Create activity record
     await Activity.create({

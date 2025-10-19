@@ -8,11 +8,10 @@ import {
   validateUserId,
   validateCommunityId,
   validatePoints,
+  calculateLevel, 
 } from '../utils/helpers.js';
+import * as socketService from './socketService.js';
 
-// =====================
-// VALIDATION LAYER
-// =====================
 
 const validateUserIdOrThrow = (userId) => {
   const error = validateUserId(userId);
@@ -92,30 +91,36 @@ export const awardVolunteerEventPoints = async (
     );
 
     // Update user's total points (single source of truth)
-    await User.findByIdAndUpdate(userId, { $inc: { points: totalPoints } });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { points: totalPoints } },
+      { new: true }
+    );
 
     logger.success(
       `Volunteer ${userId} awarded ${totalPoints} points for event participation`
     );
 
+    // ✅ FIXED: Now socket notifications have proper imports and functions
     socketService.notifyPointsEarned(userId, totalPoints, 'event_participation', {
-  entityType: 'Event',
-  entityId: eventId,
-});
+      entityType: 'Event',
+      entityId: eventId,
+    });
 
-// Check for level up
-const user = await User.findById(userId);
-const newLevel = calculateLevel(user.points);
-if (newLevel > user.level) {
-  socketService.notifyLevelUp(userId, newLevel, calculateVolunteerRank(user.points));
-}
+    // Check for level up
+    // ✅ FIXED: calculateLevel is now imported
+    const newLevel = calculateLevel(updatedUser.points);
+    if (newLevel > updatedUser.level) {
+      await User.findByIdAndUpdate(userId, { level: newLevel });
+      socketService.notifyLevelUp(userId, newLevel, calculateVolunteerRank(updatedUser.points));
+    }
 
-// Update leaderboard
-socketService.updateLeaderboard('volunteer', {
-  userId,
-  totalPoints: volunteerPoints.totalPoints,
-  rank: volunteerPoints.currentRank,
-});
+    // Update leaderboard
+    socketService.updateLeaderboard('volunteer', {
+      userId,
+      totalPoints: volunteerPoints.totalPoints,
+      rank: volunteerPoints.currentRank,
+    });
 
     return volunteerPoints;
   } catch (error) {
