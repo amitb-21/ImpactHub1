@@ -310,6 +310,22 @@ export const joinEvent = async (req, res) => {
       status: 'Registered',
     });
 
+    await event.save();
+
+// ✅ ADD SOCKET NOTIFICATIONS
+socketService.notifyEventNewParticipant(
+  event.createdBy,
+  event._id,
+  { _id: userId, name: user.name, profileImage: user.profileImage }
+);
+
+// Update event capacity in real-time
+socketService.updateEventCapacity(event._id, {
+  registered: event.participants.length,
+  available: event.maxParticipants - event.participants.length,
+  isFull: event.isFull(),
+});
+
     // ✅ FIX: Using correct POINTS_CONFIG constant and proper error handling
     try {
       await pointsService.awardVolunteerEventPoints(

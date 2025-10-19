@@ -75,6 +75,15 @@ export const createRating = async (req, res) => {
       isVerifiedParticipant,
     });
 
+    socketService.notifyNewRating(entityType, entityId, {
+  rating: newRating.rating,
+  review: newRating.review,
+  ratedBy: {
+    name: user.name,
+    profileImage: user.profileImage,
+  },
+});
+
     // Create activity record
     await Activity.create({
       user: userId,

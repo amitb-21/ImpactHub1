@@ -250,6 +250,15 @@ export const joinCommunity = async (req, res) => {
 
     logger.success(`User ${userId} joined community ${id}`);
 
+    await community.save();
+
+// ✅ ADD SOCKET NOTIFICATION
+socketService.notifyCommunityNewMember(community._id, {
+  _id: userId,
+  name: user.name,
+  profileImage: user.profileImage,
+});
+
     res.json({
       success: true,
       message: 'Joined community successfully',

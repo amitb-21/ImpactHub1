@@ -253,6 +253,22 @@ export const approveCommunity = async (req, res) => {
 
     logger.success(`Community ${community._id} verified by admin ${adminId}`);
 
+    await verification.save();
+
+socketService.notifyCommunityVerification(
+  verification.community.createdBy,
+  community._id,
+  'verified',
+  `Your community "${community.name}" has been verified!`
+);
+
+// Notify community members
+socketService.emitToCommunity(community._id, 'community:verified', {
+  communityId: community._id,
+  communityName: community.name,
+  message: 'This community is now verified!',
+});
+
     res.json({
       success: true,
       message: 'Community verified successfully! Creator awarded points.',

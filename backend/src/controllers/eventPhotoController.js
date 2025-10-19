@@ -42,6 +42,15 @@ export const uploadEventPhoto = async (req, res) => {
       isOfficial: isOfficial && isEventCreator, // Only creator can mark as official
     });
 
+    socketService.notifyEventPhotoUploaded(eventId, event.community, {
+  photoId: photo._id,
+  photoUrl: photo.photoUrl,
+  uploadedBy: {
+    name: user.name,
+    profileImage: user.profileImage,
+  },
+});
+
     // Populate references
     const populatedPhoto = await photo
       .populate('uploadedBy', 'name profileImage')

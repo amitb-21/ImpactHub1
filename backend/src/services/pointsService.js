@@ -98,6 +98,25 @@ export const awardVolunteerEventPoints = async (
       `Volunteer ${userId} awarded ${totalPoints} points for event participation`
     );
 
+    socketService.notifyPointsEarned(userId, totalPoints, 'event_participation', {
+  entityType: 'Event',
+  entityId: eventId,
+});
+
+// Check for level up
+const user = await User.findById(userId);
+const newLevel = calculateLevel(user.points);
+if (newLevel > user.level) {
+  socketService.notifyLevelUp(userId, newLevel, calculateVolunteerRank(user.points));
+}
+
+// Update leaderboard
+socketService.updateLeaderboard('volunteer', {
+  userId,
+  totalPoints: volunteerPoints.totalPoints,
+  rank: volunteerPoints.currentRank,
+});
+
     return volunteerPoints;
   } catch (error) {
     logger.error('Error awarding volunteer event points', error);

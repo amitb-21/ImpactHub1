@@ -242,6 +242,21 @@ export const markAttendance = async (req, res) => {
     logger.success(
       `Attendance marked for user ${participation.user._id} in event ${participation.event._id}`
     );
+    await participation.save();
+
+socketService.notifyAttendanceVerified(
+  participation.user._id,
+  participation.event._id,
+  pointsEarned,
+  hoursContributed
+);
+
+// Notify event organizer
+socketService.notifyEventNewParticipant(
+  participation.event.createdBy,
+  participation.event._id,
+  participation.user
+);
 
     res.json({
       success: true,
