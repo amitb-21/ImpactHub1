@@ -1,4 +1,3 @@
-// backend/src/routes/verificationRoutes.js
 import express from 'express';
 import * as verificationController from '../controllers/verificationController.js';
 import { verifyToken, isAdmin } from '../middleware/auth.js';
@@ -7,8 +6,15 @@ import { validateId, validatePagination } from '../middleware/validator.js';
 const router = express.Router();
 
 // =====================
-// PUBLIC ENDPOINTS
+// PUBLIC ENDPOINTS (No auth required)
 // =====================
+
+// Get verification status (anyone can check)
+router.get(
+  '/:communityId/status',
+  validateId('communityId'),
+  verificationController.getVerificationStatus
+);
 
 // Submit verification request (community creator)
 router.post(
@@ -18,18 +24,22 @@ router.post(
   verificationController.submitVerificationRequest
 );
 
-// Get verification status (anyone can check)
+// =====================
+// ADMIN ONLY ENDPOINTS (Must be grouped together)
+// =====================
+
+// ✅ FIX: More specific routes BEFORE generic patterns
+
+// Get verification history
 router.get(
-  '/:communityId/status',
-  validateId('communityId'),
-  verificationController.getVerificationStatus
+  '/admin/history',
+  verifyToken,
+  isAdmin,
+  validatePagination,
+  verificationController.getVerificationHistory
 );
 
-// =====================
-// ADMIN ONLY ENDPOINTS
-// =====================
-
-// Get pending verifications (admin only)
+// Get pending verifications
 router.get(
   '/admin/pending',
   verifyToken,
@@ -38,7 +48,7 @@ router.get(
   verificationController.getPendingVerifications
 );
 
-// Approve community (admin only)
+// Approve community
 router.post(
   '/:verificationId/approve',
   verifyToken,
@@ -47,22 +57,13 @@ router.post(
   verificationController.approveCommunity
 );
 
-// Reject community (admin only)
+// Reject community
 router.post(
   '/:verificationId/reject',
   verifyToken,
   isAdmin,
   validateId('verificationId'),
   verificationController.rejectCommunity
-);
-
-// Get verification history (admin only)
-router.get(
-  '/admin/history',
-  verifyToken,
-  isAdmin,
-  validatePagination,
-  verificationController.getVerificationHistory
 );
 
 export default router;

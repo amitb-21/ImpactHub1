@@ -1,6 +1,8 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import * as socketService from '../services/socketService.js';
+import { getIO } from '../config/socket.js';
+import { logger } from '../utils/logger.js'; 
 
 const router = express.Router();
 
@@ -27,7 +29,11 @@ router.get('/online-count', (req, res) => {
       onlineUsers: sockets.size,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error getting online count' });
+    logger.error('Error getting online count', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error getting online count' 
+    });
   }
 });
 

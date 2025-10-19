@@ -13,35 +13,29 @@ router.post(
   eventPhotoController.uploadEventPhoto
 );
 
-// Get all photos for an event
-router.get(
-  '/:eventId',
-  validateId('eventId'),
-  validatePagination,
-  eventPhotoController.getEventPhotos
-);
-
-// Get photos by type (event_preview, during_event, after_event)
+// Get photos by type (must be BEFORE generic /:eventId route)
 router.get(
   '/:eventId/type/:photoType',
   validateId('eventId'),
   eventPhotoController.getPhotosByType
 );
 
+// Get community photo gallery (specific path)
+router.get(
+  '/community/:communityId/gallery',
+  validateId('communityId'),
+  validatePagination,
+  eventPhotoController.getCommunityPhotoGallery
+);
+
+// ✅ SPLIT PHOTO ROUTES INTO SEPARATE PATHS
+
 // Update photo description
 router.put(
-  '/photo/:photoId',
+  '/photo/:photoId/description',
   verifyToken,
   validateId('photoId'),
   eventPhotoController.updatePhotoDescription
-);
-
-// Delete photo
-router.delete(
-  '/photo/:photoId',
-  verifyToken,
-  validateId('photoId'),
-  eventPhotoController.deleteEventPhoto
 );
 
 // Like photo
@@ -60,12 +54,20 @@ router.post(
   eventPhotoController.unlikePhoto
 );
 
-// Get community photo gallery
+// Delete photo
+router.delete(
+  '/photo/:photoId',
+  verifyToken,
+  validateId('photoId'),
+  eventPhotoController.deleteEventPhoto
+);
+
+// Get all photos for an event (generic - LAST)
 router.get(
-  '/community/:communityId/gallery',
-  validateId('communityId'),
+  '/:eventId',
+  validateId('eventId'),
   validatePagination,
-  eventPhotoController.getCommunityPhotoGallery
+  eventPhotoController.getEventPhotos
 );
 
 export default router;

@@ -4,7 +4,7 @@ import { config } from '../config/env.js';
 import { ERROR_MESSAGES } from '../utils/constants.js';
 import { logger } from '../utils/logger.js';
 
-export const verifyToken = (req, res, next) => {
+export const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -18,6 +18,12 @@ export const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, config.JWT_SECRET);
     req.userId = decoded.id;
     req.userEmail = decoded.email;
+
+    const user = await User.findById(decoded.id).select('role');
+    if (user) {
+      req.userRole = user.role;
+    }
+
     next();
   } catch (error) {
     logger.error('Token verification failed', error);
