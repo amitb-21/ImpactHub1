@@ -52,6 +52,28 @@ export const ACTIVITY_TYPES = [
   'community_verification_verified',
   'community_verification_rejected',
   'user_deactivated',
+  'resource_created', // ✅ NEW
+];
+
+export const RESOURCE_CATEGORIES = [
+  'Event Planning',
+  'Sustainability Tips',
+  'Recycling Guides',
+  'Energy Conservation',
+  'Community Building',
+  'Environmental Education',
+  'DIY Projects',
+  'Local Resources',
+  'Templates',
+  'Other',
+];
+
+export const RESOURCE_TYPES = [
+  'article',
+  'video',
+  'pdf',
+  'template',
+  'infographic',
 ];
 
 export const COMMUNITY_VERIFICATION_STATUS = {
@@ -131,6 +153,8 @@ export default {
   EVENT_CATEGORIES,
   COMMUNITY_CATEGORIES,
   ACTIVITY_TYPES,
+  RESOURCE_CATEGORIES, // ✅ NEW
+  RESOURCE_TYPES, // ✅ NEW
   COMMUNITY_VERIFICATION_STATUS,
   ORGANIZATION_DETAILS_RULES,
   VERIFICATION_DOCUMENT_TYPES,
