@@ -1,11 +1,33 @@
-// backend/src/services/pointsService.js
-
 import VolunteerPoints from '../models/VolunteerPoints.js';
 import CommunityRewards from '../models/CommunityRewards.js';
 import User from '../models/User.js';
 import Community from '../models/Community.js';
 import { logger } from '../utils/logger.js';
-import { POINTS_CONFIG } from '../utils/constants.js';
+import { POINTS_CONFIG, ERROR_MESSAGES } from '../utils/constants.js';
+import {
+  validateUserId,
+  validateCommunityId,
+  validatePoints,
+} from '../utils/helpers.js';
+
+// =====================
+// VALIDATION LAYER
+// =====================
+
+const validateUserIdOrThrow = (userId) => {
+  const error = validateUserId(userId);
+  if (error) throw new Error(error);
+};
+
+const validateCommunityIdOrThrow = (communityId) => {
+  const error = validateCommunityId(communityId);
+  if (error) throw new Error(error);
+};
+
+const validatePointsOrThrow = (points) => {
+  const error = validatePoints(points);
+  if (error) throw new Error(error);
+};
 
 // =====================
 // VOLUNTEER POINTS SERVICE
@@ -13,11 +35,29 @@ import { POINTS_CONFIG } from '../utils/constants.js';
 
 /**
  * Award points to volunteer for event participation
+ * @param {string} userId - User ID
+ * @param {string} eventId - Event ID
+ * @param {number} points - Points to award (default: EVENT_PARTICIPATED)
+ * @param {number} hoursContributed - Hours volunteered (optional)
  */
-export const awardVolunteerEventPoints = async (userId, eventId, points = POINTS_CONFIG.EVENT_PARTICIPATED, hoursContributed = 0) => {
+export const awardVolunteerEventPoints = async (
+  userId,
+  eventId,
+  points = POINTS_CONFIG.EVENT_PARTICIPATED,
+  hoursContributed = 0
+) => {
   try {
+    // Validate inputs
+    validateUserIdOrThrow(userId);
+    if (!eventId) throw new Error('Event ID is required');
+    validatePointsOrThrow(points);
+
+    if (typeof hoursContributed !== 'number' || hoursContributed < 0) {
+      throw new Error('Hours contributed must be a non-negative number');
+    }
+
     let totalPoints = points;
-    
+
     // Add bonus for hours volunteered
     if (hoursContributed > 0) {
       totalPoints += hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED;
@@ -30,13 +70,14 @@ export const awardVolunteerEventPoints = async (userId, eventId, points = POINTS
         $inc: {
           totalPoints: totalPoints,
           'pointsBreakdown.eventParticipation': points,
-          'pointsHours': hoursContributed > 0 ? hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED : 0,
         },
         $push: {
           pointsHistory: {
             points: totalPoints,
             type: 'event_participation',
-            description: `Participated in event and earned ${totalPoints} points`,
+            description: `Participated in event and earned ${totalPoints} points${
+              hoursContributed > 0 ? ` (${hoursContributed} hours)` : ''
+            }`,
             eventId: eventId,
             relatedEntity: {
               entityType: 'Event',
@@ -50,10 +91,12 @@ export const awardVolunteerEventPoints = async (userId, eventId, points = POINTS
       { upsert: true, new: true }
     );
 
-    // Update user's total points
+    // Update user's total points (single source of truth)
     await User.findByIdAndUpdate(userId, { $inc: { points: totalPoints } });
 
-    logger.success(`Volunteer ${userId} awarded ${totalPoints} points for event participation`);
+    logger.success(
+      `Volunteer ${userId} awarded ${totalPoints} points for event participation`
+    );
 
     return volunteerPoints;
   } catch (error) {
@@ -67,6 +110,9 @@ export const awardVolunteerEventPoints = async (userId, eventId, points = POINTS
  */
 export const awardVolunteerEventCreationPoints = async (userId, eventId) => {
   try {
+    validateUserIdOrThrow(userId);
+    if (!eventId) throw new Error('Event ID is required');
+
     const points = POINTS_CONFIG.EVENT_CREATED;
 
     const volunteerPoints = await VolunteerPoints.findOneAndUpdate(
@@ -110,6 +156,9 @@ export const awardVolunteerEventCreationPoints = async (userId, eventId) => {
  */
 export const awardVolunteerCommunityCreationPoints = async (userId, communityId) => {
   try {
+    validateUserIdOrThrow(userId);
+    validateCommunityIdOrThrow(communityId);
+
     const points = POINTS_CONFIG.COMMUNITY_CREATED;
 
     const volunteerPoints = await VolunteerPoints.findOneAndUpdate(
@@ -152,6 +201,8 @@ export const awardVolunteerCommunityCreationPoints = async (userId, communityId)
  */
 export const getVolunteerPointsSummary = async (userId) => {
   try {
+    validateUserIdOrThrow(userId);
+
     let volunteerPoints = await VolunteerPoints.findOne({ user: userId });
 
     if (!volunteerPoints) {
@@ -197,6 +248,9 @@ export const calculateVolunteerRank = (totalPoints) => {
  */
 export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
   try {
+    validateCommunityIdOrThrow(communityId);
+    validateUserIdOrThrow(userId);
+
     const points = 5; // Points per member joined
 
     const communityRewards = await CommunityRewards.findOneAndUpdate(
@@ -239,6 +293,8 @@ export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
  */
 export const awardCommunityEventCreatedPoints = async (communityId) => {
   try {
+    validateCommunityIdOrThrow(communityId);
+
     const points = 50;
 
     const communityRewards = await CommunityRewards.findOneAndUpdate(
@@ -276,6 +332,8 @@ export const awardCommunityEventCreatedPoints = async (communityId) => {
  */
 export const awardCommunityVerificationPoints = async (communityId) => {
   try {
+    validateCommunityIdOrThrow(communityId);
+
     const points = 500;
 
     const communityRewards = await CommunityRewards.findOneAndUpdate(
@@ -313,8 +371,12 @@ export const awardCommunityVerificationPoints = async (communityId) => {
  */
 export const getCommunityRewardsSummary = async (communityId) => {
   try {
-    let communityRewards = await CommunityRewards.findOne({ community: communityId })
-      .populate('community', 'name verificationStatus');
+    validateCommunityIdOrThrow(communityId);
+
+    let communityRewards = await CommunityRewards.findOne({ community: communityId }).populate(
+      'community',
+      'name verificationStatus'
+    );
 
     if (!communityRewards) {
       const community = await Community.findById(communityId);
@@ -360,6 +422,13 @@ export const calculateCommunityTier = (totalPoints) => {
  */
 export const getVolunteerLeaderboard = async (limit = 20, page = 1) => {
   try {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error('Limit must be between 1 and 100');
+    }
+    if (!Number.isInteger(page) || page < 1) {
+      throw new Error('Page must be a positive integer');
+    }
+
     const skip = (page - 1) * limit;
 
     const leaderboard = await VolunteerPoints.find()
@@ -391,6 +460,13 @@ export const getVolunteerLeaderboard = async (limit = 20, page = 1) => {
  */
 export const getCommunityLeaderboard = async (limit = 20, page = 1) => {
   try {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error('Limit must be between 1 and 100');
+    }
+    if (!Number.isInteger(page) || page < 1) {
+      throw new Error('Page must be a positive integer');
+    }
+
     const skip = (page - 1) * limit;
 
     const leaderboard = await CommunityRewards.find()

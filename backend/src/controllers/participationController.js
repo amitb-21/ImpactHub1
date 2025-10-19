@@ -5,7 +5,7 @@ import Activity from '../models/Activity.js';
 import { awardEventParticipation } from '../services/impactService.js';
 import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
-import { parseQueryParams } from '../utils/helpers.js';
+import { parseQueryParams, validateHoursContributed } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
 
 // Save event to wishlist
@@ -157,8 +157,19 @@ export const getUserWishlist = async (req, res) => {
 export const markAttendance = async (req, res) => {
   try {
     const { participationId } = req.params;
-    const { hoursContributed } = req.body;
+    let { hoursContributed } = req.body;
     const organizerId = req.userId;
+
+    // ✅ FIX: Validate hours contributed before processing
+    const hoursError = validateHoursContributed(hoursContributed);
+    if (hoursError) {
+      return res.status(400).json({
+        success: false,
+        message: hoursError,
+      });
+    }
+
+    hoursContributed = hoursContributed || 0;
 
     const participation = await Participation.findById(participationId)
       .populate('event')
@@ -183,9 +194,9 @@ export const markAttendance = async (req, res) => {
     participation.status = 'Attended';
     participation.verifiedAt = new Date();
     participation.verifiedBy = organizerId;
-    participation.hoursContributed = hoursContributed || 0;
+    participation.hoursContributed = hoursContributed;
 
-    // Calculate points earned
+    // ✅ FIX: Calculate points with proper error handling
     let pointsEarned = POINTS_CONFIG.EVENT_PARTICIPATED;
     if (hoursContributed > 0) {
       pointsEarned += hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED;
@@ -194,19 +205,24 @@ export const markAttendance = async (req, res) => {
     participation.pointsEarned = pointsEarned;
     await participation.save();
 
-    // Award points to user
-    const user = await User.findByIdAndUpdate(
-      participation.user._id,
-      { $inc: { points: pointsEarned } },
-      { new: true }
-    );
+    // Award points to user with error handling
+    try {
+      await User.findByIdAndUpdate(
+        participation.user._id,
+        { $inc: { points: pointsEarned } },
+        { new: true }
+      );
 
-    await pointsService.awardVolunteerEventPoints(
-      participation.user._id,
-      participation.event._id,
-      pointsEarned,
-      hoursContributed
-    );
+      await pointsService.awardVolunteerEventPoints(
+        participation.user._id,
+        participation.event._id,
+        pointsEarned,
+        hoursContributed
+      );
+    } catch (pointsError) {
+      logger.error('Error awarding points during attendance marking', pointsError);
+      // Don't fail the request if points fail
+    }
 
     // Create activity record
     await Activity.create({
@@ -248,8 +264,15 @@ export const rejectParticipant = async (req, res) => {
     const { rejectionReason } = req.body;
     const organizerId = req.userId;
 
-    const participation = await Participation.findById(participationId)
-      .populate('event');
+    // ✅ FIX: Validate rejection reason
+    if (!rejectionReason || rejectionReason.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required',
+      });
+    }
+
+    const participation = await Participation.findById(participationId).populate('event');
 
     if (!participation) {
       return res.status(404).json({
@@ -267,7 +290,7 @@ export const rejectParticipant = async (req, res) => {
     }
 
     participation.status = 'Rejected';
-    participation.rejectionReason = rejectionReason || 'Not specified';
+    participation.rejectionReason = rejectionReason;
     await participation.save();
 
     // Remove from event participants
@@ -280,7 +303,9 @@ export const rejectParticipant = async (req, res) => {
       $pull: { eventsParticipated: participation.event._id },
     });
 
-    logger.success(`Participant ${participation.user} rejected from event ${participation.event._id}`);
+    logger.success(
+      `Participant ${participation.user} rejected from event ${participation.event._id}`
+    );
 
     res.json({
       success: true,

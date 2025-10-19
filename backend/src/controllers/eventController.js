@@ -5,7 +5,7 @@ import Participation from '../models/Participation.js';
 import Activity from '../models/Activity.js';
 import { awardEventCreation, awardEventParticipation } from '../services/impactService.js';
 import { logger } from '../utils/logger.js';
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
+import { SUCCESS_MESSAGES, ERROR_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
 
@@ -16,7 +16,9 @@ const formatEventWithCapacity = (event) => {
     capacity: {
       total: event.maxParticipants,
       registered: event.participants.length,
-      available: event.maxParticipants ? Math.max(0, event.maxParticipants - event.participants.length) : null,
+      available: event.maxParticipants
+        ? Math.max(0, event.maxParticipants - event.participants.length)
+        : null,
       isFull: event.isFull(),
       capacityPercentage: event.getCapacityPercentage(),
     },
@@ -94,8 +96,10 @@ export const getEvents = async (req, res) => {
     }
 
     if (verified === 'true') {
-      const verifiedCommunities = await Community.find({ verificationStatus: 'verified' }).select('_id');
-      const verifiedIds = verifiedCommunities.map(c => c._id);
+      const verifiedCommunities = await Community.find({
+        verificationStatus: 'verified',
+      }).select('_id');
+      const verifiedIds = verifiedCommunities.map((c) => c._id);
       query.community = { $in: verifiedIds };
     }
 
@@ -106,30 +110,32 @@ export const getEvents = async (req, res) => {
       .lean();
 
     if (hasAvailability === 'true') {
-      events = events.filter(event => {
+      events = events.filter((event) => {
         if (!event.maxParticipants) return true;
         return event.participants.length < event.maxParticipants;
       });
     }
 
     if (participantMin && participantMin > 0) {
-      events = events.filter(event => event.participants.length >= parseInt(participantMin));
+      events = events.filter((event) => event.participants.length >= parseInt(participantMin));
     }
 
     const total = events.length;
     const paginatedEvents = events.slice(skip, skip + parseInt(limit));
 
-    const formattedEvents = paginatedEvents.map(event => {
+    const formattedEvents = paginatedEvents.map((event) => {
       const eventWithCapacity = {
         ...event,
         capacity: {
           total: event.maxParticipants,
           registered: event.participants.length,
-          available: event.maxParticipants 
-            ? Math.max(0, event.maxParticipants - event.participants.length) 
+          available: event.maxParticipants
+            ? Math.max(0, event.maxParticipants - event.participants.length)
             : null,
-          isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
-          capacityPercentage: event.maxParticipants 
+          isFull: event.maxParticipants
+            ? event.participants.length >= event.maxParticipants
+            : false,
+          capacityPercentage: event.maxParticipants
             ? Math.round((event.participants.length / event.maxParticipants) * 100)
             : 0,
         },
@@ -166,7 +172,8 @@ export const getEvents = async (req, res) => {
 
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, community, startDate, endDate, location, category, image, maxParticipants } = req.body;
+    const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
+      req.body;
     const userId = req.userId;
 
     const communityExists = await Community.findById(community);
@@ -193,6 +200,7 @@ export const createEvent = async (req, res) => {
     });
 
     await awardEventCreation(userId);
+    // ✅ FIX: Now correctly imported POINTS_CONFIG
     await pointsService.awardVolunteerEventCreationPoints(userId, event._id);
     await pointsService.awardCommunityEventCreatedPoints(community);
     await Community.findByIdAndUpdate(community, { $inc: { totalEvents: 1 } });
@@ -302,19 +310,19 @@ export const joinEvent = async (req, res) => {
       status: 'Registered',
     });
 
-    // ✅ ADD THIS SECTION:
-    // Award volunteer points
-    await pointsService.awardVolunteerEventPoints(
-      userId,
-      id,
-      POINTS_CONFIG.EVENT_PARTICIPATED
-    );
+    // ✅ FIX: Using correct POINTS_CONFIG constant and proper error handling
+    try {
+      await pointsService.awardVolunteerEventPoints(
+        userId,
+        id,
+        POINTS_CONFIG.EVENT_PARTICIPATED
+      );
 
-    // Award community points
-    await pointsService.awardCommunityMemberJoinedPoints(
-      event.community,
-      userId
-    );
+      await pointsService.awardCommunityMemberJoinedPoints(event.community, userId);
+    } catch (pointsError) {
+      logger.error('Error awarding points during event join', pointsError);
+      // Don't fail the request if points awarding fails, just log it
+    }
 
     await awardEventParticipation(userId, id);
 
@@ -388,7 +396,8 @@ export const leaveEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, startDate, endDate, location, category, image, status, maxParticipants } = req.body;
+    const { title, description, startDate, endDate, location, category, image, status, maxParticipants } =
+      req.body;
     const userId = req.userId;
 
     const event = await Event.findById(id);

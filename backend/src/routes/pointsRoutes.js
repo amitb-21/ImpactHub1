@@ -12,123 +12,111 @@ const router = express.Router();
 // =====================
 
 /**
+ * Get volunteer leaderboard (real-time)
+ * IMPORTANT: This MUST come BEFORE the :userId route to avoid shadowing
+ * GET /points/volunteer/leaderboard?page=1&limit=20
+ */
+router.get('/volunteer/leaderboard', validatePagination, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const result = await pointsService.getVolunteerLeaderboard(
+      parseInt(limit),
+      parseInt(page)
+    );
+
+    res.json({
+      success: true,
+      data: result.leaderboard,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    logger.error('Error fetching volunteer leaderboard', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * Get volunteer points summary (real-time)
  * GET /points/volunteer/:userId
  */
-router.get(
-  '/volunteer/:userId',
-  validateId('userId'),
-  async (req, res) => {
-    try {
-      const { userId } = req.params;
+router.get('/volunteer/:userId', validateId('userId'), async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-      const summary = await pointsService.getVolunteerPointsSummary(userId);
+    const summary = await pointsService.getVolunteerPointsSummary(userId);
 
-      res.json({
-        success: true,
-        data: summary,
-      });
-    } catch (error) {
-      logger.error('Error fetching volunteer points', error);
-      res.status(500).json({
-        success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
-    }
+    res.json({
+      success: true,
+      data: summary,
+    });
+  } catch (error) {
+    logger.error('Error fetching volunteer points', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.SERVER_ERROR,
+    });
   }
-);
-
-/**
- * Get volunteer leaderboard (real-time)
- * GET /points/volunteer/leaderboard?page=1&limit=20
- */
-router.get(
-  '/volunteer/leaderboard',
-  validatePagination,
-  async (req, res) => {
-    try {
-      const { page = 1, limit = 20 } = req.query;
-
-      const result = await pointsService.getVolunteerLeaderboard(
-        parseInt(limit),
-        parseInt(page)
-      );
-
-      res.json({
-        success: true,
-        data: result.leaderboard,
-        pagination: result.pagination,
-      });
-    } catch (error) {
-      logger.error('Error fetching volunteer leaderboard', error);
-      res.status(500).json({
-        success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
-    }
-  }
-);
+});
 
 // =====================
 // COMMUNITY REWARDS ROUTES
 // =====================
 
 /**
+ * Get community leaderboard (real-time)
+ * IMPORTANT: This MUST come BEFORE the :communityId route to avoid shadowing
+ * GET /points/community/leaderboard?page=1&limit=20
+ */
+router.get('/community/leaderboard', validatePagination, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const result = await pointsService.getCommunityLeaderboard(
+      parseInt(limit),
+      parseInt(page)
+    );
+
+    res.json({
+      success: true,
+      data: result.leaderboard,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    logger.error('Error fetching community leaderboard', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * Get community rewards summary (real-time)
  * GET /points/community/:communityId
  */
-router.get(
-  '/community/:communityId',
-  validateId('communityId'),
-  async (req, res) => {
-    try {
-      const { communityId } = req.params;
+router.get('/community/:communityId', validateId('communityId'), async (req, res) => {
+  try {
+    const { communityId } = req.params;
 
-      const summary = await pointsService.getCommunityRewardsSummary(communityId);
+    const summary = await pointsService.getCommunityRewardsSummary(communityId);
 
-      res.json({
-        success: true,
-        data: summary,
-      });
-    } catch (error) {
-      logger.error('Error fetching community rewards', error);
-      res.status(500).json({
-        success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
-    }
+    res.json({
+      success: true,
+      data: summary,
+    });
+  } catch (error) {
+    logger.error('Error fetching community rewards', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.SERVER_ERROR,
+    });
   }
-);
-
-/**
- * Get community leaderboard (real-time)
- * GET /points/community/leaderboard?page=1&limit=20
- */
-router.get(
-  '/community/leaderboard',
-  validatePagination,
-  async (req, res) => {
-    try {
-      const { page = 1, limit = 20 } = req.query;
-
-      const result = await pointsService.getCommunityLeaderboard(
-        parseInt(limit),
-        parseInt(page)
-      );
-
-      res.json({
-        success: true,
-        data: result.leaderboard,
-        pagination: result.pagination,
-      });
-    } catch (error) {
-      logger.error('Error fetching community leaderboard', error);
-      res.status(500).json({
-        success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
-    }
-  }
-);
+});
 
 export default router;
