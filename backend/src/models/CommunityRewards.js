@@ -143,7 +143,7 @@ const communityRewardsSchema = new mongoose.Schema(
 );
 
 // Indexes for faster queries
-communityRewardsSchema.index({ community: 1 });
+// communityRewardsSchema.index({ community: 1 }); // <-- This line was removed as 'unique: true' already creates an index.
 communityRewardsSchema.index({ totalPoints: -1 }); // For leaderboard
 communityRewardsSchema.index({ communityTier: 1 });
 communityRewardsSchema.index({ verificationStatus: 1 });
