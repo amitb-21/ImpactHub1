@@ -4,7 +4,17 @@ import API from './client';
 export const authAPI = {
   register: (data) => API.post('/auth/register', data),
   getCurrentUser: () => API.get('/auth/me'),
-  logout: () => API.post('/auth/logout')
+  logout: () => API.post('/auth/logout'),
+  googleLogin: () => {
+    // Redirect to backend Google OAuth
+    window.location.href = `${API_URL}/auth/google`;
+  },
+  
+  handleGoogleCallback: (token) => {
+    // Store token from URL callback
+    localStorage.setItem('token', token);
+    return API.get('/auth/me');
+  }
 };
 
 // ===== USERS =====
