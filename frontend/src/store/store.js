@@ -15,7 +15,11 @@ export const store = configureStore({
     community: communityReducer,
     impact: impactReducer,
     notification: notificationReducer,
-    photo: photoReducer
+    photo: photoReducer,
+    admin: adminReducer,
+    verification: verificationReducer,
+    participant: participantReducer,
+    rating: ratingReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
