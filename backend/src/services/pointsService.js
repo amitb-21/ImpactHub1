@@ -62,40 +62,54 @@ export const awardVolunteerEventPoints = async (
       totalPoints += hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED;
     }
 
-    // Update or create volunteer points record
-    const volunteerPoints = await VolunteerPoints.findOneAndUpdate(
-      { user: userId },
-      {
-        $inc: {
-          totalPoints: totalPoints,
-          'pointsBreakdown.eventParticipation': points,
-        },
-        $push: {
-          pointsHistory: {
-            points: totalPoints,
-            type: 'event_participation',
-            description: `Participated in event and earned ${totalPoints} points${
-              hoursContributed > 0 ? ` (${hoursContributed} hours)` : ''
-            }`,
-            eventId: eventId,
-            relatedEntity: {
-              entityType: 'Event',
-              entityId: eventId,
-            },
-            awardedAt: new Date(),
-          },
-        },
-        lastPointsUpdate: new Date(),
-      },
-      { upsert: true, new: true }
-    );
+    // Use transaction to update volunteer points and user atomically when possible
+    const session = await VolunteerPoints.startSession();
+    let volunteerPoints;
+    let updatedUser;
+    try {
+      session.startTransaction();
 
-    // Update user's total points (single source of truth)
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $inc: { points: totalPoints } },
-      { new: true }
-    );
+      volunteerPoints = await VolunteerPoints.findOneAndUpdate(
+        { user: userId },
+        {
+          $inc: {
+            totalPoints: totalPoints,
+            'pointsBreakdown.eventParticipation': points,
+          },
+          $push: {
+            pointsHistory: {
+              points: totalPoints,
+              type: 'event_participation',
+              description: `Participated in event and earned ${totalPoints} points${
+                hoursContributed > 0 ? ` (${hoursContributed} hours)` : ''
+              }`,
+              eventId: eventId,
+              relatedEntity: {
+                entityType: 'Event',
+                entityId: eventId,
+              },
+              awardedAt: new Date(),
+            },
+          },
+          lastPointsUpdate: new Date(),
+        },
+        { upsert: true, new: true, session }
+      );
+
+      // Update user's total points (single source of truth)
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $inc: { points: totalPoints } },
+        { new: true, session }
+      );
+
+      await session.commitTransaction();
+    } catch (txErr) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txErr;
+    }
+    session.endSession();
 
     logger.success(
       `Volunteer ${userId} awarded ${totalPoints} points for event participation`

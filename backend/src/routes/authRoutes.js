@@ -1,12 +1,15 @@
+
 import express from 'express';
 import passport from 'passport';
 import * as authController from '../controllers/authController.js';
 import { verifyToken } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // Google OAuth routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', rateLimiter, passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(
   '/google/callback',
@@ -14,16 +17,16 @@ router.get(
     failureRedirect: `${process.env.CLIENT_URL}/login?error=true`,
     session: false,
   }),
-  authController.googleAuthCallback
+  asyncHandler(authController.googleAuthCallback)
 );
 
 // Manual registration
-router.post('/register', authController.registerUser);
+router.post('/register', rateLimiter, asyncHandler(authController.registerUser));
 
 // Get current user
-router.get('/me', verifyToken, authController.getCurrentUser);
+router.get('/me', verifyToken, asyncHandler(authController.getCurrentUser));
 
 // Logout
-router.post('/logout', verifyToken, authController.logout);
+router.post('/logout', verifyToken, asyncHandler(authController.logout));
 
 export default router;

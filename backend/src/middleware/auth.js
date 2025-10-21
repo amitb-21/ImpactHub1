@@ -9,71 +9,39 @@ export const verifyToken = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'No token provided',
-      });
+      return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
+    // decode token and attach to req.auth
     const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.userId = decoded.id;
-    req.userEmail = decoded.email;
+    req.auth = { id: decoded.id, email: decoded.email };
 
+    // load role once
     const user = await User.findById(decoded.id).select('role');
-    if (user) {
-      req.userRole = user.role;
-    }
+    req.userRole = user?.role;
 
     next();
   } catch (error) {
     logger.error('Token verification failed', error);
-    return res.status(401).json({
-      success: false,
-      message: ERROR_MESSAGES.INVALID_TOKEN,
-    });
+    return res.status(401).json({ success: false, message: ERROR_MESSAGES.INVALID_TOKEN });
   }
 };
 
 export const isAdmin = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'No token provided',
-      });
+    // assume verifyToken ran first in route chain
+    if (!req.auth?.id) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.userId = decoded.id;
-    req.userEmail = decoded.email;
-
-    // Fetch user and check role
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
+    if (req.userRole !== 'admin') {
+      return res.status(403).json({ success: false, message: ERROR_MESSAGES.UNAUTHORIZED });
     }
 
-    if (user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: ERROR_MESSAGES.UNAUTHORIZED,
-      });
-    }
-
-    req.userRole = user.role;
     next();
   } catch (error) {
     logger.error('Admin verification failed', error);
-    return res.status(403).json({
-      success: false,
-      message: ERROR_MESSAGES.UNAUTHORIZED,
-    });
+    return res.status(403).json({ success: false, message: ERROR_MESSAGES.UNAUTHORIZED });
   }
 };
 

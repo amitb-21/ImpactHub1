@@ -6,6 +6,13 @@ import communityReducer from './slices/communitySlice';
 import impactReducer from './slices/impactSlice';
 import notificationReducer from './slices/notificationSlice';
 import photoReducer from './slices/photoSlice';
+import adminReducer from './slices/adminSlice';
+import verificationReducer from './slices/verificationSlice';
+import participantReducer from './slices/participantSlice';
+import ratingReducer from './slices/ratingSlice';
+import resourceReducer from './slices/resourceSlice';
+import activityReducer from './slices/activitySlice';
+import locationReducer from './slices/locationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +26,10 @@ export const store = configureStore({
     admin: adminReducer,
     verification: verificationReducer,
     participant: participantReducer,
-    rating: ratingReducer
+    rating: ratingReducer,
+    resources: resourceReducer,    
+    activities: activityReducer,   
+    location: locationReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
