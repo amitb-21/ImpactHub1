@@ -65,6 +65,9 @@ export const participationAPI = {
     API.delete(`/participations/${eventId}/wishlist/remove`),
   getWishlist: (userId, page = 1) => 
     API.get(`/participations/user/${userId}/wishlist?page=${page}&limit=10`)
+  , // end getWishlist
+  // Get participation details
+  getParticipationDetails: (participationId) => API.get(`/participations/${participationId}`)
 };
 
 // ===== RATINGS =====

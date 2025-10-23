@@ -8,7 +8,7 @@ import notificationReducer from './slices/notificationSlice';
 import photoReducer from './slices/photoSlice';
 import adminReducer from './slices/adminSlice';
 import verificationReducer from './slices/verificationSlice';
-import participantReducer from './slices/participantSlice';
+import participationReducer from './slices/participationSlice';
 import ratingReducer from './slices/ratingSlice';
 import resourceReducer from './slices/resourceSlice';
 import activityReducer from './slices/activitySlice';
@@ -25,7 +25,7 @@ export const store = configureStore({
     photo: photoReducer,
     admin: adminReducer,
     verification: verificationReducer,
-    participant: participantReducer,
+    participation: participationReducer,
     rating: ratingReducer,
     resources: resourceReducer,    
     activities: activityReducer,   
