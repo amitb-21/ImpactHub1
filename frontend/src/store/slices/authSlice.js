@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../api/services';
 import { toast } from 'react-toastify';
 
-// Async thunks
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (data, { rejectWithValue }) => {
@@ -13,6 +12,22 @@ export const registerUser = createAsyncThunk(
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const loginUser = createAsyncThunk(
+  'auth/login',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.login(credentials);
+      localStorage.setItem('token', response.data.token);
+      toast.success('Login successful!');
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Login failed';
       toast.error(message);
       return rejectWithValue(message);
     }
@@ -48,7 +63,6 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
-// Initial state
 const initialState = {
   user: null,
   token: localStorage.getItem('token') || null,
@@ -57,7 +71,6 @@ const initialState = {
   error: null
 };
 
-// Slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -80,7 +93,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Register
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -95,7 +107,22 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      // Get current user
+
+      .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
       .addCase(getCurrentUser.pending, (state) => {
         state.isLoading = true;
       })
@@ -111,7 +138,7 @@ const authSlice = createSlice({
         state.token = null;
         localStorage.removeItem('token');
       })
-      // Logout
+
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
