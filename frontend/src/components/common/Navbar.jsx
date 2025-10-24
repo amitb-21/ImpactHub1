@@ -1,21 +1,37 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks";
-import { useSocket } from "../../hooks"; 
+import { useSocket } from "../../hooks";
 import { Link, useNavigate } from "react-router-dom";
-import { FiMenu, FiX, FiBell, FiLogOut, FiUser } from "react-icons/fi";
+import {
+  FiMenu,
+  FiX,
+  FiBell,
+  FiLogOut,
+  FiUser,
+  FiSearch,
+} from "react-icons/fi";
 import { useSelector } from "react-redux";
+import Modal from "./Modal";
+import UserSearch from "../user/UserSearch";
 
 const Navbar = ({ onMenuClick }) => {
   const { user, isAuthenticated, isModerator, isAdmin } = useAuth();
   const { joinAdmin } = useSocket();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const unreadCount = useSelector((state) => state.notification.unreadCount);
 
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
+  };
+
+  // Handle user selection from search
+  const handleUserSelect = (selectedUser) => {
+    setShowUserSearch(false);
+    navigate(`/profile/${selectedUser._id}`);
   };
 
   // Join admin room if admin
@@ -26,119 +42,142 @@ const Navbar = ({ onMenuClick }) => {
   }, [isAdmin, joinAdmin]);
 
   return (
-    <nav className="navbar" style={styles.navbar}>
-      {/* Mobile Menu Button */}
-      <button
-        className="menu-toggle"
-        onClick={onMenuClick}
-        style={styles.menuToggle}
-      >
-        <FiMenu size={24} color="#FAFAFA" />
-      </button>
+    <>
+      <nav className="navbar" style={styles.navbar}>
+        {/* Mobile Menu Button */}
+        <button
+          className="menu-toggle"
+          onClick={onMenuClick}
+          style={styles.menuToggle}
+        >
+          <FiMenu size={24} color="#FAFAFA" />
+        </button>
 
-      {/* Logo */}
-      <Link to="/" style={styles.logo}>
-        <span style={styles.logoText}>ImpactHub</span>
-      </Link>
+        {/* Logo */}
+        <Link to="/" style={styles.logo}>
+          <span style={styles.logoText}>ImpactHub</span>
+        </Link>
 
-      {/* Center Navigation (Desktop) */}
-      <div style={styles.navLinks}>
-        <Link to="/events" style={styles.navLink}>
-          Events
-        </Link>
-        <Link to="/communities" style={styles.navLink}>
-          Communities
-        </Link>
-        <Link to="/impact" style={styles.navLink}>
-          Impact
-        </Link>
-        <Link to="/resources" style={styles.navLink}>
-          Resources
-        </Link>
-      </div>
+        {/* Center Navigation (Desktop) */}
+        <div style={styles.navLinks}>
+          <Link to="/events" style={styles.navLink}>
+            Events
+          </Link>
+          <Link to="/communities" style={styles.navLink}>
+            Communities
+          </Link>
+          <Link to="/impact" style={styles.navLink}>
+            Impact
+          </Link>
+          <Link to="/resources" style={styles.navLink}>
+            Resources
+          </Link>
+        </div>
 
-      {/* Right Section */}
-      <div style={styles.rightSection}>
-        {isAuthenticated ? (
-          <>
-            {/* Notifications Bell */}
-            <button
-              style={styles.notificationBtn}
-              onClick={() => navigate("/notifications")}
-              title="Notifications"
-            >
-              <FiBell size={20} color="#FAFAFA" />
-              {unreadCount > 0 && (
-                <span style={styles.badge}>{unreadCount}</span>
-              )}
-            </button>
-
-            {/* User Menu */}
-            <div style={styles.userMenuContainer}>
+        {/* Right Section */}
+        <div style={styles.rightSection}>
+          {isAuthenticated ? (
+            <>
+              {/* User Search Button */}
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                style={styles.userBtn}
+                style={styles.searchBtn}
+                onClick={() => setShowUserSearch(true)}
+                title="Search Users"
               >
-                <img
-                  src={user?.profileImage || "https://via.placeholder.com/32"}
-                  alt={user?.name}
-                  style={styles.avatar}
-                />
-                <span style={styles.userName}>{user?.name?.split(" ")[0]}</span>
+                <FiSearch size={20} color="#FAFAFA" />
               </button>
 
-              {/* Dropdown Menu */}
-              {showUserMenu && (
-                <div style={styles.dropdown}>
-                  <Link
-                    to={`/profile/${user?._id}`}
-                    style={styles.dropdownItem}
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <FiUser size={16} />
-                    <span>Profile</span>
-                  </Link>
+              {/* Notifications Bell */}
+              <button
+                style={styles.notificationBtn}
+                onClick={() => navigate("/notifications")}
+                title="Notifications"
+              >
+                <FiBell size={20} color="#FAFAFA" />
+                {unreadCount > 0 && (
+                  <span style={styles.badge}>{unreadCount}</span>
+                )}
+              </button>
 
-                  {isAdmin?.() && (
+              {/* User Menu */}
+              <div style={styles.userMenuContainer}>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  style={styles.userBtn}
+                >
+                  <img
+                    src={user?.profileImage || "https://via.placeholder.com/32"}
+                    alt={user?.name}
+                    style={styles.avatar}
+                  />
+                  <span style={styles.userName}>
+                    {user?.name?.split(" ")[0]}
+                  </span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div style={styles.dropdown}>
                     <Link
-                      to="/admin"
+                      to={`/profile/${user?._id}`}
                       style={styles.dropdownItem}
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <span>⚙️ Admin Panel</span>
+                      <FiUser size={16} />
+                      <span>Profile</span>
                     </Link>
-                  )}
 
-                  {isModerator?.() && (
-                    <Link
-                      to="/moderation"
-                      style={styles.dropdownItem}
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span>👮 Moderation</span>
-                    </Link>
-                  )}
+                    {isAdmin?.() && (
+                      <Link
+                        to="/admin"
+                        style={styles.dropdownItem}
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span>⚙️ Admin Panel</span>
+                      </Link>
+                    )}
 
-                  <button onClick={handleLogout} style={styles.dropdownItem}>
-                    <FiLogOut size={16} />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <Link to="/login" style={styles.authLink}>
-              Login
-            </Link>
-            <Link to="/register" style={styles.registerBtn}>
-              Sign Up
-            </Link>
-          </>
-        )}
-      </div>
-    </nav>
+                    {isModerator?.() && (
+                      <Link
+                        to="/moderation"
+                        style={styles.dropdownItem}
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span>👮 Moderation</span>
+                      </Link>
+                    )}
+
+                    <button onClick={handleLogout} style={styles.dropdownItem}>
+                      <FiLogOut size={16} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={styles.authLink}>
+                Login
+              </Link>
+              <Link to="/register" style={styles.registerBtn}>
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* User Search Modal */}
+      <Modal
+        isOpen={showUserSearch}
+        onClose={() => setShowUserSearch(false)}
+        title="Search Users"
+        size="lg"
+      >
+        <UserSearch onUserSelect={handleUserSelect} />
+      </Modal>
+    </>
   );
 };
 
@@ -196,6 +235,15 @@ const styles = {
     alignItems: "center",
     gap: "20px",
     marginLeft: "auto",
+  },
+  searchBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    display: "flex",
+    alignItems: "center",
+    transition: "opacity 0.3s ease",
   },
   notificationBtn: {
     background: "none",
