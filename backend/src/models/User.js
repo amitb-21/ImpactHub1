@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { config } from '../config/env.js';
 
 const userSchema = new mongoose.Schema(
@@ -20,6 +21,12 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       lowercase: true,
       trim: true,
+    },
+    password: {
+      type: String,
+      default: null,
+      select: false, // Don't include by default in queries
+      minlength: 6,
     },
     profileImage: {
       type: String,
@@ -70,6 +77,21 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  if (!this.password) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 userSchema.methods.generateJWT = function () {
   const payload = { id: this._id, email: this.email };
   return jwt.sign(payload, config.JWT_SECRET, { expiresIn: '7d' });
@@ -78,6 +100,7 @@ userSchema.methods.generateJWT = function () {
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.googleId;
+  delete obj.password; // Never include password in JSON
   return obj;
 };
 

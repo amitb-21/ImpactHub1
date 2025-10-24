@@ -1,4 +1,3 @@
-
 import express from 'express';
 import passport from 'passport';
 import * as authController from '../controllers/authController.js';
@@ -8,9 +7,18 @@ import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Google OAuth routes
-router.get('/google', rateLimiter, passport.authenticate('google', { scope: ['profile', 'email'] }));
+// =====================
+// GOOGLE OAUTH ROUTES
+// =====================
 
+// Initiate Google OAuth
+router.get(
+  '/google',
+  rateLimiter,
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// Google OAuth callback
 router.get(
   '/google/callback',
   passport.authenticate('google', {
@@ -20,8 +28,24 @@ router.get(
   asyncHandler(authController.googleAuthCallback)
 );
 
-// Manual registration
+// =====================
+// EMAIL/PASSWORD ROUTES
+// =====================
+
+// Login with email and password
+router.post(
+  '/login',
+  rateLimiter,
+  passport.authenticate('local', { session: false }),
+  asyncHandler(authController.loginUser)
+);
+
+// Register new user
 router.post('/register', rateLimiter, asyncHandler(authController.registerUser));
+
+// =====================
+// PROTECTED ROUTES
+// =====================
 
 // Get current user
 router.get('/me', verifyToken, asyncHandler(authController.getCurrentUser));

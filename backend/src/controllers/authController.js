@@ -3,6 +3,44 @@ import ImpactMetric from '../models/ImpactMetric.js';
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 
+// =====================
+// LOGIN WITH EMAIL/PASSWORD
+// =====================
+export const loginUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    const token = req.user.generateJWT();
+    const user = req.user.toJSON();
+
+    // Update last login
+    await User.findByIdAndUpdate(req.user._id, { lastLogin: new Date() });
+
+    logger.success(`User ${user.email} logged in via email/password`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user,
+    });
+  } catch (error) {
+    logger.error('Login error', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
+  }
+};
+
+// =====================
+// GOOGLE AUTH CALLBACK
+// =====================
 export const googleAuthCallback = async (req, res) => {
   try {
     if (!req.user) {
@@ -32,17 +70,22 @@ export const googleAuthCallback = async (req, res) => {
   }
 };
 
+// =====================
+// REGISTER USER
+// =====================
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, location } = req.body;
+    const { name, email, password, location } = req.body;
 
-    if (!name || !email) {
+    // Validate required fields
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Name and email are required',
+        message: 'Name, email, and password are required',
       });
     }
 
+    // Check if user already exists
     let user = await User.findOne({ email });
 
     if (user) {
@@ -52,9 +95,11 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    // Create new user
     user = await User.create({
       name,
       email,
+      password, // Will be hashed by pre-save middleware
       location,
       points: 0,
       level: 1,
@@ -82,6 +127,9 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// =====================
+// GET CURRENT USER
+// =====================
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-googleId');
@@ -106,6 +154,9 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+// =====================
+// LOGOUT
+// =====================
 export const logout = (req, res) => {
   try {
     req.logout((err) => {
@@ -131,6 +182,7 @@ export const logout = (req, res) => {
 };
 
 export default {
+  loginUser,
   googleAuthCallback,
   registerUser,
   getCurrentUser,
