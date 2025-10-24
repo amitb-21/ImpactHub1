@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useAuth } from "../hooks";
-import { useSocket } from "../hooks";
+import { useAuth } from "../../hooks";
+import { useSocket } from "../../hooks"; 
 import { Link, useNavigate } from "react-router-dom";
 import { FiMenu, FiX, FiBell, FiLogOut, FiUser } from "react-icons/fi";
 import { useSelector } from "react-redux";

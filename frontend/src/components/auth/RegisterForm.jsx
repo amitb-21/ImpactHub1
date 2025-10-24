@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../store/slices/authSlice";
-import { registerSchema } from "../config/validators";
-import Button from "./common/Button";
+import { registerUser } from "../../store/slices/authSlice";
+import { registerSchema } from "../../config/validators";
+import Button from "../common/Button";
 import {
   FiUser,
   FiMail,

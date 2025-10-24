@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../store/slices/authSlice";
-import { loginSchema } from "../config/validators";
-import Button from "./common/Button";
+import { loginUser } from "../../store/slices/authSlice";
+import { loginSchema } from "../../config/validators";
+import Button from "../common/Button";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
 
 const LoginForm = () => {
