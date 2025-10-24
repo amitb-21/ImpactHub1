@@ -19,6 +19,8 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import UserProfile from "./pages/UserProfile";
 
 // Error Pages (to be created)
 const NotFound = () => (
@@ -88,8 +90,7 @@ const AppContent = () => {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              {/* <Dashboard /> - To be created on Day 14 */}
-              <div>Dashboard (Coming Soon)</div>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
@@ -99,8 +100,7 @@ const AppContent = () => {
           path="/profile/:userId"
           element={
             <ProtectedRoute>
-              {/* <UserProfile /> - To be created on Day 14 */}
-              <div>User Profile (Coming Soon)</div>
+              <UserProfile />
             </ProtectedRoute>
           }
         />

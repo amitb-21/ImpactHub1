@@ -76,10 +76,12 @@ const initialState = {
   },
   searchResults: {
     data: [],
-    pagination: null
+    pagination: null,
+    query: ''
   },
   isLoading: false,
   isUpdating: false,
+  isSearching: false,
   error: null
 };
 
@@ -95,6 +97,16 @@ const userSlice = createSlice({
       state.profile = null;
       state.stats = null;
       state.activity = { data: [], pagination: null };
+    },
+    clearSearchResults: (state) => {
+      state.searchResults = {
+        data: [],
+        pagination: null,
+        query: ''
+      };
+    },
+    setSearchQuery: (state, action) => {
+      state.searchResults.query = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -113,17 +125,34 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
       // Fetch stats
+      .addCase(fetchUserStats.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchUserStats.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.stats = action.payload.stats;
       })
+      .addCase(fetchUserStats.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
       // Fetch activity
+      .addCase(fetchUserActivity.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchUserActivity.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.activity.data = action.payload.data;
         state.activity.pagination = action.payload.pagination;
+      })
+      .addCase(fetchUserActivity.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       })
       // Update profile
       .addCase(updateUserProfile.pending, (state) => {
         state.isUpdating = true;
+        state.error = null;
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.isUpdating = false;
@@ -134,12 +163,21 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
       // Search users
+      .addCase(searchUsers.pending, (state) => {
+        state.isSearching = true;
+        state.error = null;
+      })
       .addCase(searchUsers.fulfilled, (state, action) => {
+        state.isSearching = false;
         state.searchResults.data = action.payload.data;
         state.searchResults.pagination = action.payload.pagination;
+      })
+      .addCase(searchUsers.rejected, (state, action) => {
+        state.isSearching = false;
+        state.error = action.payload;
       });
   }
 });
 
-export const { clearError, clearProfile } = userSlice.actions;
+export const { clearError, clearProfile, clearSearchResults, setSearchQuery } = userSlice.actions;
 export default userSlice.reducer;
