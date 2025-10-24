@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import ImpactMetric from '../models/ImpactMetric.js';
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
+import { config } from '../config/env.js';
 
 // =====================
 // LOGIN WITH EMAIL/PASSWORD
@@ -55,12 +56,9 @@ export const googleAuthCallback = async (req, res) => {
 
     logger.success(`User ${user.email} authenticated via Google`);
 
-    res.json({
-      success: true,
-      message: 'Authentication successful',
-      token,
-      user,
-    });
+      // Redirect to frontend with token so client can store it and continue
+      const redirectUrl = `${config.CLIENT_URL}/login?token=${encodeURIComponent(token)}`;
+      return res.redirect(redirectUrl);
   } catch (error) {
     logger.error('Google auth callback error', error);
     res.status(500).json({
@@ -132,7 +130,9 @@ export const registerUser = async (req, res) => {
 // =====================
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-googleId');
+    // verifyToken middleware attaches decoded id to req.auth.id
+    const userId = req.userId || req.auth?.id;
+    const user = await User.findById(userId).select('-googleId');
 
     if (!user) {
       return res.status(404).json({

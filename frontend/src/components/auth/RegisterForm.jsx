@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../store/slices/authSlice";
 import { registerSchema } from "../../config/validators";
 import Button from "../common/Button";
+import { API_URL } from "../../config/constants";
 import {
   FiUser,
   FiMail,
@@ -229,7 +230,8 @@ const RegisterForm = () => {
           size="md"
           fullWidth
           onClick={() => {
-            window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
+            // use API_URL from config (Vite env)
+            window.location.href = `${API_URL}/auth/google`;
           }}
         >
           <span style={styles.googleIcon}>🔐</span> Google

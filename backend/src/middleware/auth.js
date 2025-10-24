@@ -12,13 +12,16 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    // decode token and attach to req.auth
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.auth = { id: decoded.id, email: decoded.email };
+  // decode token and attach commonly used fields
+  const decoded = jwt.verify(token, config.JWT_SECRET);
+  // attach both a simple auth object and explicit fields for compatibility
+  req.auth = { id: decoded.id, email: decoded.email };
+  req.userId = decoded.id;
+  req.userEmail = decoded.email;
 
-    // load role once
-    const user = await User.findById(decoded.id).select('role');
-    req.userRole = user?.role;
+  // load role once for authorization checks
+  const user = await User.findById(decoded.id).select('role');
+  req.userRole = user?.role;
 
     next();
   } catch (error) {

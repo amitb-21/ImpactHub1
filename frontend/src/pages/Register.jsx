@@ -5,14 +5,14 @@ import RegisterForm from "../components/auth/RegisterForm";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  // Redirect if already authenticated
+  // Redirect if user object is present (ensure we don't redirect just because a token exists)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       navigate("/dashboard");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   return (
     <div style={styles.page}>
@@ -23,7 +23,7 @@ const Register = () => {
   );
 };
 
-const pageStyles = {
+const styles = {
   page: {
     minHeight: "calc(100vh - 70px)",
     backgroundColor: "#FAFAFA",

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../store/slices/authSlice";
 import { loginSchema } from "../../config/validators";
 import Button from "../common/Button";
+import { API_URL } from "../../config/constants";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
 
 const LoginForm = () => {
@@ -127,8 +128,8 @@ const LoginForm = () => {
           size="md"
           fullWidth
           onClick={() => {
-            // Redirect to Google OAuth
-            window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
+            // Redirect to Google OAuth on backend
+            window.location.href = `${API_URL}/auth/google`;
           }}
         >
           <span style={styles.googleIcon}>🔐</span> Google
