@@ -22,6 +22,10 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import UserProfile from "./pages/UserProfile";
 
+// Pages - Communities (NEW - Day 16)
+import Communities from "./pages/Communities";
+import CommunityDetail from "./pages/CommunityDetail";
+
 // Error Pages (to be created)
 const NotFound = () => (
   <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -106,6 +110,52 @@ const AppContent = () => {
         />
 
         {/* =====================
+          COMMUNITIES (Day 16)
+          ===================== */}
+
+        {/* Communities List Page */}
+        <Route
+          path="/communities"
+          element={
+            <ProtectedRoute>
+              <Communities />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Community Detail Page */}
+        <Route
+          path="/communities/:communityId"
+          element={
+            <ProtectedRoute>
+              <CommunityDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Community Activity Feed */}
+        <Route
+          path="/communities/:communityId/activity"
+          element={
+            <ProtectedRoute>
+              {/* <CommunityActivityFeed /> - To be created on Day 29 */}
+              <div>Community Activity (Coming Soon)</div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Nearby Communities */}
+        <Route
+          path="/nearby-communities"
+          element={
+            <ProtectedRoute>
+              {/* <NearbyCommunities /> - To be created on Day 23 */}
+              <div>Nearby Communities (Coming Soon)</div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* =====================
           EVENTS
           ===================== */}
 
@@ -160,54 +210,6 @@ const AppContent = () => {
             <ProtectedRoute>
               {/* <TodayEvents /> - To be created on Day 23 */}
               <div>Today's Events (Coming Soon)</div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* =====================
-          COMMUNITIES
-          ===================== */}
-
-        {/* Communities List Page */}
-        <Route
-          path="/communities"
-          element={
-            <ProtectedRoute>
-              {/* <Communities /> - To be created on Day 16 */}
-              <div>Communities List (Coming Soon)</div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Community Detail Page */}
-        <Route
-          path="/communities/:communityId"
-          element={
-            <ProtectedRoute>
-              {/* <CommunityDetail /> - To be created on Day 16 */}
-              <div>Community Detail (Coming Soon)</div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Community Activity Feed */}
-        <Route
-          path="/communities/:communityId/activity"
-          element={
-            <ProtectedRoute>
-              {/* <CommunityActivityFeed /> - To be created on Day 29 */}
-              <div>Community Activity (Coming Soon)</div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Nearby Communities */}
-        <Route
-          path="/nearby-communities"
-          element={
-            <ProtectedRoute>
-              {/* <NearbyCommunities /> - To be created on Day 23 */}
-              <div>Nearby Communities (Coming Soon)</div>
             </ProtectedRoute>
           }
         />
