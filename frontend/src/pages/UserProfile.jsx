@@ -15,6 +15,7 @@ import { Card } from "../components/common/Card";
 import { Button } from "../components/common/Button";
 import { Loader } from "../components/common/Loader";
 import { FiArrowLeft, FiMessageSquare, FiShare2 } from "react-icons/fi";
+import styles from "./styles/UserProfile.module.css";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -41,11 +42,11 @@ const UserProfile = () => {
   if (error) {
     return (
       <Layout>
-        <div style={styles.container}>
-          <div style={styles.errorContainer}>
-            <div style={styles.errorIcon}>❌</div>
-            <h2 style={styles.errorTitle}>User Not Found</h2>
-            <p style={styles.errorText}>
+        <div className={styles.container}>
+          <div className={styles.errorContainer}>
+            <div className={styles.errorIcon}>❌</div>
+            <h2 className={styles.errorTitle}>User Not Found</h2>
+            <p className={styles.errorText}>
               The user you're looking for doesn't exist or has been removed.
             </p>
             <Button
@@ -64,7 +65,7 @@ const UserProfile = () => {
   if (isLoading || !profile) {
     return (
       <Layout>
-        <div style={styles.container}>
+        <div className={styles.container}>
           <Loader size="lg" text="Loading profile..." fullScreen={false} />
         </div>
       </Layout>
@@ -73,9 +74,9 @@ const UserProfile = () => {
 
   return (
     <Layout>
-      <div style={styles.container}>
+      <div className={styles.container}>
         {/* Header with Back Button */}
-        <div style={styles.header}>
+        <div className={styles.header}>
           <Button
             variant="ghost"
             size="sm"
@@ -85,7 +86,7 @@ const UserProfile = () => {
             Back
           </Button>
           {!isOwnProfile && (
-            <div style={styles.actionButtons}>
+            <div className={styles.actionButtons}>
               <Button variant="outline" size="sm" icon={FiMessageSquare}>
                 Message
               </Button>
@@ -97,11 +98,11 @@ const UserProfile = () => {
         </div>
 
         {/* Main Grid */}
-        <div style={styles.gridContainer}>
+        <div className={styles.gridContainer}>
           {/* Left Column */}
-          <div style={styles.leftColumn}>
+          <div className={styles.leftColumn}>
             {/* Profile Card */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <ProfileCard
                 user={profile}
                 isOwnProfile={isOwnProfile}
@@ -110,28 +111,28 @@ const UserProfile = () => {
             </div>
 
             {/* User Stats */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <UserStats userId={userId} />
             </div>
           </div>
 
           {/* Right Column */}
-          <div style={styles.rightColumn}>
+          <div className={styles.rightColumn}>
             {/* About Section */}
             {profile?.bio && (
-              <div style={styles.section}>
+              <div className={styles.section}>
                 <Card padding="lg" shadow="md">
-                  <h3 style={styles.sectionTitle}>About</h3>
-                  <p style={styles.aboutText}>{profile.bio}</p>
+                  <h3 className={styles.sectionTitle}>About</h3>
+                  <p className={styles.aboutText}>{profile.bio}</p>
                 </Card>
               </div>
             )}
 
             {/* Information Card */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <Card padding="lg" shadow="md">
-                <h3 style={styles.sectionTitle}>Information</h3>
-                <div style={styles.infoGrid}>
+                <h3 className={styles.sectionTitle}>Information</h3>
+                <div className={styles.infoGrid}>
                   {profile?.email && (
                     <InfoItem label="Email" value={profile.email} />
                   )}
@@ -159,14 +160,14 @@ const UserProfile = () => {
 
             {/* Badges Section (if any) */}
             {profile?.badges && profile.badges.length > 0 && (
-              <div style={styles.section}>
+              <div className={styles.section}>
                 <Card padding="lg" shadow="md">
-                  <h3 style={styles.sectionTitle}>Badges</h3>
-                  <div style={styles.badgesGrid}>
+                  <h3 className={styles.sectionTitle}>Badges</h3>
+                  <div className={styles.badgesGrid}>
                     {profile.badges.map((badge) => (
-                      <div key={badge._id} style={styles.badgeItem}>
-                        <span style={styles.badgeIcon}>{badge.icon}</span>
-                        <span style={styles.badgeName}>{badge.name}</span>
+                      <div key={badge._id} className={styles.badgeItem}>
+                        <span className={styles.badgeIcon}>{badge.icon}</span>
+                        <span className={styles.badgeName}>{badge.name}</span>
                       </div>
                     ))}
                   </div>
@@ -176,10 +177,10 @@ const UserProfile = () => {
 
             {/* Achievements */}
             {stats && (
-              <div style={styles.section}>
+              <div className={styles.section}>
                 <Card padding="lg" shadow="md">
-                  <h3 style={styles.sectionTitle}>Achievements</h3>
-                  <div style={styles.achievementsGrid}>
+                  <h3 className={styles.sectionTitle}>Achievements</h3>
+                  <div className={styles.achievementsGrid}>
                     <AchievementItem
                       icon="🎯"
                       title="Event Master"
@@ -214,7 +215,7 @@ const UserProfile = () => {
         </div>
 
         {/* Recent Activity Section */}
-        <div style={styles.section}>
+        <div className={styles.section}>
           <UserActivity userId={userId} limit={10} />
         </div>
       </div>
@@ -224,195 +225,19 @@ const UserProfile = () => {
 
 // Info Item Component
 const InfoItem = ({ label, value }) => (
-  <div style={styles.infoItem}>
-    <span style={styles.infoLabel}>{label}</span>
-    <span style={styles.infoValue}>{value}</span>
+  <div className={styles.infoItem}>
+    <span className={styles.infoLabel}>{label}</span>
+    <span className={styles.infoValue}>{value}</span>
   </div>
 );
 
 // Achievement Item Component
 const AchievementItem = ({ icon, title, description }) => (
-  <div style={styles.achievementItem}>
-    <div style={styles.achievementIcon}>{icon}</div>
-    <h4 style={styles.achievementTitle}>{title}</h4>
-    <p style={styles.achievementDescription}>{description}</p>
+  <div className={styles.achievementItem}>
+    <div className={styles.achievementIcon}>{icon}</div>
+    <h4 className={styles.achievementTitle}>{title}</h4>
+    <p className={styles.achievementDescription}>{description}</p>
   </div>
 );
-
-const styles = {
-  container: {
-    width: "100%",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "32px",
-    paddingBottom: "20px",
-    borderBottom: "2px solid #e0e0e0",
-  },
-  actionButtons: {
-    display: "flex",
-    gap: "12px",
-  },
-  gridContainer: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "32px",
-    marginBottom: "40px",
-  },
-  leftColumn: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  rightColumn: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  section: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  sectionTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 16px 0",
-  },
-  aboutText: {
-    fontSize: "14px",
-    color: "#666",
-    lineHeight: "1.6",
-    margin: 0,
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-  },
-  infoItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    padding: "12px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "8px",
-  },
-  infoLabel: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#999",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  infoValue: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "#00796B",
-  },
-  badgesGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-    gap: "12px",
-  },
-  badgeItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "6px",
-    padding: "12px",
-    backgroundColor: "#f0f8f7",
-    borderRadius: "8px",
-    textAlign: "center",
-  },
-  badgeIcon: {
-    fontSize: "28px",
-  },
-  badgeName: {
-    fontSize: "11px",
-    fontWeight: "600",
-    color: "#212121",
-  },
-  achievementsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: "16px",
-  },
-  achievementItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    padding: "16px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "10px",
-    border: "1px solid #e0e0e0",
-    textAlign: "center",
-  },
-  achievementIcon: {
-    fontSize: "32px",
-  },
-  achievementTitle: {
-    fontSize: "13px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-  achievementDescription: {
-    fontSize: "11px",
-    color: "#999",
-    margin: 0,
-    lineHeight: "1.4",
-  },
-  errorContainer: {
-    padding: "80px 40px",
-    textAlign: "center",
-  },
-  errorIcon: {
-    fontSize: "64px",
-    marginBottom: "16px",
-    display: "block",
-  },
-  errorTitle: {
-    fontSize: "28px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 12px 0",
-  },
-  errorText: {
-    fontSize: "15px",
-    color: "#666",
-    margin: "0 0 24px 0",
-    maxWidth: "400px",
-    marginLeft: "auto",
-    marginRight: "auto",
-  },
-
-  "@media (max-width: 768px)": {
-    gridContainer: {
-      gridTemplateColumns: "1fr",
-      gap: "24px",
-    },
-    header: {
-      flexDirection: "column",
-      alignItems: "flex-start",
-      gap: "16px",
-    },
-    actionButtons: {
-      width: "100%",
-    },
-    infoGrid: {
-      gridTemplateColumns: "1fr",
-    },
-    achievementsGrid: {
-      gridTemplateColumns: "repeat(2, 1fr)",
-    },
-  },
-};
 
 export default UserProfile;

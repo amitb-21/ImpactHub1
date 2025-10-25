@@ -21,6 +21,7 @@ import {
   FiTrendingUp,
   FiBook,
 } from "react-icons/fi";
+import styles from "./styles/Dashboard.module.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const Dashboard = () => {
   if (!user) {
     return (
       <Layout>
-        <div style={styles.container}>
+        <div className={styles.container}>
           <p>Loading...</p>
         </div>
       </Layout>
@@ -63,12 +64,14 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div style={styles.container}>
+      <div className={styles.container}>
         {/* Header */}
-        <div style={styles.header}>
+        <div className={styles.header}>
           <div>
-            <h1 style={styles.title}>Welcome back, {user.name}! 👋</h1>
-            <p style={styles.subtitle}>Track your impact and stay connected</p>
+            <h1 className={styles.title}>Welcome back, {user.name}! 👋</h1>
+            <p className={styles.subtitle}>
+              Track your impact and stay connected
+            </p>
           </div>
           <Button
             size="md"
@@ -95,24 +98,24 @@ const Dashboard = () => {
         </Modal>
 
         {/* Main Content Grid */}
-        <div style={styles.gridContainer}>
+        <div className={styles.gridContainer}>
           {/* Left Column */}
-          <div style={styles.leftColumn}>
+          <div className={styles.leftColumn}>
             {/* Profile Card */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <ProfileCard key={refreshKey} user={user} isOwnProfile={true} />
             </div>
 
             {/* User Stats */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <UserStats userId={user._id} />
             </div>
 
             {/* Quick Actions */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <Card padding="lg" shadow="md">
-                <h3 style={styles.sectionTitle}>Quick Actions</h3>
-                <div style={styles.quickActionsGrid}>
+                <h3 className={styles.sectionTitle}>Quick Actions</h3>
+                <div className={styles.quickActionsGrid}>
                   <QuickActionButton
                     icon={FiCalendar}
                     label="Find Events"
@@ -143,14 +146,14 @@ const Dashboard = () => {
           </div>
 
           {/* Right Column */}
-          <div style={styles.rightColumn}>
+          <div className={styles.rightColumn}>
             {/* Impact Summary Card */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <Card padding="lg" shadow="md">
-                <h3 style={styles.sectionTitle}>Your Impact</h3>
+                <h3 className={styles.sectionTitle}>Your Impact</h3>
                 {metrics ? (
                   <>
-                    <div style={styles.impactGrid}>
+                    <div className={styles.impactGrid}>
                       <ImpactItem
                         icon="🌱"
                         label="Events Attended"
@@ -185,7 +188,7 @@ const Dashboard = () => {
                     </Button>
                   </>
                 ) : (
-                  <p style={styles.noData}>
+                  <p className={styles.noData}>
                     Start participating to see your impact!
                   </p>
                 )}
@@ -193,17 +196,17 @@ const Dashboard = () => {
             </div>
 
             {/* Recent Activity */}
-            <div style={styles.section}>
+            <div className={styles.section}>
               <UserActivity userId={user._id} limit={5} />
             </div>
 
             {/* Leaderboard Hint */}
-            <div style={styles.section}>
-              <Card padding="lg" shadow="md" style={styles.hintCard}>
-                <div style={styles.hintContent}>
-                  <div style={styles.hintIcon}>🏆</div>
-                  <h4 style={styles.hintTitle}>Climb the Leaderboard</h4>
-                  <p style={styles.hintText}>
+            <div className={styles.section}>
+              <Card padding="lg" shadow="md" className={styles.hintCard}>
+                <div className={styles.hintContent}>
+                  <div className={styles.hintIcon}>🏆</div>
+                  <h4 className={styles.hintTitle}>Climb the Leaderboard</h4>
+                  <p className={styles.hintText}>
                     Complete more events and challenges to earn points and climb
                     ranks!
                   </p>
@@ -223,9 +226,9 @@ const Dashboard = () => {
 
         {/* Upcoming Events Section */}
         {events && events.length > 0 && (
-          <div style={styles.section}>
-            <div style={styles.sectionHeader}>
-              <h3 style={styles.sectionTitle}>Upcoming Events</h3>
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>Upcoming Events</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -236,7 +239,7 @@ const Dashboard = () => {
                 View All
               </Button>
             </div>
-            <div style={styles.eventsGrid}>
+            <div className={styles.eventsGrid}>
               {events.slice(0, 4).map((event) => (
                 <EventQuickCard
                   key={event._id}
@@ -254,252 +257,40 @@ const Dashboard = () => {
 
 // Quick Action Button Component
 const QuickActionButton = ({ icon: Icon, label, description, onClick }) => (
-  <div style={styles.quickActionButton} onClick={onClick}>
+  <div className="quick-action-button" onClick={onClick}>
     <Icon size={24} style={{ color: "#00796B" }} />
-    <h4 style={styles.quickActionLabel}>{label}</h4>
-    <p style={styles.quickActionDescription}>{description}</p>
+    <h4 className="quick-action-label">{label}</h4>
+    <p className="quick-action-description">{description}</p>
   </div>
 );
 
 // Impact Item Component
 const ImpactItem = ({ icon, label, value }) => (
-  <div style={styles.impactItem}>
-    <div style={styles.impactIcon}>{icon}</div>
-    <span style={styles.impactValue}>{value}</span>
-    <span style={styles.impactLabel}>{label}</span>
+  <div className="impact-item">
+    <div className="impact-icon">{icon}</div>
+    <span className="impact-value">{value}</span>
+    <span className="impact-label">{label}</span>
   </div>
 );
 
 // Event Quick Card Component
 const EventQuickCard = ({ event, onClick }) => (
-  <Card
-    onClick={onClick}
-    hover
-    shadow="sm"
-    padding="md"
-    style={styles.eventCard}
-  >
-    <div style={styles.eventCardImage}>
+  <Card onClick={onClick} hover shadow="sm" padding="md" className="event-card">
+    <div className="event-card-image">
       <img
         src={event.image || "https://via.placeholder.com/200x120?text=Event"}
         alt={event.title}
-        style={styles.eventImage}
+        className="event-image"
         onError={(e) => {
           e.target.src = "https://via.placeholder.com/200x120?text=Event";
         }}
       />
     </div>
-    <h4 style={styles.eventCardTitle}>{event.title.substring(0, 40)}</h4>
-    <p style={styles.eventCardMeta}>
+    <h4 className="event-card-title">{event.title.substring(0, 40)}</h4>
+    <p className="event-card-meta">
       {new Date(event.startDate).toLocaleDateString()}
     </p>
   </Card>
 );
-
-const styles = {
-  container: {
-    width: "100%",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "40px",
-    paddingBottom: "24px",
-    borderBottom: "2px solid #e0e0e0",
-  },
-  title: {
-    fontSize: "32px",
-    fontWeight: "800",
-    color: "#212121",
-    margin: "0 0 8px 0",
-  },
-  subtitle: {
-    fontSize: "15px",
-    color: "#666",
-    margin: 0,
-  },
-  gridContainer: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "32px",
-    marginBottom: "60px",
-  },
-  leftColumn: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  rightColumn: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  section: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  sectionTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 16px 0",
-  },
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "20px",
-  },
-  quickActionsGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-  },
-  quickActionButton: {
-    padding: "16px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "10px",
-    border: "1px solid #e0e0e0",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    textAlign: "center",
-  },
-  quickActionLabel: {
-    fontSize: "13px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-  quickActionDescription: {
-    fontSize: "11px",
-    color: "#999",
-    margin: 0,
-  },
-  impactGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-  },
-  impactItem: {
-    padding: "16px",
-    backgroundColor: "#f0f8f7",
-    borderRadius: "10px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "6px",
-    textAlign: "center",
-  },
-  impactIcon: {
-    fontSize: "28px",
-  },
-  impactValue: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#00796B",
-  },
-  impactLabel: {
-    fontSize: "12px",
-    color: "#666",
-    fontWeight: "500",
-  },
-  noData: {
-    fontSize: "14px",
-    color: "#999",
-    textAlign: "center",
-    padding: "20px",
-    margin: 0,
-  },
-  hintCard: {
-    background: "linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%)",
-    borderLeft: "4px solid #FFB300",
-  },
-  hintContent: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    gap: "12px",
-  },
-  hintIcon: {
-    fontSize: "40px",
-  },
-  hintTitle: {
-    fontSize: "15px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-  hintText: {
-    fontSize: "13px",
-    color: "#666",
-    margin: 0,
-    lineHeight: "1.5",
-  },
-  eventsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-    gap: "16px",
-  },
-  eventCard: {
-    cursor: "pointer",
-    overflow: "hidden",
-  },
-  eventCardImage: {
-    width: "100%",
-    height: "120px",
-    marginBottom: "12px",
-    borderRadius: "8px",
-    overflow: "hidden",
-  },
-  eventImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  eventCardTitle: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 6px 0",
-  },
-  eventCardMeta: {
-    fontSize: "12px",
-    color: "#999",
-    margin: 0,
-  },
-
-  "@media (max-width: 768px)": {
-    gridContainer: {
-      gridTemplateColumns: "1fr",
-      gap: "24px",
-    },
-    header: {
-      flexDirection: "column",
-      alignItems: "flex-start",
-      gap: "16px",
-    },
-    title: {
-      fontSize: "24px",
-    },
-    quickActionsGrid: {
-      gridTemplateColumns: "1fr 1fr",
-    },
-    impactGrid: {
-      gridTemplateColumns: "1fr 1fr",
-    },
-    eventsGrid: {
-      gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-    },
-  },
-};
 
 export default Dashboard;

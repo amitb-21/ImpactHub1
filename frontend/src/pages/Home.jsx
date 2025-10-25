@@ -18,9 +18,10 @@ import {
   FiStar,
   FiCheckCircle,
 } from "react-icons/fi";
-import { formatDate, truncate, timeAgo } from "../config/helpers";
-import { calculateRank, calculateTier } from "../config/helpers";
+import { formatDate, truncate } from "../config/helpers";
+import { calculateRank } from "../config/helpers";
 import { formatPoints } from "../config/formatters";
+import styles from "./styles/Home.module.css";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -33,13 +34,10 @@ const Home = () => {
   const userMetrics = useSelector((state) => state.impact.metrics);
   const eventsLoading = useSelector((state) => state.event.isLoading);
   const communitiesLoading = useSelector((state) => state.community.isLoading);
-  const metricsLoading = useSelector((state) => state.impact.isLoading);
 
   // Fetch initial data on mount
   useEffect(() => {
-    // Fetch featured events (limit 6, sorted by newest)
     dispatch(fetchEvents({ limit: 6, status: "Upcoming" }));
-    // Fetch featured communities (limit 6, sorted by newest)
     dispatch(fetchCommunities({ limit: 6 }));
   }, [dispatch]);
 
@@ -52,23 +50,23 @@ const Home = () => {
 
   return (
     <Layout>
-      <div style={styles.container}>
+      <div className={styles.container}>
         {/* Hero Section */}
-        <section style={styles.heroSection}>
-          <div style={styles.heroContent}>
-            <h1 style={styles.heroTitle}>
+        <section className={styles.heroSection}>
+          <div className={styles.heroContent}>
+            <h1 className={styles.heroTitle}>
               Make a Real Impact,
               <br />
-              <span style={styles.accentText}>One Action at a Time</span>
+              <span className={styles.accentText}>One Action at a Time</span>
             </h1>
 
-            <p style={styles.heroSubtitle}>
+            <p className={styles.heroSubtitle}>
               Join thousands of volunteers making positive change through
               organized events and engaged communities. Start your impact
               journey today.
             </p>
 
-            <div style={styles.heroButtons}>
+            <div className={styles.heroButtons}>
               {!isAuthenticated ? (
                 <>
                   <Button
@@ -111,42 +109,40 @@ const Home = () => {
             </div>
 
             {/* Trust indicators */}
-            <div style={styles.trustIndicators}>
-              <div style={styles.trustItem}>
-                <span style={styles.trustNumber}>5000+</span>
-                <span style={styles.trustLabel}>Active Volunteers</span>
+            <div className={styles.trustIndicators}>
+              <div className={styles.trustItem}>
+                <span className={styles.trustNumber}>5000+</span>
+                <span className={styles.trustLabel}>Active Volunteers</span>
               </div>
-              <span style={styles.trustDivider}>•</span>
-              <div style={styles.trustItem}>
-                <span style={styles.trustNumber}>500+</span>
-                <span style={styles.trustLabel}>Communities</span>
+              <span className={styles.trustDivider}>•</span>
+              <div className={styles.trustItem}>
+                <span className={styles.trustNumber}>500+</span>
+                <span className={styles.trustLabel}>Communities</span>
               </div>
-              <span style={styles.trustDivider}>•</span>
-              <div style={styles.trustItem}>
-                <span style={styles.trustNumber}>2000+</span>
-                <span style={styles.trustLabel}>Events</span>
+              <span className={styles.trustDivider}>•</span>
+              <div className={styles.trustItem}>
+                <span className={styles.trustNumber}>2000+</span>
+                <span className={styles.trustLabel}>Events</span>
               </div>
             </div>
           </div>
 
           {/* Hero Visual */}
-          <div style={styles.heroVisual}>
-            <div style={styles.heroImagePlaceholder}>
-              <div style={styles.heroIcon}>🌍</div>
-              <p style={styles.heroIconText}>Making Global Impact</p>
+          <div className={styles.heroVisual}>
+            <div className={styles.heroImagePlaceholder}>
+              <div className={styles.heroIcon}>🌍</div>
+              <p className={styles.heroIconText}>Making Global Impact</p>
             </div>
           </div>
         </section>
 
         {/* Stats Section (if authenticated) */}
         {isAuthenticated && (
-          <section style={styles.statsSection}>
-            <h2 style={styles.sectionTitle}>Your Impact So Far</h2>
-            {metricsLoading ? (
-              <Loader size="md" text="Loading your metrics..." />
-            ) : userMetrics ? (
+          <section className={styles.statsSection}>
+            <h2 className={styles.sectionTitle}>Your Impact So Far</h2>
+            {userMetrics ? (
               <>
-                <div style={styles.statsGrid}>
+                <div className={styles.statsGrid}>
                   <StatsCard
                     icon={FiCalendar}
                     label="Events Attended"
@@ -186,9 +182,9 @@ const Home = () => {
         )}
 
         {/* Featured Events Section */}
-        <section style={styles.featuredSection}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Featured Events</h2>
+        <section className={styles.featuredSection}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Featured Events</h2>
             <Button
               variant="ghost"
               onClick={() => navigate("/events")}
@@ -201,11 +197,11 @@ const Home = () => {
           </div>
 
           {eventsLoading ? (
-            <div style={styles.loadingContainer}>
+            <div className={styles.loadingContainer}>
               <Loader size="sm" />
             </div>
           ) : events && events.length > 0 ? (
-            <div style={styles.cardsGrid}>
+            <div className={styles.cardsGrid}>
               {events.slice(0, 6).map((event) => (
                 <EventCardPreview
                   key={event._id}
@@ -226,9 +222,9 @@ const Home = () => {
         </section>
 
         {/* Featured Communities Section */}
-        <section style={styles.featuredSection}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Active Communities</h2>
+        <section className={styles.featuredSection}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Active Communities</h2>
             <Button
               variant="ghost"
               onClick={() => navigate("/communities")}
@@ -241,11 +237,11 @@ const Home = () => {
           </div>
 
           {communitiesLoading ? (
-            <div style={styles.loadingContainer}>
+            <div className={styles.loadingContainer}>
               <Loader size="sm" />
             </div>
           ) : communities && communities.length > 0 ? (
-            <div style={styles.cardsGrid}>
+            <div className={styles.cardsGrid}>
               {communities.slice(0, 6).map((community) => (
                 <CommunityCardPreview
                   key={community._id}
@@ -266,10 +262,10 @@ const Home = () => {
         </section>
 
         {/* CTA Section */}
-        <section style={styles.ctaSection}>
-          <div style={styles.ctaContent}>
-            <h2 style={styles.ctaTitle}>Ready to Make a Difference?</h2>
-            <p style={styles.ctaSubtitle}>
+        <section className={styles.ctaSection}>
+          <div className={styles.ctaContent}>
+            <h2 className={styles.ctaTitle}>Ready to Make a Difference?</h2>
+            <p className={styles.ctaSubtitle}>
               Join our community of volunteers and start creating positive
               impact today. Every action counts.
             </p>
@@ -282,7 +278,7 @@ const Home = () => {
                 Join ImpactHub Now
               </Button>
             ) : (
-              <div style={styles.ctaButtonGroup}>
+              <div className={styles.ctaButtonGroup}>
                 <Button
                   size="lg"
                   variant="primary"
@@ -303,9 +299,9 @@ const Home = () => {
         </section>
 
         {/* Features Section */}
-        <section style={styles.featuresSection}>
-          <h2 style={styles.sectionTitle}>Why ImpactHub?</h2>
-          <div style={styles.featuresGrid}>
+        <section className={styles.featuresSection}>
+          <h2 className={styles.sectionTitle}>Why ImpactHub?</h2>
+          <div className={styles.featuresGrid}>
             <FeatureCard
               icon="🎯"
               title="Find Your Cause"
@@ -341,8 +337,8 @@ const Home = () => {
 
         {/* Footer CTA */}
         {!isAuthenticated && (
-          <section style={styles.footerCTA}>
-            <h3 style={styles.footerCTATitle}>
+          <section className={styles.footerCTA}>
+            <h3 className={styles.footerCTATitle}>
               Don't miss out on making a difference
             </h3>
             <Button
@@ -359,24 +355,20 @@ const Home = () => {
   );
 };
 
-// =====================
-// SUB-COMPONENTS
-// =====================
-
+// Event Card Preview Component
 const EventCardPreview = ({ event, onClick }) => (
   <Card
     onClick={onClick}
     hover
     shadow="md"
     padding="md"
-    style={styles.eventCard}
+    className={styles.eventCard}
   >
-    {/* Event Image */}
-    <div style={styles.eventImage}>
+    <div className={styles.eventImage}>
       <img
         src={event.image || "https://via.placeholder.com/300x200?text=Event"}
         alt={event.title}
-        style={styles.eventImageTag}
+        className={styles.eventImageTag}
         onError={(e) => {
           e.target.src = "https://via.placeholder.com/300x200?text=Event";
         }}
@@ -385,26 +377,27 @@ const EventCardPreview = ({ event, onClick }) => (
         label={event.category || "Event"}
         variant="primary"
         size="sm"
-        style={styles.badgeOverlay}
+        className={styles.badgeOverlay}
       />
     </div>
 
-    {/* Event Info */}
-    <div style={styles.eventInfo}>
-      <h3 style={styles.eventTitle}>{truncate(event.title, 40)}</h3>
+    <div className={styles.eventInfo}>
+      <h3 className={styles.eventTitle}>{truncate(event.title, 40)}</h3>
 
-      <div style={styles.eventMeta}>
-        <div style={styles.metaItem}>
+      <div className={styles.eventMeta}>
+        <div className={styles.metaItem}>
           <FiCalendar size={14} style={{ color: "#00796B" }} />
           <span>{formatDate(event.startDate)}</span>
         </div>
-        <div style={styles.metaItem}>
+        <div className={styles.metaItem}>
           <FiUsers size={14} style={{ color: "#00796B" }} />
           <span>{event.participants?.length || 0} joined</span>
         </div>
       </div>
 
-      <p style={styles.eventDescription}>{truncate(event.description, 60)}</p>
+      <p className={styles.eventDescription}>
+        {truncate(event.description, 60)}
+      </p>
 
       <Button
         size="sm"
@@ -418,23 +411,23 @@ const EventCardPreview = ({ event, onClick }) => (
   </Card>
 );
 
+// Community Card Preview Component
 const CommunityCardPreview = ({ community, onClick }) => (
   <Card
     onClick={onClick}
     hover
     shadow="md"
     padding="md"
-    style={styles.communityCard}
+    className={styles.communityCard}
   >
-    {/* Community Image */}
-    <div style={styles.communityImage}>
+    <div className={styles.communityImage}>
       <img
         src={
           community.image ||
           "https://via.placeholder.com/300x200?text=Community"
         }
         alt={community.name}
-        style={styles.communityImageTag}
+        className={styles.communityImageTag}
         onError={(e) => {
           e.target.src = "https://via.placeholder.com/300x200?text=Community";
         }}
@@ -443,21 +436,22 @@ const CommunityCardPreview = ({ community, onClick }) => (
         label={community.category || "Community"}
         variant="primary"
         size="sm"
-        style={styles.badgeOverlay}
+        className={styles.badgeOverlay}
       />
     </div>
 
-    {/* Community Info */}
-    <div style={styles.communityInfo}>
-      <div style={styles.communityHeader}>
-        <h3 style={styles.communityTitle}>{truncate(community.name, 30)}</h3>
+    <div className={styles.communityInfo}>
+      <div className={styles.communityHeader}>
+        <h3 className={styles.communityTitle}>
+          {truncate(community.name, 30)}
+        </h3>
         {community.verificationStatus === "verified" && (
           <FiCheckCircle size={18} style={{ color: "#10b981" }} />
         )}
       </div>
 
-      <div style={styles.communityMeta}>
-        <div style={styles.metaItem}>
+      <div className={styles.communityMeta}>
+        <div className={styles.metaItem}>
           <FiUsers size={14} style={{ color: "#00796B" }} />
           <span>{community.members?.length || 0} members</span>
         </div>
@@ -472,7 +466,7 @@ const CommunityCardPreview = ({ community, onClick }) => (
         />
       )}
 
-      <p style={styles.communityDescription}>
+      <p className={styles.communityDescription}>
         {truncate(community.description, 60)}
       </p>
 
@@ -488,26 +482,29 @@ const CommunityCardPreview = ({ community, onClick }) => (
   </Card>
 );
 
+// Stats Card Component
 const StatsCard = ({ icon: Icon, label, value }) => (
-  <Card shadow="sm" padding="md" style={styles.statsCard}>
-    <div style={styles.statsCardContent}>
+  <Card shadow="sm" padding="md" className={styles.statsCard}>
+    <div className={styles.statsCardContent}>
       <Icon style={styles.statsIcon} size={28} />
-      <div style={styles.statsCardText}>
-        <p style={styles.statsValue}>{value}</p>
-        <p style={styles.statsLabel}>{label}</p>
+      <div className={styles.statsCardText}>
+        <p className={styles.statsValue}>{value}</p>
+        <p className={styles.statsLabel}>{label}</p>
       </div>
     </div>
   </Card>
 );
 
+// Feature Card Component
 const FeatureCard = ({ icon, title, description }) => (
-  <div style={styles.featureCard}>
-    <div style={styles.featureIcon}>{icon}</div>
-    <h3 style={styles.featureTitle}>{title}</h3>
-    <p style={styles.featureDescription}>{description}</p>
+  <div className={styles.featureCard}>
+    <div className={styles.featureIcon}>{icon}</div>
+    <h3 className={styles.featureTitle}>{title}</h3>
+    <p className={styles.featureDescription}>{description}</p>
   </div>
 );
 
+// Empty State Component
 const EmptyState = ({
   title,
   description,
@@ -515,10 +512,10 @@ const EmptyState = ({
   actionLabel,
   onAction,
 }) => (
-  <div style={styles.emptyState}>
-    <div style={styles.emptyIcon}>📭</div>
-    <p style={styles.emptyStateTitle}>{title}</p>
-    <p style={styles.emptyStateText}>{description}</p>
+  <div className={styles.emptyState}>
+    <div className={styles.emptyIcon}>📭</div>
+    <p className={styles.emptyStateTitle}>{title}</p>
+    <p className={styles.emptyStateText}>{description}</p>
     {isAuthenticated && (
       <Button size="sm" variant="primary" onClick={onAction}>
         {actionLabel}
@@ -526,466 +523,5 @@ const EmptyState = ({
     )}
   </div>
 );
-
-// =====================
-// STYLES
-// =====================
-
-const styles = {
-  container: {
-    width: "100%",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0",
-  },
-
-  // Hero Section
-  heroSection: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "60px",
-    alignItems: "center",
-    padding: "80px 40px",
-    background: "linear-gradient(135deg, #00796B 0%, #004D40 100%)",
-    borderRadius: "16px",
-    marginBottom: "80px",
-    color: "#FAFAFA",
-  },
-
-  heroContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-
-  heroTitle: {
-    fontSize: "48px",
-    fontWeight: "800",
-    lineHeight: "1.2",
-    margin: 0,
-    color: "#FAFAFA",
-    letterSpacing: "-0.5px",
-  },
-
-  accentText: {
-    color: "#FFB300",
-    display: "block",
-  },
-
-  heroSubtitle: {
-    fontSize: "18px",
-    lineHeight: "1.6",
-    color: "rgba(250, 250, 250, 0.9)",
-    margin: 0,
-    maxWidth: "500px",
-  },
-
-  heroButtons: {
-    display: "flex",
-    gap: "16px",
-    flexWrap: "wrap",
-    marginTop: "16px",
-  },
-
-  trustIndicators: {
-    display: "flex",
-    alignItems: "center",
-    gap: "24px",
-    marginTop: "24px",
-    paddingTop: "24px",
-    borderTop: "1px solid rgba(250, 250, 250, 0.2)",
-  },
-
-  trustItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-
-  trustNumber: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#FFB300",
-  },
-
-  trustLabel: {
-    fontSize: "13px",
-    color: "rgba(250, 250, 250, 0.8)",
-  },
-
-  trustDivider: {
-    color: "rgba(250, 250, 250, 0.3)",
-  },
-
-  heroVisual: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  heroImagePlaceholder: {
-    width: "100%",
-    aspectRatio: "1",
-    backgroundColor: "rgba(255, 179, 0, 0.1)",
-    borderRadius: "12px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "2px dashed rgba(255, 179, 0, 0.3)",
-  },
-
-  heroIcon: {
-    fontSize: "80px",
-    marginBottom: "16px",
-  },
-
-  heroIconText: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#FFB300",
-    margin: 0,
-  },
-
-  // Stats Section
-  statsSection: {
-    padding: "60px 40px",
-    backgroundColor: "#f0f8f7",
-    borderRadius: "12px",
-    marginBottom: "80px",
-  },
-
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "20px",
-    marginBottom: "24px",
-  },
-
-  statsCard: {
-    padding: "24px !important",
-  },
-
-  statsCardContent: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-  },
-
-  statsIcon: {
-    color: "#00796B",
-    flexShrink: 0,
-  },
-
-  statsCardText: {
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  statsValue: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-
-  statsLabel: {
-    fontSize: "13px",
-    color: "#666",
-    margin: 0,
-  },
-
-  // Featured Section
-  featuredSection: {
-    marginBottom: "80px",
-  },
-
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "32px",
-  },
-
-  sectionTitle: {
-    fontSize: "32px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-
-  cardsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: "24px",
-  },
-
-  eventCard: {
-    cursor: "pointer",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-    overflow: "hidden",
-  },
-
-  eventImage: {
-    position: "relative",
-    marginBottom: "16px",
-    borderRadius: "8px",
-    overflow: "hidden",
-    height: "180px",
-  },
-
-  eventImageTag: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-
-  badgeOverlay: {
-    position: "absolute",
-    top: "12px",
-    right: "12px",
-  },
-
-  eventInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  eventTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-    lineHeight: "1.3",
-  },
-
-  eventMeta: {
-    display: "flex",
-    gap: "16px",
-    flexWrap: "wrap",
-  },
-
-  metaItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
-    color: "#666",
-  },
-
-  eventDescription: {
-    fontSize: "13px",
-    color: "#666",
-    margin: 0,
-    lineHeight: "1.4",
-  },
-
-  communityCard: {
-    cursor: "pointer",
-  },
-
-  communityImage: {
-    position: "relative",
-    marginBottom: "16px",
-    borderRadius: "8px",
-    overflow: "hidden",
-    height: "180px",
-  },
-
-  communityImageTag: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-
-  communityInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  communityHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "8px",
-  },
-
-  communityTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-
-  communityMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-
-  communityDescription: {
-    fontSize: "13px",
-    color: "#666",
-    margin: 0,
-  },
-
-  loadingContainer: {
-    padding: "40px 20px",
-    textAlign: "center",
-  },
-
-  emptyState: {
-    padding: "60px 40px",
-    textAlign: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: "12px",
-  },
-
-  emptyIcon: {
-    fontSize: "48px",
-    marginBottom: "16px",
-  },
-
-  emptyStateTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#212121",
-    margin: "0 0 8px 0",
-  },
-
-  emptyStateText: {
-    fontSize: "14px",
-    color: "#666",
-    margin: "0 0 20px 0",
-  },
-
-  // CTA Section
-  ctaSection: {
-    background: "linear-gradient(135deg, #00796B 0%, #004D40 100%)",
-    borderRadius: "12px",
-    padding: "60px 40px",
-    textAlign: "center",
-    marginBottom: "80px",
-    color: "#FAFAFA",
-  },
-
-  ctaContent: {
-    maxWidth: "600px",
-    margin: "0 auto",
-  },
-
-  ctaTitle: {
-    fontSize: "36px",
-    fontWeight: "700",
-    color: "#FAFAFA",
-    margin: "0 0 16px 0",
-  },
-
-  ctaSubtitle: {
-    fontSize: "16px",
-    color: "rgba(250, 250, 250, 0.9)",
-    margin: "0 0 24px 0",
-    lineHeight: "1.6",
-  },
-
-  ctaButtonGroup: {
-    display: "flex",
-    gap: "16px",
-    justifyContent: "center",
-    flexWrap: "wrap",
-  },
-
-  // Features Section
-  featuresSection: {
-    marginBottom: "80px",
-  },
-
-  featuresGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "32px",
-    marginTop: "40px",
-  },
-
-  featureCard: {
-    padding: "32px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "12px",
-    textAlign: "center",
-    border: "1px solid #e0e0e0",
-    transition: "all 0.3s ease",
-  },
-
-  featureIcon: {
-    fontSize: "48px",
-    marginBottom: "16px",
-    display: "block",
-  },
-
-  featureTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 12px 0",
-  },
-
-  featureDescription: {
-    fontSize: "14px",
-    color: "#666",
-    lineHeight: "1.6",
-    margin: 0,
-  },
-
-  // Footer CTA
-  footerCTA: {
-    padding: "60px 40px",
-    textAlign: "center",
-    backgroundColor: "#00796B",
-    borderRadius: "12px",
-    marginBottom: "40px",
-  },
-
-  footerCTATitle: {
-    fontSize: "28px",
-    fontWeight: "700",
-    color: "#FAFAFA",
-    margin: "0 0 20px 0",
-  },
-
-  "@media (max-width: 768px)": {
-    heroSection: {
-      gridTemplateColumns: "1fr",
-      gap: "40px",
-      padding: "40px 20px",
-      marginBottom: "60px",
-    },
-    heroTitle: {
-      fontSize: "36px",
-    },
-    heroSubtitle: {
-      fontSize: "16px",
-    },
-    sectionTitle: {
-      fontSize: "24px",
-    },
-    cardsGrid: {
-      gridTemplateColumns: "1fr",
-    },
-    ctaSection: {
-      padding: "40px 20px",
-      marginBottom: "60px",
-    },
-    ctaTitle: {
-      fontSize: "28px",
-    },
-    featuresGrid: {
-      gridTemplateColumns: "1fr",
-      gap: "20px",
-    },
-  },
-};
 
 export default Home;

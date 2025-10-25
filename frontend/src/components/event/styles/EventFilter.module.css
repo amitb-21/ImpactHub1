@@ -1,0 +1,217 @@
+
+.card {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.filtersContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* =====================
+   Filter Group Styles
+   ===================== */
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filterTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  background: #f0f8f7;
+  color: #00796B;
+  border: 2px solid #b2dfdb;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background: #e0f2f1;
+  border-color: #80cbc4;
+}
+
+.chipActive {
+  background: #00796B;
+  color: #FAFAFA;
+  border-color: #00796B;
+}
+
+.chipActive:hover {
+  background: #004D40;
+  border-color: #004D40;
+}
+
+/* =====================
+   Active Filters Display
+   ===================== */
+
+.activeFiltersDisplay {
+  padding: 16px;
+  background: #f9f9f9;
+  border-left: 4px solid #FFB300;
+  border-radius: 8px;
+}
+
+.activeFiltersLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #212121;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.activeBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* =====================
+   Compact View Styles
+   ===================== */
+
+.compactContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.badgeIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #FFB300;
+  color: #212121;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.compactFilters {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =====================
+   Responsive Design
+   ===================== */
+
+@media (max-width: 768px) {
+  .header {
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .filtersContent {
+    gap: 16px;
+  }
+
+  .filterChips {
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .activeFiltersDisplay {
+    padding: 12px;
+  }
+
+  .activeBadges {
+    gap: 6px;
+  }
+
+  .compactFilters {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filterTitle {
+    font-size: 13px;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .filterChips {
+    gap: 4px;
+  }
+
+  .activeFiltersLabel {
+    font-size: 11px;
+  }
+
+  .activeBadges {
+    gap: 4px;
+  }
+}

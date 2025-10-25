@@ -1,0 +1,382 @@
+/* =====================
+   Event Card Component Styles
+   ===================== */
+
+/* =====================
+   Full Card Styles
+   ===================== */
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f0f8f7 0%, #e0f2f1 100%);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+  font-size: 64px;
+}
+
+.placeholderIcon {
+  font-size: 64px;
+  opacity: 0.7;
+}
+
+.badgesOverlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.statusIndicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #10b981;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  animation: pulse-indicator 2s infinite;
+}
+
+@keyframes pulse-indicator {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.liveIndicatorLarge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #10b981;
+  display: block;
+  letter-spacing: 1px;
+}
+
+.fullIndicator {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(239, 68, 68, 0.9);
+  color: #FAFAFA;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.dateTime {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #00796B;
+  font-weight: 500;
+}
+
+.dateText {
+  font-weight: 600;
+}
+
+.timeText {
+  color: #666;
+  font-weight: 400;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+}
+
+.locationText {
+  font-weight: 500;
+}
+
+.description {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.metaContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 3px solid #00796B;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.metaText {
+  color: #212121;
+  font-weight: 600;
+}
+
+.orgLabel {
+  color: #666;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.capacityBar {
+  width: 100%;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.capacityFill {
+  height: 100%;
+  background: #00796B;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.actionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* =====================
+   Compact Card Styles
+   ===================== */
+
+.compactContainer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.compactImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+}
+
+.compactImageTag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compactImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+}
+
+.compactContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compactHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.compactName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.liveIndicator {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10b981;
+  white-space: nowrap;
+  background: #d1fae5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.compactMeta {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.compactParticipants {
+  font-size: 12px;
+  color: #00796B;
+  margin: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =====================
+   Empty State Styles
+   ===================== */
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+}
+
+/* =====================
+   Responsive Design
+   ===================== */
+
+@media (max-width: 768px) {
+  .imageContainer {
+    height: 150px;
+    margin-bottom: 12px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .description {
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+
+  .metaContainer {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .metaItem {
+    font-size: 12px;
+  }
+
+  .actionContainer {
+    gap: 6px;
+  }
+
+  .compactContainer {
+    gap: 10px;
+  }
+
+  .compactImage {
+    width: 50px;
+    height: 50px;
+  }
+
+  .compactName {
+    font-size: 13px;
+  }
+
+  .compactMeta,
+  .compactParticipants {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageContainer {
+    height: 120px;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .dateTime {
+    font-size: 12px;
+  }
+
+  .metaContainer {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .compactContainer {
+    gap: 8px;
+  }
+
+  .compactImage {
+    width: 45px;
+    height: 45px;
+  }
+}
