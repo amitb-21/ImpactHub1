@@ -1,0 +1,319 @@
+.card {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 24px 0;
+}
+
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* =====================
+   Image Section
+   ===================== */
+
+.imageSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid #e0e0e0;
+}
+
+.imageContainer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 3px solid #00796B;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: #00796B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #00796B;
+}
+
+.imageInitial {
+  font-size: 48px;
+}
+
+.imageUploadLabel {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #FFB300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #212121;
+  border: 3px solid #FAFAFA;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.imageUploadLabel:hover {
+  transform: scale(1.1);
+}
+
+.imageInfo {
+  flex: 1;
+}
+
+.imageTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212121;
+  margin: 0 0 4px 0;
+}
+
+.imageDescription {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.removeButton:hover {
+  background-color: #fecaca;
+}
+
+/* =====================
+   Form Styles
+   ===================== */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #212121;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #FAFAFA;
+  color: #212121;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  outline: none;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #00796B;
+  background-color: #f0f8f7;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #999;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.inputError {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.errorMessage {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.locationError {
+  font-size: 12px;
+  color: #ef4444;
+  margin: 0;
+}
+
+/* =====================
+   Section Title
+   ===================== */
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #00796B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 16px 0 12px 0;
+  padding-top: 8px;
+  border-top: 2px solid #e0e0e0;
+}
+
+/* =====================
+   Grid Layouts
+   ===================== */
+
+.gridTwoColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* =====================
+   Button Group
+   ===================== */
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* =====================
+   Responsive Design
+   ===================== */
+
+@media (max-width: 768px) {
+  .card {
+    max-width: 100%;
+  }
+
+  .imageSection {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .imageContainer {
+    margin: 0 auto;
+  }
+
+  .imageInfo {
+    width: 100%;
+  }
+
+  .gridTwoColumns {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .sectionTitle {
+    font-size: 13px;
+    margin: 12px 0 10px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageSection {
+    padding: 12px;
+  }
+
+  .imageContainer {
+    width: 100px;
+    height: 100px;
+  }
+
+  .imageInitial {
+    font-size: 40px;
+  }
+
+  .imageTitle {
+    font-size: 13px;
+  }
+
+  .imageDescription {
+    font-size: 12px;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .form {
+    gap: 14px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+
+  .input,
+  .textarea {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}
