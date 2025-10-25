@@ -1,5 +1,4 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
 import { Card } from "../common/Card";
 import { Badge } from "../common/Badge";
 import { Loader } from "../common/Loader";
@@ -12,12 +11,13 @@ import {
 } from "react-icons/fi";
 import { calculateTier } from "../../config/helpers";
 import { formatNumber } from "../../config/helpers";
+import styles from "./styles/CommunityStats.module.css";
 
 const CommunityStats = ({ community, compact = false }) => {
   if (!community) {
     return (
-      <Card padding="lg" style={styles.card}>
-        <div style={styles.emptyState}>
+      <Card padding="lg" className={styles.card}>
+        <div className={styles.emptyState}>
           <p>No community data available</p>
         </div>
       </Card>
@@ -61,9 +61,10 @@ const CommunityStats = ({ community, compact = false }) => {
     },
   ];
 
+  // Compact View
   if (compact) {
     return (
-      <div style={styles.compactGrid}>
+      <div className={styles.compactGrid}>
         {stats.map((stat, index) => (
           <StatCardCompact key={index} {...stat} />
         ))}
@@ -71,10 +72,11 @@ const CommunityStats = ({ community, compact = false }) => {
     );
   }
 
+  // Regular View
   return (
-    <Card padding="lg" shadow="md" style={styles.card}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>Community Statistics</h3>
+    <Card padding="lg" shadow="md" className={styles.card}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Community Statistics</h3>
         {tier && (
           <Badge
             label={tier.name}
@@ -86,7 +88,7 @@ const CommunityStats = ({ community, compact = false }) => {
       </div>
 
       {/* Stats Grid */}
-      <div style={styles.statsGrid}>
+      <div className={styles.statsGrid}>
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
@@ -94,26 +96,24 @@ const CommunityStats = ({ community, compact = false }) => {
 
       {/* Tier Information */}
       {tier && (
-        <div style={styles.tierSection}>
-          <div style={styles.tierHeader}>
-            <h4 style={styles.tierTitle}>Community Tier: {tier.name}</h4>
+        <div className={styles.tierSection}>
+          <div className={styles.tierHeader}>
+            <h4 className={styles.tierTitle}>Community Tier: {tier.name}</h4>
             <div
-              style={{
-                ...styles.tierBadge,
-                backgroundColor: tier.color,
-              }}
+              className={styles.tierBadge}
+              style={{ backgroundColor: tier.color }}
             >
               <FiAward size={18} style={{ color: "#FAFAFA" }} />
             </div>
           </div>
-          <p style={styles.tierDescription}>
+          <p className={styles.tierDescription}>
             Points: {community.communityPoints || 0} /{" "}
             {getTierThreshold(tier.name)}
           </p>
-          <div style={styles.progressBar}>
+          <div className={styles.progressBar}>
             <div
+              className={styles.progressFill}
               style={{
-                ...styles.progressFill,
                 width: `${calculateTierProgress(
                   community.communityPoints || 0,
                   tier.name
@@ -127,8 +127,8 @@ const CommunityStats = ({ community, compact = false }) => {
 
       {/* Additional Info */}
       {community.verificationStatus && (
-        <div style={styles.infoSection}>
-          <h4 style={styles.infoTitle}>Verification Status</h4>
+        <div className={styles.infoSection}>
+          <h4 className={styles.infoTitle}>Verification Status</h4>
           <Badge
             label={
               community.verificationStatus.charAt(0).toUpperCase() +
@@ -149,33 +149,44 @@ const CommunityStats = ({ community, compact = false }) => {
   );
 };
 
-// Stat Card Component
+/**
+ * Stat Card Component
+ * Displays individual stat with icon and label
+ */
 const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
-  <div style={styles.statCard}>
-    <div style={{ ...styles.statIconWrapper, backgroundColor: bgColor }}>
+  <div className={styles.statCard}>
+    <div
+      className={styles.statIconWrapper}
+      style={{ backgroundColor: bgColor }}
+    >
       <Icon size={24} style={{ color }} />
     </div>
-    <div style={styles.statContent}>
-      <span style={styles.statValue}>{value}</span>
-      <span style={styles.statLabel}>{label}</span>
+    <div className={styles.statContent}>
+      <span className={styles.statValue}>{value}</span>
+      <span className={styles.statLabel}>{label}</span>
     </div>
   </div>
 );
 
-// Compact Stat Card Component
+/**
+ * Compact Stat Card Component
+ * Lightweight version for sidebar/reduced-space displays
+ */
 const StatCardCompact = ({ icon: Icon, label, value, color, bgColor }) => (
-  <div style={styles.compactCard}>
-    <div style={{ ...styles.compactIcon, backgroundColor: bgColor }}>
+  <div className={styles.compactCard}>
+    <div className={styles.compactIcon} style={{ backgroundColor: bgColor }}>
       <Icon size={18} style={{ color }} />
     </div>
-    <div style={styles.compactContent}>
-      <span style={styles.compactValue}>{value}</span>
-      <span style={styles.compactLabel}>{label}</span>
+    <div className={styles.compactContent}>
+      <span className={styles.compactValue}>{value}</span>
+      <span className={styles.compactLabel}>{label}</span>
     </div>
   </div>
 );
 
-// Helper functions
+/**
+ * Helper function to get tier threshold
+ */
 const getTierThreshold = (tierName) => {
   const thresholds = {
     Bronze: 1000,
@@ -191,195 +202,6 @@ const calculateTierProgress = (points, tierName) => {
   const current = Math.max(0, getTierThreshold(tierName) - points);
   const total = getTierThreshold(tierName);
   return Math.min((points / total) * 100, 100);
-};
-
-const styles = {
-  card: {
-    width: "100%",
-  },
-
-  emptyState: {
-    padding: "40px 20px",
-    textAlign: "center",
-    color: "#999",
-  },
-
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "24px",
-    paddingBottom: "16px",
-    borderBottom: "2px solid #e0e0e0",
-  },
-
-  title: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
-    marginBottom: "24px",
-  },
-
-  statCard: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    padding: "20px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "12px",
-    border: "1px solid #e0e0e0",
-    transition: "all 0.3s ease",
-  },
-
-  statIconWrapper: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  statContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    minWidth: 0,
-  },
-
-  statValue: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#212121",
-    lineHeight: "1",
-  },
-
-  statLabel: {
-    fontSize: "13px",
-    color: "#666",
-    fontWeight: "500",
-  },
-
-  tierSection: {
-    padding: "20px",
-    backgroundColor: "#f0f8f7",
-    borderRadius: "12px",
-    border: "1px solid #d1ede8",
-    marginBottom: "20px",
-  },
-
-  tierHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "12px",
-  },
-
-  tierTitle: {
-    fontSize: "15px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: 0,
-  },
-
-  tierBadge: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  tierDescription: {
-    fontSize: "13px",
-    color: "#666",
-    margin: "0 0 12px 0",
-  },
-
-  progressBar: {
-    width: "100%",
-    height: "12px",
-    backgroundColor: "#e0e0e0",
-    borderRadius: "6px",
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    borderRadius: "6px",
-    transition: "width 0.6s ease",
-  },
-
-  infoSection: {
-    padding: "16px",
-    backgroundColor: "#fff9e6",
-    borderRadius: "10px",
-    border: "1px solid #ffe4b5",
-  },
-
-  infoTitle: {
-    fontSize: "13px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 8px 0",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-
-  // Compact styles
-  compactGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: "12px",
-  },
-
-  compactCard: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "16px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "8px",
-    border: "1px solid #e0e0e0",
-  },
-
-  compactIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  compactContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    minWidth: 0,
-  },
-
-  compactValue: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#212121",
-  },
-
-  compactLabel: {
-    fontSize: "11px",
-    color: "#666",
-    fontWeight: "500",
-  },
 };
 
 export default CommunityStats;

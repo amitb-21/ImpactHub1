@@ -1,0 +1,252 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tierInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tierIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tierContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tierName {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.tierTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.tierDescription {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* Progress Section */
+.progressSection {
+  padding: 20px;
+  background-color: #f0f8f7;
+  border-radius: 12px;
+  border: 1px solid #d1ede8;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #212121;
+}
+
+.progressValue {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Benefits Section */
+.benefitsSection {
+  padding: 20px;
+  background-color: #fff9e6;
+  border-radius: 12px;
+  border: 1px solid #ffe4b5;
+}
+
+.benefitsTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 12px 0;
+}
+
+.benefitsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.benefitItem {
+  font-size: 13px;
+  color: #666;
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.benefitItem::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* Tier Chart Section */
+.tierChartSection {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+.chartTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 16px 0;
+}
+
+.tierChart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tierChartItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #FAFAFA;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.tierChartItem:hover {
+  background-color: #f0f0f0;
+  transform: translateX(2px);
+}
+
+.tierChartItemInactive {
+  opacity: 0.6;
+}
+
+.tierChartColor {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.tierChartInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.tierChartName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #212121;
+}
+
+.tierChartRange {
+  font-size: 11px;
+  color: #999;
+}
+
+.tierChartCurrent {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10b981;
+  background-color: #d1fae5;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tierInfo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .container {
+    gap: 16px;
+  }
+
+  .progressSection,
+  .benefitsSection,
+  .tierChartSection {
+    padding: 16px;
+  }
+
+  .tierTitle {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tierIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .tierTitle {
+    font-size: 16px;
+  }
+
+  .progressHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

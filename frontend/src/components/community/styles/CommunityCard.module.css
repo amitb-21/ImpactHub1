@@ -1,0 +1,203 @@
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+}
+
+/* ===== Regular Card Styles ===== */
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: #e0f2f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholderIcon {
+  font-size: 48px;
+}
+
+.badgesOverlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.description {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.metaContainer {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.metaText {
+  font-weight: 500;
+}
+
+.orgInfo {
+  padding: 8px 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.orgLabel {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.actionContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ===== Compact Card Styles ===== */
+
+.compactContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compactImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.compactImageTag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compactImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: #e0f2f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.compactContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.compactHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.compactName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.compactMembers {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+/* ===== Responsive Design ===== */
+
+@media (max-width: 768px) {
+  .imageContainer {
+    height: 150px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .description {
+    font-size: 12px;
+  }
+
+  .metaContainer {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageContainer {
+    height: 120px;
+    margin-bottom: 12px;
+  }
+
+  .content {
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .metaContainer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .actionContainer {
+    gap: 4px;
+  }
+}

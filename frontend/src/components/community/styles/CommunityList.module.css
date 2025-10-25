@@ -1,0 +1,102 @@
+/* Loading State */
+.loadingContainer {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+/* Error State */
+.errorContainer {
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #fee2e2;
+  border-radius: 10px;
+  border: 1px solid #fca5a5;
+}
+
+.errorIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.errorText {
+  color: #991b1b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 80px 40px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+.emptyIcon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.emptyStateTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.emptyStateText {
+  font-size: 14px;
+  color: #999;
+  margin: 0 0 16px 0;
+}
+
+/* Grid Container */
+.grid {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.gridRegular {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.gridCompact {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* View All Container */
+.viewAllContainer {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .gridRegular {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .gridCompact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .gridRegular {
+    grid-template-columns: 1fr;
+  }
+
+  .gridCompact {
+    grid-template-columns: 1fr;
+  }
+
+  .emptyState {
+    padding: 40px 20px;
+  }
+}

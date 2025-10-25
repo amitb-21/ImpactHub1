@@ -1,0 +1,233 @@
+.card {
+  width: 100%;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.statIconWrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #212121;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Tier Section */
+.tierSection {
+  padding: 20px;
+  background-color: #f0f8f7;
+  border-radius: 12px;
+  border: 1px solid #d1ede8;
+  margin-bottom: 20px;
+}
+
+.tierHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tierTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.tierBadge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tierDescription {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+/* Info Section */
+.infoSection {
+  padding: 16px;
+  background-color: #fff9e6;
+  border-radius: 10px;
+  border: 1px solid #ffe4b5;
+}
+
+.infoTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Compact Grid */
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.compactCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.compactIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.compactContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.compactValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+}
+
+.compactLabel {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+
+  .compactGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tierSection {
+    padding: 16px;
+  }
+
+  .compactGrid {
+    grid-template-columns: 1fr;
+  }
+}

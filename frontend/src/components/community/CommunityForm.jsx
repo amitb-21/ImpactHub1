@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,15 +11,8 @@ import { communitySchema } from "../../config/validators";
 import { COMMUNITY_CATEGORIES } from "../../config/constants";
 import { Card } from "../common/Card";
 import { Button } from "../common/Button";
-import { Modal } from "../common/Modal";
-import { Loader } from "../common/Loader";
-import {
-  FiMapPin,
-  FiUpload,
-  FiX,
-  FiAlertCircle,
-  FiCheck,
-} from "react-icons/fi";
+import { FiUpload, FiX, FiAlertCircle } from "react-icons/fi";
+import styles from "./styles/CommunityForm.module.css";
 
 const CommunityForm = ({ community = null, onClose, onSuccess }) => {
   const dispatch = useDispatch();
@@ -32,7 +25,7 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
     longitude,
     error: locationError,
   } = useGeolocation();
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
+
   const [communityImage, setCommunityImage] = useState(
     community?.image || null
   );
@@ -68,8 +61,6 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
       },
     },
   });
-
-  const locationValue = watch("location");
 
   // Handle image selection
   const handleImageChange = (e) => {
@@ -129,30 +120,30 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
   const isLoading = isCreating || isUpdating;
 
   return (
-    <Card padding="lg" shadow="md" style={styles.card}>
-      <h2 style={styles.title}>
+    <Card padding="lg" shadow="md" className={styles.card}>
+      <h2 className={styles.title}>
         {community ? "Edit Community" : "Create Community"}
       </h2>
 
       {/* Error Alert */}
       {error && (
-        <div style={styles.errorAlert}>
+        <div className={styles.errorAlert}>
           <FiAlertCircle size={20} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Community Image Section */}
-      <div style={styles.imageSection}>
-        <div style={styles.imageContainer}>
+      <div className={styles.imageSection}>
+        <div className={styles.imageContainer}>
           {imagePreview ? (
-            <img src={imagePreview} alt="Community" style={styles.image} />
+            <img src={imagePreview} alt="Community" className={styles.image} />
           ) : (
-            <div style={styles.imagePlaceholder}>
-              <span style={styles.imageInitial}>👥</span>
+            <div className={styles.imagePlaceholder}>
+              <span className={styles.imageInitial}>👥</span>
             </div>
           )}
-          <label style={styles.imageUploadLabel}>
+          <label className={styles.imageUploadLabel}>
             <FiUpload size={20} />
             <input
               type="file"
@@ -162,9 +153,11 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
             />
           </label>
         </div>
-        <div style={styles.imageInfo}>
-          <p style={styles.imageTitle}>Community Banner</p>
-          <p style={styles.imageDescription}>JPG, PNG or GIF. Max size 5MB</p>
+        <div className={styles.imageInfo}>
+          <p className={styles.imageTitle}>Community Banner</p>
+          <p className={styles.imageDescription}>
+            JPG, PNG or GIF. Max size 5MB
+          </p>
           {imageFile && (
             <button
               type="button"
@@ -172,7 +165,7 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
                 setImageFile(null);
                 setImagePreview(community?.image || null);
               }}
-              style={styles.removeButton}
+              className={styles.removeButton}
             >
               <FiX size={16} /> Remove
             </button>
@@ -181,60 +174,59 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
+      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
         {/* Name Field */}
-        <div style={styles.formGroup}>
-          <label htmlFor="name" style={styles.label}>
+        <div className={styles.formGroup}>
+          <label htmlFor="name" className={styles.label}>
             Community Name
           </label>
-          <input
-            id="name"
-            type="text"
-            placeholder="e.g., Green City Volunteers"
-            {...register("name")}
-            style={{
-              ...styles.input,
-              ...(errors.name && styles.inputError),
-            }}
-          />
+          <div className={styles.inputWrapper}>
+            <input
+              id="name"
+              type="text"
+              placeholder="e.g., Green City Volunteers"
+              {...register("name")}
+              className={`${styles.input} ${
+                errors.name ? styles.inputError : ""
+              }`}
+            />
+          </div>
           {errors.name && (
-            <span style={styles.errorMessage}>{errors.name.message}</span>
+            <span className={styles.errorMessage}>{errors.name.message}</span>
           )}
         </div>
 
         {/* Description Field */}
-        <div style={styles.formGroup}>
-          <label htmlFor="description" style={styles.label}>
+        <div className={styles.formGroup}>
+          <label htmlFor="description" className={styles.label}>
             Description
           </label>
           <textarea
             id="description"
             placeholder="Describe your community..."
             {...register("description")}
-            style={{
-              ...styles.textarea,
-              ...(errors.description && styles.inputError),
-            }}
+            className={`${styles.textarea} ${
+              errors.description ? styles.inputError : ""
+            }`}
           />
           {errors.description && (
-            <span style={styles.errorMessage}>
+            <span className={styles.errorMessage}>
               {errors.description.message}
             </span>
           )}
         </div>
 
         {/* Category Field */}
-        <div style={styles.formGroup}>
-          <label htmlFor="category" style={styles.label}>
+        <div className={styles.formGroup}>
+          <label htmlFor="category" className={styles.label}>
             Category
           </label>
           <select
             id="category"
             {...register("category")}
-            style={{
-              ...styles.input,
-              ...(errors.category && styles.inputError),
-            }}
+            className={`${styles.input} ${
+              errors.category ? styles.inputError : ""
+            }`}
           >
             <option value="">Select a category</option>
             {COMMUNITY_CATEGORIES.map((cat) => (
@@ -244,17 +236,19 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
             ))}
           </select>
           {errors.category && (
-            <span style={styles.errorMessage}>{errors.category.message}</span>
+            <span className={styles.errorMessage}>
+              {errors.category.message}
+            </span>
           )}
         </div>
 
-        {/* Location Fields */}
-        <div style={styles.sectionTitle}>📍 Location</div>
+        {/* Location Section */}
+        <div className={styles.sectionTitle}>📍 Location</div>
 
-        <div style={styles.gridTwoColumns}>
+        <div className={styles.gridTwoColumns}>
           {/* City */}
-          <div style={styles.formGroup}>
-            <label htmlFor="city" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="city" className={styles.label}>
               City
             </label>
             <input
@@ -262,21 +256,20 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               type="text"
               placeholder="City"
               {...register("location.city")}
-              style={{
-                ...styles.input,
-                ...(errors.location?.city && styles.inputError),
-              }}
+              className={`${styles.input} ${
+                errors.location?.city ? styles.inputError : ""
+              }`}
             />
             {errors.location?.city && (
-              <span style={styles.errorMessage}>
+              <span className={styles.errorMessage}>
                 {errors.location.city.message}
               </span>
             )}
           </div>
 
           {/* State */}
-          <div style={styles.formGroup}>
-            <label htmlFor="state" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="state" className={styles.label}>
               State
             </label>
             <input
@@ -284,15 +277,15 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               type="text"
               placeholder="State"
               {...register("location.state")}
-              style={styles.input}
+              className={styles.input}
             />
           </div>
         </div>
 
-        <div style={styles.gridTwoColumns}>
+        <div className={styles.gridTwoColumns}>
           {/* Address */}
-          <div style={styles.formGroup}>
-            <label htmlFor="address" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="address" className={styles.label}>
               Address
             </label>
             <input
@@ -300,13 +293,13 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               type="text"
               placeholder="Street address"
               {...register("location.address")}
-              style={styles.input}
+              className={styles.input}
             />
           </div>
 
           {/* Zip Code */}
-          <div style={styles.formGroup}>
-            <label htmlFor="zipCode" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="zipCode" className={styles.label}>
               Zip Code
             </label>
             <input
@@ -314,18 +307,18 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               type="text"
               placeholder="Zip code"
               {...register("location.zipCode")}
-              style={styles.input}
+              className={styles.input}
             />
           </div>
         </div>
 
-        {/* Organization Details */}
-        <div style={styles.sectionTitle}>🏢 Organization Details</div>
+        {/* Organization Details Section */}
+        <div className={styles.sectionTitle}>🏢 Organization Details</div>
 
-        <div style={styles.gridTwoColumns}>
+        <div className={styles.gridTwoColumns}>
           {/* Registration Number */}
-          <div style={styles.formGroup}>
-            <label htmlFor="registrationNumber" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="registrationNumber" className={styles.label}>
               Registration Number
             </label>
             <input
@@ -333,22 +326,22 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               type="text"
               placeholder="Org. registration"
               {...register("organizationDetails.registrationNumber")}
-              style={{
-                ...styles.input,
-                ...(errors.organizationDetails?.registrationNumber &&
-                  styles.inputError),
-              }}
+              className={`${styles.input} ${
+                errors.organizationDetails?.registrationNumber
+                  ? styles.inputError
+                  : ""
+              }`}
             />
             {errors.organizationDetails?.registrationNumber && (
-              <span style={styles.errorMessage}>
+              <span className={styles.errorMessage}>
                 {errors.organizationDetails.registrationNumber.message}
               </span>
             )}
           </div>
 
           {/* Founded Year */}
-          <div style={styles.formGroup}>
-            <label htmlFor="foundedYear" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="foundedYear" className={styles.label}>
               Founded Year
             </label>
             <input
@@ -357,19 +350,17 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               {...register("organizationDetails.foundedYear", {
                 valueAsNumber: true,
               })}
-              style={{
-                ...styles.input,
-                ...(errors.organizationDetails?.foundedYear &&
-                  styles.inputError),
-              }}
+              className={`${styles.input} ${
+                errors.organizationDetails?.foundedYear ? styles.inputError : ""
+              }`}
             />
           </div>
         </div>
 
-        <div style={styles.gridTwoColumns}>
+        <div className={styles.gridTwoColumns}>
           {/* Member Count */}
-          <div style={styles.formGroup}>
-            <label htmlFor="memberCount" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="memberCount" className={styles.label}>
               Initial Member Count
             </label>
             <input
@@ -379,13 +370,13 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               {...register("organizationDetails.memberCount", {
                 valueAsNumber: true,
               })}
-              style={styles.input}
+              className={styles.input}
             />
           </div>
 
           {/* Past Events Count */}
-          <div style={styles.formGroup}>
-            <label htmlFor="pastEventsCount" style={styles.label}>
+          <div className={styles.formGroup}>
+            <label htmlFor="pastEventsCount" className={styles.label}>
               Past Events
             </label>
             <input
@@ -395,13 +386,13 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
               {...register("organizationDetails.pastEventsCount", {
                 valueAsNumber: true,
               })}
-              style={styles.input}
+              className={styles.input}
             />
           </div>
         </div>
 
         {/* Buttons */}
-        <div style={styles.buttonGroup}>
+        <div className={styles.buttonGroup}>
           <Button
             type="submit"
             variant="primary"
@@ -430,214 +421,6 @@ const CommunityForm = ({ community = null, onClose, onSuccess }) => {
       </form>
     </Card>
   );
-};
-
-const styles = {
-  card: {
-    width: "100%",
-    maxWidth: "700px",
-    margin: "0 auto",
-  },
-
-  title: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "0 0 24px 0",
-  },
-
-  errorAlert: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    padding: "12px 16px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    fontSize: "13px",
-    fontWeight: "500",
-  },
-
-  imageSection: {
-    display: "flex",
-    alignItems: "center",
-    gap: "24px",
-    padding: "24px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "12px",
-    marginBottom: "24px",
-    border: "1px solid #e0e0e0",
-  },
-
-  imageContainer: {
-    position: "relative",
-    width: "120px",
-    height: "120px",
-    flexShrink: 0,
-  },
-
-  image: {
-    width: "100%",
-    height: "100%",
-    borderRadius: "10px",
-    objectFit: "cover",
-    border: "4px solid #00796B",
-  },
-
-  imagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    borderRadius: "10px",
-    backgroundColor: "#00796B",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "4px solid #00796B",
-  },
-
-  imageInitial: {
-    fontSize: "48px",
-  },
-
-  imageUploadLabel: {
-    position: "absolute",
-    bottom: "0",
-    right: "0",
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#FFB300",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    color: "#212121",
-    border: "3px solid #FAFAFA",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    transition: "all 0.3s ease",
-  },
-
-  imageInfo: {
-    flex: 1,
-  },
-
-  imageTitle: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#212121",
-    margin: "0 0 4px 0",
-  },
-
-  imageDescription: {
-    fontSize: "13px",
-    color: "#666",
-    margin: "0 0 12px 0",
-  },
-
-  removeButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "8px 12px",
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    border: "1px solid #fca5a5",
-    borderRadius: "6px",
-    fontSize: "13px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
-
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "18px",
-  },
-
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-
-  sectionTitle: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "#212121",
-    margin: "12px 0 16px 0",
-    paddingBottom: "8px",
-    borderBottom: "2px solid #e0e0e0",
-  },
-
-  label: {
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#212121",
-  },
-
-  input: {
-    width: "100%",
-    padding: "12px 16px",
-    fontSize: "14px",
-    border: "1.5px solid #e0e0e0",
-    borderRadius: "8px",
-    backgroundColor: "#FAFAFA",
-    color: "#212121",
-    transition: "all 0.2s ease",
-    fontFamily: "inherit",
-    outline: "none",
-  },
-
-  textarea: {
-    width: "100%",
-    padding: "12px 16px",
-    fontSize: "14px",
-    border: "1.5px solid #e0e0e0",
-    borderRadius: "8px",
-    backgroundColor: "#FAFAFA",
-    color: "#212121",
-    transition: "all 0.2s ease",
-    fontFamily: "inherit",
-    outline: "none",
-    resize: "vertical",
-    minHeight: "120px",
-  },
-
-  inputError: {
-    borderColor: "#ef4444",
-    backgroundColor: "#fef2f2",
-  },
-
-  errorMessage: {
-    fontSize: "12px",
-    color: "#ef4444",
-    fontWeight: "500",
-  },
-
-  gridTwoColumns: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-  },
-
-  buttonGroup: {
-    display: "flex",
-    gap: "12px",
-    marginTop: "24px",
-    paddingTop: "20px",
-    borderTop: "1px solid #e0e0e0",
-  },
-
-  "@media (max-width: 768px)": {
-    imageSection: {
-      flexDirection: "column",
-    },
-    gridTwoColumns: {
-      gridTemplateColumns: "1fr",
-    },
-  },
 };
 
 export default CommunityForm;
