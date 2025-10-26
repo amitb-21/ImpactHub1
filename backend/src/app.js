@@ -2,9 +2,9 @@ import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import cors from 'cors';
-import helmet from 'helmet'; // ✅ ADD
-import mongoSanitize from 'express-mongo-sanitize'; // ✅ ADD
-import xss from 'xss-clean'; // ✅ ADD
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
 import './config/passport.js';
 
 // Routes
@@ -23,28 +23,44 @@ import locationCalendarRoutes from './routes/locationCalendarRoutes.js';
 import pointsRoutes from './routes/pointsRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import realtimeRoutes from './routes/realtimeRoutes.js';
+// ✅ ADD MISSING ROUTE
+import communityManagerRoutes from './routes/communityManagerRoutes.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { rateLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
 
-// ✅ SECURITY MIDDLEWARE - ADD THESE 3 LINES FIRST
-app.use(helmet());
-app.use(mongoSanitize());
-app.use(xss());
+// =====================
+// SECURITY MIDDLEWARE (First!)
+// =====================
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for development, configure properly in production
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(mongoSanitize()); // Prevent NoSQL injection
+app.use(xss()); // Prevent XSS attacks
 
-// CORS configuration
+// =====================
+// CORS CONFIGURATION
+// =====================
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Body parsing middleware
+// =====================
+// BODY PARSING
+// =====================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Session configuration
+// =====================
+// SESSION CONFIGURATION
+// =====================
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'impacthub-session-secret',
@@ -53,25 +69,38 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     },
   })
 );
 
-// Passport authentication
+// =====================
+// PASSPORT AUTHENTICATION
+// =====================
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Health check endpoint
+// =====================
+// RATE LIMITING (Optional but recommended)
+// =====================
+app.use('/auth', rateLimiter); // Rate limit auth endpoints
+
+// =====================
+// HEALTH CHECK
+// =====================
 app.get('/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Server is running',
+    message: 'ImpactHub API is running',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
   });
 });
 
-// API Routes
+// =====================
+// API ROUTES
+// =====================
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/communities', communityRoutes);
@@ -79,7 +108,6 @@ app.use('/events', eventRoutes);
 app.use('/activities', activityRoutes);
 app.use('/impact', impactRoutes);
 app.use('/ratings', ratingRoutes);
-app.use('/admin', adminRoutes);
 app.use('/verifications', verificationRoutes);
 app.use('/participations', participationRoutes);
 app.use('/event-photos', eventPhotoRoutes);
@@ -88,10 +116,13 @@ app.use('/points', pointsRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/realtime', realtimeRoutes);
 
-// 404 handler
-app.use(notFoundHandler);
+// ✅ ADMIN ROUTES (Must be separate for security)
+app.use('/admin', adminRoutes);
 
-// Error handling middleware (must be last)
+// ✅ COMMUNITY MANAGER APPLICATION ROUTES
+app.use('/community-manager', communityManagerRoutes);
+
+app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;

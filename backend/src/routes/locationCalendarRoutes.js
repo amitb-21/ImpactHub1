@@ -1,5 +1,7 @@
+// backend/src/routes/locationCalendarRoutes.js
 import express from 'express';
 import Event from '../models/Event.js';
+import User from '../models/User.js';
 import {
   getNearbyEvents,
   getNearbyCommunities,
@@ -9,9 +11,9 @@ import {
   getEventsToday,
 } from '../services/locationService.js';
 import {
-  generateICalendar,
-  generateCalendarInvitationUrl,
-  syncEventToCalendars,
+  generateICalendarInvite,
+  generateCalendarUrls,
+  sendCalendarInvitation,
 } from '../services/calendarService.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
@@ -29,16 +31,16 @@ const router = express.Router();
 // LOCATION-BASED ENDPOINTS
 // =====================
 
-// ✅ FIXED: Get nearby events with proper validation
+// Get nearby events
 router.get(
-  '/location/nearby-events',
-  validateCoordinatesQuery, // ✅ Validates lat/lng
-  validateLocationRadius, // ✅ Validates radius range
+  '/nearby-events',
+  validateCoordinatesQuery,
+  validateLocationRadius,
   async (req, res) => {
     try {
       const { lat, lng, radiusKm = 10, limit = 20 } = req.query;
-      const radius = Math.max(0.1, Math.min(parseFloat(radiusKm) || 10, 500)); // Clamp 0.1-500km
-      const eventLimit = Math.min(parseInt(limit) || 20, 100); // Max 100 results
+      const radius = Math.max(0.1, Math.min(parseFloat(radiusKm) || 10, 500));
+      const eventLimit = Math.min(parseInt(limit) || 20, 100);
 
       const events = await getNearbyEvents(
         parseFloat(lat),
@@ -52,7 +54,7 @@ router.get(
         data: events,
         metadata: {
           center: { lat: parseFloat(lat), lng: parseFloat(lng) },
-          radius: radius,
+          radius,
           resultCount: events.length,
         },
       });
@@ -66,9 +68,9 @@ router.get(
   }
 );
 
-// ✅ FIXED: Get nearby communities with proper validation
+// Get nearby communities
 router.get(
-  '/location/nearby-communities',
+  '/nearby-communities',
   validateCoordinatesQuery,
   validateLocationRadius,
   async (req, res) => {
@@ -89,7 +91,7 @@ router.get(
         data: communities,
         metadata: {
           center: { lat: parseFloat(lat), lng: parseFloat(lng) },
-          radius: radius,
+          radius,
           resultCount: communities.length,
         },
       });
@@ -103,46 +105,42 @@ router.get(
   }
 );
 
-// ✅ FIXED: Get events in bounding box with proper validation
-router.get(
-  '/location/bbox',
-  validateBoundingBox, // ✅ Validates all bbox coordinates
-  async (req, res) => {
-    try {
-      const { swLat, swLng, neLat, neLng, limit = 50 } = req.query;
-      const boxLimit = Math.min(parseInt(limit) || 50, 200);
+// Get events in bounding box
+router.get('/bbox', validateBoundingBox, async (req, res) => {
+  try {
+    const { swLat, swLng, neLat, neLng, limit = 50 } = req.query;
+    const boxLimit = Math.min(parseInt(limit) || 50, 200);
 
-      const events = await getEventsInBoundingBox(
-        parseFloat(swLat),
-        parseFloat(swLng),
-        parseFloat(neLat),
-        parseFloat(neLng),
-        boxLimit
-      );
+    const events = await getEventsInBoundingBox(
+      parseFloat(swLat),
+      parseFloat(swLng),
+      parseFloat(neLat),
+      parseFloat(neLng),
+      boxLimit
+    );
 
-      res.json({
-        success: true,
-        data: events,
-        metadata: {
-          boundingBox: {
-            southwest: { lat: parseFloat(swLat), lng: parseFloat(swLng) },
-            northeast: { lat: parseFloat(neLat), lng: parseFloat(neLng) },
-          },
-          resultCount: events.length,
+    res.json({
+      success: true,
+      data: events,
+      metadata: {
+        boundingBox: {
+          southwest: { lat: parseFloat(swLat), lng: parseFloat(swLng) },
+          northeast: { lat: parseFloat(neLat), lng: parseFloat(neLng) },
         },
-      });
-    } catch (error) {
-      logger.error('Error getting events in bbox', error);
-      res.status(500).json({
-        success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
-    }
+        resultCount: events.length,
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting events in bbox', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
   }
-);
+});
 
 // Get events by city
-router.get('/location/city/:city', async (req, res) => {
+router.get('/city/:city', async (req, res) => {
   try {
     const { city } = req.params;
 
@@ -172,9 +170,9 @@ router.get('/location/city/:city', async (req, res) => {
   }
 });
 
-// ✅ FIXED: Get events today in nearby location with validation
+// Get events today
 router.get(
-  '/location/today',
+  '/today',
   validateCoordinatesQuery,
   validateLocationRadius,
   async (req, res) => {
@@ -189,7 +187,7 @@ router.get(
         data: events,
         metadata: {
           center: { lat: parseFloat(lat), lng: parseFloat(lng) },
-          radius: radius,
+          radius,
           resultCount: events.length,
           date: new Date().toISOString().split('T')[0],
         },
@@ -204,7 +202,7 @@ router.get(
   }
 );
 
-// ✅ FIXED: Update event location with validation
+// Update event location
 router.put(
   '/events/:eventId/location',
   verifyToken,
@@ -214,7 +212,6 @@ router.put(
       const { eventId } = req.params;
       const { address, city, state, zipCode, latitude, longitude } = req.body;
 
-      // Validate at least city is provided
       if (!city || city.trim().length === 0) {
         return res.status(400).json({
           success: false,
@@ -231,14 +228,13 @@ router.put(
         });
       }
 
-      if (!event.createdBy.equals(req.userId)) {
+      if (!event.createdBy.equals(req.userId) && req.userRole !== 'admin') {
         return res.status(403).json({
           success: false,
           message: ERROR_MESSAGES.UNAUTHORIZED,
         });
       }
 
-      // Validate coordinates if provided
       if (latitude !== undefined && longitude !== undefined) {
         if (typeof latitude !== 'number' || typeof longitude !== 'number') {
           return res.status(400).json({
@@ -284,91 +280,93 @@ router.put(
 // CALENDAR ENDPOINTS
 // =====================
 
-// Get event as iCalendar (.ics)
-router.get(
-  '/calendar/events/:eventId/download.ics',
-  validateId('eventId'),
-  async (req, res) => {
-    try {
-      const { eventId } = req.params;
+// Download event as .ics file
+router.get('/calendar/:eventId/download.ics', validateId('eventId'), async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const userId = req.query.userId; // Optional: personalize for user
 
-      const event = await Event.findById(eventId).populate('createdBy', 'name email');
+    const event = await Event.findById(eventId)
+      .populate('createdBy', 'name email')
+      .populate('community', 'name');
 
-      if (!event) {
-        return res.status(404).json({
-          success: false,
-          message: 'Event not found',
-        });
-      }
-
-      const icalendar = generateICalendar(event);
-
-      res.setHeader('Content-Type', 'text/calendar');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="event-${eventId}.ics"`
-      );
-      res.send(icalendar);
-
-      logger.success(`iCalendar downloaded for event ${eventId}`);
-    } catch (error) {
-      logger.error('Error downloading iCalendar', error);
-      res.status(500).json({
+    if (!event) {
+      return res.status(404).json({
         success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
+        message: 'Event not found',
       });
     }
+
+    let user = null;
+    if (userId) {
+      user = await User.findById(userId).select('name email');
+    }
+
+    // Generate .ics file
+    const icsContent = generateICalendarInvite(event, user || { name: 'Guest', email: 'guest@impacthub.app' });
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="impacthub-event-${eventId}.ics"`);
+    res.send(icsContent);
+
+    logger.success(`Calendar file downloaded for event ${eventId}`);
+  } catch (error) {
+    logger.error('Error downloading calendar file', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
   }
-);
+});
 
-// Get calendar invitation URLs
-router.get(
-  '/calendar/events/:eventId/invite-urls',
-  validateId('eventId'),
-  async (req, res) => {
-    try {
-      const { eventId } = req.params;
+// Get calendar URLs for event
+router.get('/calendar/:eventId/urls', validateId('eventId'), async (req, res) => {
+  try {
+    const { eventId } = req.params;
 
-      const event = await Event.findById(eventId);
+    const event = await Event.findById(eventId)
+      .populate('createdBy', 'name')
+      .populate('community', 'name');
 
-      if (!event) {
-        return res.status(404).json({
-          success: false,
-          message: 'Event not found',
-        });
-      }
-
-      const urls = generateCalendarInvitationUrl(event);
-
-      res.json({
-        success: true,
-        data: {
-          eventTitle: event.title,
-          eventDate: event.startDate,
-          invitationUrls: urls,
-        },
-      });
-    } catch (error) {
-      logger.error('Error generating invitation URLs', error);
-      res.status(500).json({
+    if (!event) {
+      return res.status(404).json({
         success: false,
-        message: ERROR_MESSAGES.SERVER_ERROR,
+        message: 'Event not found',
       });
     }
-  }
-);
 
-// Sync event to calendars
+    const calendarUrls = generateCalendarUrls(event);
+
+    res.json({
+      success: true,
+      data: {
+        eventTitle: event.title,
+        eventDate: event.startDate,
+        calendarUrls,
+      },
+    });
+  } catch (error) {
+    logger.error('Error generating calendar URLs', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
+  }
+});
+
+// Send calendar invitation to user (via socket)
 router.post(
-  '/calendar/events/:eventId/sync',
+  '/calendar/:eventId/send-invitation',
   verifyToken,
   validateId('eventId'),
   async (req, res) => {
     try {
       const { eventId } = req.params;
-      const { googleAuth } = req.body;
+      const userId = req.userId;
 
-      const event = await Event.findById(eventId).populate('createdBy', 'name email');
+      const event = await Event.findById(eventId)
+        .populate('createdBy', 'name')
+        .populate('community', 'name');
 
       if (!event) {
         return res.status(404).json({
@@ -377,23 +375,15 @@ router.post(
         });
       }
 
-      const syncResult = await syncEventToCalendars(
-        event,
-        req.userEmail,
-        googleAuth || null
-      );
+      // Send invitation
+      await sendCalendarInvitation(userId, event);
 
       res.json({
         success: true,
-        message: 'Event synced to calendars',
-        data: {
-          icalendar: syncResult.icalendar,
-          googleCalendar: syncResult.googleCalendar,
-          error: syncResult.googleCalendarError || null,
-        },
+        message: 'Calendar invitation sent!',
       });
     } catch (error) {
-      logger.error('Error syncing event to calendars', error);
+      logger.error('Error sending calendar invitation', error);
       res.status(500).json({
         success: false,
         message: ERROR_MESSAGES.SERVER_ERROR,

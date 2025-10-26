@@ -10,6 +10,7 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES, POINTS_CONFIG } from '../utils/consta
 import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
 import * as socketService from '../services/socketService.js';
+import { sendCalendarInvitation } from '../services/calendarService.js';
 
 const formatEventWithCapacity = (event) => {
   const eventObj = event.toObject ? event.toObject() : event;
@@ -302,7 +303,9 @@ export const joinEvent = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const event = await Event.findById(id);
+    const event = await Event.findById(id)
+      .populate('createdBy', 'name')
+      .populate('community', 'name');
 
     if (!event) {
       return res.status(404).json({
@@ -325,7 +328,7 @@ export const joinEvent = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId).select('name profileImage');
+    const user = await User.findById(userId).select('name profileImage email');
 
     event.participants.push(userId);
     await event.save();
@@ -340,6 +343,14 @@ export const joinEvent = async (req, res) => {
       community: event.community,
       status: 'Registered',
     });
+    
+    try {
+      await sendCalendarInvitation(userId, event);
+      logger.success(`Calendar invitation sent to user ${userId} for event ${id}`);
+    } catch (calendarError) {
+      // Don't fail the request if calendar invitation fails
+      logger.error('Failed to send calendar invitation', calendarError);
+    }
 
     socketService.notifyEventNewParticipant(event.createdBy, event._id, {
       _id: user._id,
@@ -353,7 +364,6 @@ export const joinEvent = async (req, res) => {
       isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
     });
 
-    // ✅ CORRECTED: Points NOT awarded here (only after moderator verifies attendance)
     await Activity.create({
       user: userId,
       type: 'event_joined',
@@ -368,7 +378,7 @@ export const joinEvent = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Joined event successfully',
+      message: 'Joined event successfully! Calendar invitation sent.',
       event: formatEventWithCapacity(event),
     });
   } catch (error) {
