@@ -1,9 +1,13 @@
+import mongoose from 'mongoose';
 import CommunityManagerApplication from '../models/CommunityManagerApplication.js';
+import Community from '../models/Community.js';
+import CommunityRewards from '../models/CommunityRewards.js';
 import User from '../models/User.js';
 import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import { buildLocationObject } from '../services/geocodingService.js';
 import * as socketService from '../services/socketService.js';
 
 // ✅ USER: Apply to become community manager
@@ -204,11 +208,12 @@ export const applyAsCommunityManager = async (req, res) => {
         entityId: application._id,
       },
     });
+
     socketService.notifyAdminsNewCommunityManagerApplication(
-  user.name,
-  communityDetails.name,
-  application._id
-);
+      user.name,
+      communityDetails.name,
+      application._id
+    );
 
     logger.success(`Community manager application submitted by user ${applicantId}`);
 
@@ -242,6 +247,7 @@ export const getMyApplication = async (req, res) => {
     })
       .populate('applicant', 'name email profileImage')
       .populate('adminReview.reviewedBy', 'name email')
+      .populate('communityCreated', 'name image _id') // ✅ NEW: Show created community
       .sort({ createdAt: -1 });
 
     if (!application) {
@@ -275,6 +281,7 @@ export const getApplicationHistory = async (req, res) => {
     const applications = await CommunityManagerApplication.find({
       applicant: applicantId,
     })
+      .populate('communityCreated', 'name') // ✅ NEW: Show communities created
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
@@ -318,6 +325,7 @@ export const getPendingApplications = async (req, res) => {
     const applications = await CommunityManagerApplication.find({ status })
       .populate('applicant', 'name email profileImage')
       .populate('adminReview.reviewedBy', 'name email')
+      .populate('communityCreated', 'name') // ✅ NEW: Show created communities
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
@@ -357,7 +365,8 @@ export const viewApplication = async (req, res) => {
 
     const application = await CommunityManagerApplication.findById(applicationId)
       .populate('applicant', 'name email profileImage createdAt')
-      .populate('adminReview.reviewedBy', 'name email');
+      .populate('adminReview.reviewedBy', 'name email')
+      .populate('communityCreated', 'name image _id'); // ✅ NEW: Show created community
 
     if (!application) {
       return res.status(404).json({
@@ -379,7 +388,7 @@ export const viewApplication = async (req, res) => {
   }
 };
 
-// ✅ ADMIN: Approve application
+// ✅ ADMIN: Approve application (AUTO-CREATE COMMUNITY)
 export const approveApplication = async (req, res) => {
   try {
     if (req.userRole !== 'admin') {
@@ -411,56 +420,136 @@ export const approveApplication = async (req, res) => {
       });
     }
 
-    // ✅ Update application
-    application.status = 'approved';
-    application.adminReview.reviewedBy = adminId;
-    application.adminReview.reviewedAt = new Date();
-    application.adminReview.approvalNotes = approvalNotes || null;
-    await application.save();
+    // ✅ START TRANSACTION
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // ✅ Promote user to moderator
-    const user = await User.findByIdAndUpdate(
-      application.applicant._id,
-      { role: 'moderator' },
-      { new: true }
-    );
+    try {
+      // 1️⃣ CREATE COMMUNITY from application data
+      const community = await Community.create(
+        [
+          {
+            name: application.communityDetails.name,
+            description: application.communityDetails.description,
+            image: null,
+            location: buildLocationObject(application.communityDetails.location),
+            category: application.communityDetails.category || 'Other',
+            createdBy: application.applicant._id,
+            members: [application.applicant._id],
+            totalMembers: 1,
+            verificationStatus: 'verified', // ✅ AUTO-VERIFIED
+            isActive: true,
+          },
+        ],
+        { session }
+      );
 
-    // ✅ Create activity logs
-    await Activity.create({
-      user: adminId,
-      type: 'community_manager_application_approved',
-      description: `Approved community manager application for ${application.communityDetails.name}`,
-      relatedEntity: {
-        entityType: 'CommunityManagerApplication',
-        entityId: application._id,
-      },
-    });
+      const newCommunity = community[0];
 
-    await Activity.create({
-      user: application.applicant._id,
-      type: 'community_manager_application_approved',
-      description: `Your community manager application for "${application.communityDetails.name}" was approved!`,
-      relatedEntity: {
-        entityType: 'CommunityManagerApplication',
-        entityId: application._id,
-      },
-    });
+      // 2️⃣ PROMOTE USER TO MODERATOR & ADD POINTS
+      const updatedUser = await User.findByIdAndUpdate(
+        application.applicant._id,
+        {
+          $inc: { points: POINTS_CONFIG.COMMUNITY_CREATED },
+          role: 'moderator',
+        },
+        { new: true, session }
+      );
 
-    // ✅ Send notification
-    socketService.notifyCommunityManagerApproved(
-      application.applicant._id,
-      application.communityDetails.name,
-      application._id
-    );
+      // 3️⃣ CREATE COMMUNITY REWARDS RECORD
+      await CommunityRewards.create(
+        [
+          {
+            community: newCommunity._id,
+            totalPoints: POINTS_CONFIG.COMMUNITY_CREATED,
+            pointsBreakdown: {
+              creationBonus: POINTS_CONFIG.COMMUNITY_CREATED,
+            },
+            verificationStatus: 'verified',
+            totalMembers: 1,
+            rewardsHistory: [
+              {
+                points: POINTS_CONFIG.COMMUNITY_CREATED,
+                type: 'creation_bonus',
+                description: 'Community creation bonus for approved manager',
+                awardedAt: new Date(),
+              },
+            ],
+          },
+        ],
+        { session }
+      );
 
-    logger.success(`Application approved: ${applicationId}`);
+      // 4️⃣ UPDATE APPLICATION
+      application.status = 'approved';
+      application.communityCreated = newCommunity._id; // ✅ LINK COMMUNITY
+      application.adminReview.reviewedBy = adminId;
+      application.adminReview.reviewedAt = new Date();
+      application.adminReview.approvalNotes = approvalNotes || null;
+      await application.save({ session });
 
-    res.json({
-      success: true,
-      message: 'Application approved! User promoted to community manager.',
-      application,
-      user,
-    });
+      // 5️⃣ CREATE ACTIVITY LOGS
+      await Activity.create(
+        [
+          {
+            user: adminId,
+            type: 'community_manager_application_approved',
+            description: `Approved community manager application for ${application.communityDetails.name}`,
+            relatedEntity: {
+              entityType: 'CommunityManagerApplication',
+              entityId: application._id,
+            },
+          },
+          {
+            user: application.applicant._id,
+            type: 'community_manager_application_approved',
+            description: `Your community manager application was approved! Community "${application.communityDetails.name}" is now live.`,
+            relatedEntity: {
+              entityType: 'Community',
+              entityId: newCommunity._id,
+            },
+          },
+        ],
+        { session }
+      );
+
+      // COMMIT TRANSACTION
+      await session.commitTransaction();
+      session.endSession();
+
+      // 6️⃣ SEND NOTIFICATIONS
+      socketService.notifyCommunityManagerApproved(
+        application.applicant._id,
+        application.communityDetails.name,
+        newCommunity._id // ✅ Send community ID (for direct link)
+      );
+
+      logger.success(`Application approved and community created: ${newCommunity._id}`);
+
+      res.json({
+        success: true,
+        message: 'Application approved! Community created and verified.',
+        application: {
+          _id: application._id,
+          status: application.status,
+          communityCreated: newCommunity._id,
+        },
+        community: {
+          _id: newCommunity._id,
+          name: newCommunity.name,
+          verificationStatus: newCommunity.verificationStatus,
+        },
+        user: {
+          name: updatedUser.name,
+          role: updatedUser.role,
+          points: updatedUser.points,
+        },
+      });
+    } catch (txErr) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txErr;
+    }
   } catch (error) {
     logger.error('Error approving application', error);
     res.status(500).json({

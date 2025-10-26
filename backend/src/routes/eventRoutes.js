@@ -7,7 +7,7 @@ import { isModeratorOrAdmin } from '../middleware/roleValidation.js';
 
 const router = express.Router();
 
-// Create event - ✅ ONLY MODERATORS
+// Create event - ✅ ONLY MODERATORS (approved community managers)
 router.post(
   '/',
   verifyToken,
@@ -29,7 +29,7 @@ router.post('/:id/join', verifyToken, validateId('id'), eventController.joinEven
 // Leave event (user)
 router.post('/:id/leave', verifyToken, validateId('id'), eventController.leaveEvent);
 
-// Get event participants (creator only)
+// Get event participants (creator/admin only)
 router.get(
   '/:id/participants',
   verifyToken,
@@ -38,7 +38,7 @@ router.get(
   eventController.getEventParticipants
 );
 
-// Update event (owner)
+// Update event (owner/admin only)
 router.put(
   '/:id',
   verifyToken,
@@ -47,7 +47,7 @@ router.put(
   eventController.updateEvent
 );
 
-// Delete event (owner)
+// Delete event (owner/admin only)
 router.delete('/:id', verifyToken, validateId('id'), eventController.deleteEvent);
 
 export default router;

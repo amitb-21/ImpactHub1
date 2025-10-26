@@ -10,128 +10,18 @@ import { parseQueryParams } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
 import * as socketService from '../services/socketService.js';
 
-export const createCommunity = async (req, res) => {
-  try {
-    const { name, description, location, category, image, organizationDetails } = req.body;
-    const userId = req.userId;
-
-    // ✅ Only moderators and admins can create communities
-    if (!['moderator', 'admin'].includes(req.userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Only moderators can create communities',
-      });
-    }
-
-    // Validate organization details
-    if (!organizationDetails) {
-      return res.status(400).json({
-        success: false,
-        message: 'Organization details are required',
-      });
-    }
-
-    const { registrationNumber, foundedYear, memberCount, pastEventsCount, documents } = organizationDetails;
-
-    // Validate required fields
-    if (!registrationNumber || registrationNumber.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Registration number is required',
-      });
-    }
-
-    if (!foundedYear || foundedYear < 1900 || foundedYear > new Date().getFullYear()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid founded year is required',
-      });
-    }
-
-    if (!memberCount || memberCount < 1) {
-      return res.status(400).json({
-        success: false,
-        message: 'Member count must be at least 1',
-      });
-    }
-
-    if (pastEventsCount === undefined || pastEventsCount < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Past events count must be 0 or greater',
-      });
-    }
-
-    const locationData = buildLocationObject(location);
-
-    // Create community with UNVERIFIED status
-    const community = await Community.create({
-      name,
-      description,
-      location: locationData,
-      category: category || 'Other',
-      image,
-      createdBy: userId,
-      members: [userId],
-      totalMembers: 1,
-      verificationStatus: 'pending',
-      isActive: true,
-    });
-
-    // Create verification request immediately
-    const verification = await CommunityVerification.create({
-      community: community._id,
-      status: 'pending',
-      communityDetails: {
-        registrationNumber,
-        foundedYear,
-        memberCount,
-        pastEventsCount,
-      },
-      documents: documents || [],
-    });
-
-    // Create activity record
-    await Activity.create({
-      user: userId,
-      type: 'community_created',
-      description: `Created community: ${name} (Pending verification)`,
-      relatedEntity: {
-        entityType: 'Community',
-        entityId: community._id,
-      },
-    });
-
-    logger.success(`Community created and verification requested: ${community._id}`);
-
-    const populatedCommunity = await community.populate('createdBy', 'name profileImage');
-
-    res.status(201).json({
-      success: true,
-      message: 'Community created successfully. Awaiting admin verification.',
-      community: populatedCommunity,
-      verification: await verification.populate('community', 'name'),
-    });
-  } catch (error) {
-    logger.error('Error creating community', error);
-    res.status(500).json({
-      success: false,
-      message: ERROR_MESSAGES.SERVER_ERROR,
-    });
-  }
-};
+// ❌ DELETED: createCommunity
+// Communities are now created automatically when CM application is approved
 
 export const getCommunities = async (req, res) => {
   try {
-    const { category, page = 1, limit = 10, search, showUnverified = false } = req.query;
+    const { category, page = 1, limit = 10, search } = req.query;
     const { skip } = parseQueryParams({ page, limit });
 
     let query = { isActive: true };
 
-    // ✅ Only show verified communities by default
-    if (showUnverified !== 'true' || req.userRole !== 'admin') {
-      query.verificationStatus = 'verified';
-    }
+    // ✅ UPDATED: Always show verified communities only
+    query.verificationStatus = 'verified';
 
     if (category) {
       query.category = category;
@@ -146,7 +36,6 @@ export const getCommunities = async (req, res) => {
 
     const communities = await Community.find(query)
       .populate('createdBy', 'name profileImage')
-      // ✅ CORRECTED: Don't populate members for regular users
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip);
@@ -188,7 +77,7 @@ export const getCommunityById = async (req, res) => {
     // Get verification status
     const verification = await CommunityVerification.findOne({ community: id });
 
-    // ✅ CORRECTED: Don't include members list in response for regular users
+    // CORRECTED: Don't include members list in response for regular users
     const response = {
       _id: community._id,
       name: community.name,
@@ -218,7 +107,7 @@ export const getCommunityById = async (req, res) => {
       success: true,
       community: response,
       verification: {
-        status: verification?.status || 'unverified',
+        status: verification?.status || 'verified',
         verifiedAt: verification?.verifiedAt || null,
         rejectionReason: verification?.rejectionReason || null,
       },
@@ -271,7 +160,7 @@ export const joinCommunity = async (req, res) => {
       $addToSet: { communitiesJoined: id },
     });
 
-    // Award points for joining (to community, not user)
+    // Award points for joining
     await pointsService.awardCommunityMemberJoinedPoints(id, userId);
 
     await Activity.create({
@@ -417,7 +306,7 @@ export const getCommunityVerificationStatus = async (req, res) => {
     if (!verification) {
       return res.json({
         success: true,
-        status: 'unverified',
+        status: 'verified', // ✅ All communities are now verified
         verification: null,
       });
     }
@@ -487,7 +376,6 @@ export const getCommunityMembers = async (req, res) => {
 };
 
 export default {
-  createCommunity,
   getCommunities,
   getCommunityById,
   joinCommunity,

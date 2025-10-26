@@ -1,19 +1,10 @@
 import express from 'express';
 import * as communityController from '../controllers/communityController.js';
 import { verifyToken } from '../middleware/auth.js';
-import { validateId, validatePagination, validateCreateCommunity } from '../middleware/validator.js';
+import { validateId, validatePagination } from '../middleware/validator.js';
 import { validateLocationData } from '../middleware/locationValidator.js';
 
 const router = express.Router();
-
-// Create community
-router.post(
-  '/',
-  verifyToken,
-  validateCreateCommunity,
-  validateLocationData,
-  communityController.createCommunity
-);
 
 // Get all communities (public)
 router.get('/', validatePagination, communityController.getCommunities);
@@ -28,7 +19,7 @@ router.get(
   communityController.getCommunityVerificationStatus
 );
 
-// Get community members (creator/admin)
+// Get community members (creator/admin only)
 router.get(
   '/:communityId/members',
   verifyToken,
@@ -43,7 +34,7 @@ router.post('/:id/join', verifyToken, validateId('id'), communityController.join
 // Leave community (user)
 router.post('/:id/leave', verifyToken, validateId('id'), communityController.leaveCommunity);
 
-// Update community (owner)
+// Update community (owner/admin only)
 router.put(
   '/:id',
   verifyToken,

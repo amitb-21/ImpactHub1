@@ -23,7 +23,6 @@ import locationCalendarRoutes from './routes/locationCalendarRoutes.js';
 import pointsRoutes from './routes/pointsRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import realtimeRoutes from './routes/realtimeRoutes.js';
-// ✅ ADD MISSING ROUTE
 import communityManagerRoutes from './routes/communityManagerRoutes.js';
 
 // Middleware
@@ -36,11 +35,11 @@ const app = express();
 // SECURITY MIDDLEWARE (First!)
 // =====================
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for development, configure properly in production
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
-app.use(mongoSanitize()); // Prevent NoSQL injection
-app.use(xss()); // Prevent XSS attacks
+app.use(mongoSanitize());
+app.use(xss());
 
 // =====================
 // CORS CONFIGURATION
@@ -69,7 +68,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     },
   })
@@ -82,9 +81,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // =====================
-// RATE LIMITING (Optional but recommended)
+// RATE LIMITING
 // =====================
-app.use('/auth', rateLimiter); // Rate limit auth endpoints
+app.use('/auth', rateLimiter);
 
 // =====================
 // HEALTH CHECK
@@ -116,10 +115,10 @@ app.use('/points', pointsRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/realtime', realtimeRoutes);
 
-// ✅ ADMIN ROUTES (Must be separate for security)
+// ADMIN ROUTES (Must be separate for security)
 app.use('/admin', adminRoutes);
 
-// ✅ COMMUNITY MANAGER APPLICATION ROUTES
+// COMMUNITY MANAGER APPLICATION ROUTES
 app.use('/community-manager', communityManagerRoutes);
 
 app.use(notFoundHandler);
