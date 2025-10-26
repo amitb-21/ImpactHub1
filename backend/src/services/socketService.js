@@ -269,6 +269,52 @@ export const sendSystemNotification = (userId, notification) => {
   });
 };
 
+export const notifyCommunityManagerApproved = (userId, communityName, applicationId) => {
+  emitToUser(userId, 'community_manager:approved', {
+    communityName,
+    applicationId,
+    message: `🎉 Congratulations! You've been approved as a community manager for "${communityName}"!`,
+    action: {
+      label: 'View Community',
+      link: `/communities/${applicationId}`,
+    },
+  });
+};
+
+/**
+ * Notify user about community manager rejection
+ */
+export const notifyCommunityManagerRejected = (userId, communityName, reason) => {
+  emitToUser(userId, 'community_manager:rejected', {
+    communityName,
+    reason,
+    message: `Your community manager application for "${communityName}" was not approved.`,
+    feedback: reason,
+    canReapply: true,
+    reapplyAfterDays: 30,
+  });
+};
+
+/**
+ * Notify admins of new community manager application
+ */
+export const notifyAdminsNewCommunityManagerApplication = (
+  applicantName,
+  communityName,
+  applicationId
+) => {
+  emitToAdmins('admin:new_community_manager_application', {
+    applicantName,
+    communityName,
+    applicationId,
+    message: `New community manager application from ${applicantName} for "${communityName}"`,
+    action: {
+      label: 'Review Application',
+      link: `/admin/community-manager-applications/${applicationId}`,
+    },
+  });
+};
+
 export default {
   emitToUser,
   emitToCommunity,
@@ -291,4 +337,7 @@ export default {
   updateEventCapacity,
   notifyEventPhotoUploaded,
   sendSystemNotification,
+  notifyCommunityManagerApproved,
+  notifyCommunityManagerRejected,
+  notifyAdminsNewCommunityManagerApplication,
 };

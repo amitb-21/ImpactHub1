@@ -1,3 +1,5 @@
+// backend/src/controllers/participationController.js - CORRECTED
+
 import Participation from '../models/Participation.js';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
@@ -7,7 +9,6 @@ import { logger } from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams, validateHoursContributed } from '../utils/helpers.js';
 import * as pointsService from '../services/pointsService.js';
-// ✅ FIXED: Added missing socket service import
 import * as socketService from '../services/socketService.js';
 
 // Save event to wishlist
@@ -155,14 +156,22 @@ export const getUserWishlist = async (req, res) => {
   }
 };
 
-// Mark attendance (community organizer verifies)
+// ✅ CORRECTED: Mark attendance (moderator/event creator only)
 export const markAttendance = async (req, res) => {
   try {
     const { participationId } = req.params;
     let { hoursContributed } = req.body;
-    const organizerId = req.userId;
+    const moderatorId = req.userId;
 
-    // ✅ FIXED: Validate hours contributed before processing
+    // ✅ Check if user is moderator or admin
+    if (!['moderator', 'admin'].includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only moderators can verify attendance',
+      });
+    }
+
+    // ✅ Validate hours contributed before processing
     const hoursError = validateHoursContributed(hoursContributed);
     if (hoursError) {
       return res.status(400).json({
@@ -184,31 +193,40 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    // Verify that organizer is the event creator
-    if (!participation.event.createdBy.equals(organizerId)) {
+    // ✅ Verify that moderator is the event creator
+    if (!participation.event.createdBy.equals(moderatorId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
+        error: 'Only the event creator can verify attendance',
+      });
+    }
+
+    // Check if already verified
+    if (participation.status === 'Attended' || participation.status === 'Completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'This participation has already been verified',
       });
     }
 
     // Update participation status
     participation.status = 'Attended';
     participation.verifiedAt = new Date();
-    participation.verifiedBy = organizerId;
+    participation.verifiedBy = moderatorId;
     participation.hoursContributed = hoursContributed;
 
-    // ✅ FIXED: Calculate points with proper error handling
+    // ✅ CORRECTED: Calculate points ONLY after verification
     let pointsEarned = POINTS_CONFIG.EVENT_PARTICIPATED;
     if (hoursContributed > 0) {
       pointsEarned += hoursContributed * POINTS_CONFIG.HOURS_VOLUNTEERED;
     }
 
     participation.pointsEarned = pointsEarned;
-    // ✅ FIXED: Save once before socket notifications
+    // ✅ Save once before socket notifications
     await participation.save();
 
-    // Award points to user with error handling
+    // Award points to user ONLY after verification
     try {
       await User.findByIdAndUpdate(
         participation.user._id,
@@ -216,14 +234,22 @@ export const markAttendance = async (req, res) => {
         { new: true }
       );
 
+      // ✅ CORRECTED: Award points ONLY after verification
       await pointsService.awardVolunteerEventPoints(
         participation.user._id,
         participation.event._id,
         pointsEarned,
         hoursContributed
       );
+
+      // Award community points for verified participation
+      await pointsService.awardCommunityMemberJoinedPoints(
+        participation.community,
+        participation.user._id
+      );
     } catch (pointsError) {
       logger.error('Error awarding points during attendance marking', pointsError);
+      // Don't fail the entire request, but log the error
     }
 
     // Create activity record
@@ -245,7 +271,7 @@ export const markAttendance = async (req, res) => {
       `Attendance marked for user ${participation.user._id} in event ${participation.event._id}`
     );
 
-    // ✅ FIXED: Socket notifications with properly populated data
+    // ✅ Socket notifications with properly populated data
     socketService.notifyAttendanceVerified(
       participation.user._id,
       participation.event._id,
@@ -253,20 +279,9 @@ export const markAttendance = async (req, res) => {
       hoursContributed
     );
 
-    // Notify event organizer
-    socketService.notifyEventNewParticipant(
-      participation.event.createdBy,
-      participation.event._id,
-      {
-        _id: participation.user._id,
-        name: participation.user.name,
-        profileImage: participation.user.profileImage,
-      }
-    );
-
     res.json({
       success: true,
-      message: 'Attendance verified successfully',
+      message: 'Attendance verified successfully! Participant awarded points.',
       participation: await participation.populate('user', 'name profileImage'),
     });
   } catch (error) {
@@ -278,14 +293,22 @@ export const markAttendance = async (req, res) => {
   }
 };
 
-// Reject participant (community organizer)
+// ✅ CORRECTED: Reject participant (event creator only)
 export const rejectParticipant = async (req, res) => {
   try {
     const { participationId } = req.params;
     const { rejectionReason } = req.body;
-    const organizerId = req.userId;
+    const moderatorId = req.userId;
 
-    // ✅ FIXED: Validate rejection reason
+    // ✅ Check if user is moderator or admin
+    if (!['moderator', 'admin'].includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only moderators can reject participants',
+      });
+    }
+
+    // ✅ Validate rejection reason
     if (!rejectionReason || rejectionReason.trim().length === 0) {
       return res.status(400).json({
         success: false,
@@ -302,8 +325,8 @@ export const rejectParticipant = async (req, res) => {
       });
     }
 
-    // Verify that organizer is the event creator
-    if (!participation.event.createdBy.equals(organizerId)) {
+    // ✅ Verify that moderator is the event creator
+    if (!participation.event.createdBy.equals(moderatorId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
@@ -324,7 +347,7 @@ export const rejectParticipant = async (req, res) => {
       $pull: { eventsParticipated: participation.event._id },
     });
 
-    // ✅ FIXED: Emit socket notification about rejection
+    // ✅ Emit socket notification about rejection
     socketService.notifyParticipationRejected(
       participation.user,
       participation.event._id,
@@ -349,7 +372,7 @@ export const rejectParticipant = async (req, res) => {
   }
 };
 
-// Get pending participants for an event (unverified)
+// ✅ CORRECTED: Get pending participants (event creator only)
 export const getPendingParticipants = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -362,6 +385,14 @@ export const getPendingParticipants = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Event not found',
+      });
+    }
+
+    // ✅ Check authorization: only event creator or admin
+    if (!event.createdBy.equals(req.userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the event creator can view pending participants',
       });
     }
 
@@ -411,6 +442,14 @@ export const getVerifiedParticipants = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Event not found',
+      });
+    }
+
+    // ✅ Check authorization: only event creator or admin
+    if (!event.createdBy.equals(req.userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the event creator can view verified participants',
       });
     }
 

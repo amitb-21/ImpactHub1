@@ -2,14 +2,9 @@ import express from 'express';
 import * as participationController from '../controllers/participationController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
+import { isModeratorOrAdmin } from '../middleware/roleValidation.js';
 
 const router = express.Router();
-
-// IMPORTANT: Order matters - more specific routes first!
-
-// =====================
-// WISHLIST ROUTES
-// =====================
 
 // Save event to wishlist
 router.post(
@@ -35,51 +30,43 @@ router.get(
   participationController.getUserWishlist
 );
 
-// =====================
-// ATTENDANCE VERIFICATION ROUTES
-// =====================
-
-// Mark participant as attended
+// Mark participant as attended - ✅ ONLY MODERATORS
 router.post(
   '/:participationId/mark-attended',
   verifyToken,
+  isModeratorOrAdmin,
   validateId('participationId'),
   participationController.markAttendance
 );
 
-// Reject participant
+// Reject participant - ✅ ONLY MODERATORS
 router.post(
   '/:participationId/reject',
   verifyToken,
+  isModeratorOrAdmin,
   validateId('participationId'),
   participationController.rejectParticipant
 );
 
-// =====================
-// EVENT PARTICIPANTS ROUTES
-// =====================
-
-// Get pending/unverified participants for an event
+// Get pending participants
 router.get(
   '/event/:eventId/pending',
+  verifyToken,
   validateId('eventId'),
   validatePagination,
   participationController.getPendingParticipants
 );
 
-// Get verified/attended participants for an event
+// Get verified participants
 router.get(
   '/event/:eventId/verified',
+  verifyToken,
   validateId('eventId'),
   validatePagination,
   participationController.getVerifiedParticipants
 );
 
-// =====================
-// GENERIC ROUTE (MUST BE LAST)
-// =====================
-
-// Get participation details (generic - MUST be after specific routes)
+// Get participation details
 router.get(
   '/:participationId',
   validateId('participationId'),

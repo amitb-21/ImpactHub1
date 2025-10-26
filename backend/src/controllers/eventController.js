@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import Participation from '../models/Participation.js';
 import Activity from '../models/Activity.js';
 import { awardEventCreation, awardEventParticipation } from '../services/impactService.js';
-import { formatCoordinates, buildLocationObject } from '../services/geocodingService.js'; // ✅ UPDATED
+import { formatCoordinates, buildLocationObject } from '../services/geocodingService.js';
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
@@ -172,11 +172,20 @@ export const getEvents = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only moderators can create events
 export const createEvent = async (req, res) => {
   try {
     const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
       req.body;
     const userId = req.userId;
+
+    // ✅ Check if user is moderator or admin
+    if (!['moderator', 'admin'].includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only moderators can create events',
+      });
+    }
 
     const communityExists = await Community.findById(community);
     if (!communityExists) {
@@ -186,7 +195,23 @@ export const createEvent = async (req, res) => {
       });
     }
 
-    // ✅ SIMPLIFIED: Use Leaflet coordinates from frontend
+    // ✅ Check if community is verified
+    if (communityExists.verificationStatus !== 'verified') {
+      return res.status(400).json({
+        success: false,
+        message: 'Community must be verified before creating events',
+        status: communityExists.verificationStatus,
+      });
+    }
+
+    // ✅ Check if user is community manager (or admin)
+    if (!communityExists.createdBy.equals(userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the community manager can create events in this community',
+      });
+    }
+
     const locationData = buildLocationObject(location);
 
     const event = await Event.create({
@@ -249,8 +274,8 @@ export const getEventById = async (req, res) => {
 
     const event = await Event.findById(id)
       .populate('createdBy', 'name profileImage')
-      .populate('community', 'name verificationStatus avgRating')
-      .populate('participants', 'name profileImage');
+      .populate('community', 'name verificationStatus avgRating');
+      // ✅ CORRECTED: Don't populate participants for regular users
 
     if (!event) {
       return res.status(404).json({
@@ -328,20 +353,7 @@ export const joinEvent = async (req, res) => {
       isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
     });
 
-    try {
-      await pointsService.awardVolunteerEventPoints(
-        userId,
-        id,
-        POINTS_CONFIG.EVENT_PARTICIPATED
-      );
-
-      await pointsService.awardCommunityMemberJoinedPoints(event.community, userId);
-    } catch (pointsError) {
-      logger.error('Error awarding points during event join', pointsError);
-    }
-
-    await awardEventParticipation(userId, id);
-
+    // ✅ CORRECTED: Points NOT awarded here (only after moderator verifies attendance)
     await Activity.create({
       user: userId,
       type: 'event_joined',
@@ -409,6 +421,7 @@ export const leaveEvent = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only event creator can update
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -425,7 +438,7 @@ export const updateEvent = async (req, res) => {
       });
     }
 
-    if (!event.createdBy.equals(userId)) {
+    if (!event.createdBy.equals(userId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
@@ -442,7 +455,6 @@ export const updateEvent = async (req, res) => {
     if (status) updateData.status = status;
     if (maxParticipants !== undefined) updateData.maxParticipants = maxParticipants;
 
-    // ✅ SIMPLIFIED: Use buildLocationObject
     if (location) {
       updateData.location = buildLocationObject(location);
     }
@@ -481,7 +493,7 @@ export const deleteEvent = async (req, res) => {
       });
     }
 
-    if (!event.createdBy.equals(userId)) {
+    if (!event.createdBy.equals(userId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
@@ -506,6 +518,7 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only event creator/admin can view participants
 export const getEventParticipants = async (req, res) => {
   try {
     const { id } = req.params;
@@ -518,6 +531,14 @@ export const getEventParticipants = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: ERROR_MESSAGES.NOT_FOUND,
+      });
+    }
+
+    // ✅ Check authorization: only event creator or admin
+    if (!event.createdBy.equals(req.userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the event creator can view participants',
       });
     }
 

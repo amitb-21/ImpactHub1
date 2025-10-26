@@ -6,45 +6,49 @@ import { validateLocationData } from '../middleware/locationValidator.js';
 
 const router = express.Router();
 
-// Create community with location and organization validation
+// Create community
 router.post(
   '/',
   verifyToken,
   validateCreateCommunity,
-  validateLocationData, // ✅ Validate location data
+  validateLocationData,
   communityController.createCommunity
 );
 
-// Get all communities
+// Get all communities (public)
 router.get('/', validatePagination, communityController.getCommunities);
 
-// Get community by ID
+// Get community by ID (public)
 router.get('/:id', validateId('id'), communityController.getCommunityById);
 
-// Get community verification status
+// Get community verification status (public)
 router.get(
   '/:id/verification-status',
   validateId('id'),
   communityController.getCommunityVerificationStatus
 );
 
-// Join community
-router.post('/:id/join', verifyToken, validateId('id'), communityController.joinCommunity);
-
-// Leave community
-router.post(
-  '/:id/leave',
+// Get community members (creator/admin)
+router.get(
+  '/:communityId/members',
   verifyToken,
-  validateId('id'),
-  communityController.leaveCommunity
+  validateId('communityId'),
+  validatePagination,
+  communityController.getCommunityMembers
 );
 
-// Update community with location validation
+// Join community (user)
+router.post('/:id/join', verifyToken, validateId('id'), communityController.joinCommunity);
+
+// Leave community (user)
+router.post('/:id/leave', verifyToken, validateId('id'), communityController.leaveCommunity);
+
+// Update community (owner)
 router.put(
   '/:id',
   verifyToken,
   validateId('id'),
-  validateLocationData, // ✅ Validate location data on updates
+  validateLocationData,
   communityController.updateCommunity
 );
 

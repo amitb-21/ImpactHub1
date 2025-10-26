@@ -6,43 +6,80 @@ import { validateCreateResource, validateUpdateResource } from '../middleware/re
 
 const router = express.Router();
 
-// Get featured resources (must be before /:id)
+// Get featured resources (public)
 router.get('/featured', resourceController.getFeaturedResources);
 
-// Get resource stats (admin only, but must be before /:id)
-router.get('/stats', verifyToken, isAdmin, resourceController.getResourceStats);
+// Get pending resources (admin only)
+router.get(
+  '/admin/pending',
+  verifyToken,
+  isAdmin,
+  validatePagination,
+  resourceController.getPendingResources
+);
 
-// Search resources (must be before /:id)
+// Get resource stats (admin only)
+router.get(
+  '/admin/stats',
+  verifyToken,
+  isAdmin,
+  resourceController.getResourceStats
+);
+
+// Search resources (public)
 router.get('/search', validatePagination, resourceController.searchResources);
 
-// Get resources by category (must be before /:id)
+// Get resources by category (public)
 router.get(
   '/category/:category',
   validatePagination,
   resourceController.getResourcesByCategory
 );
 
-// Get all resources with filters
+// Get all resources (public)
 router.get('/', validatePagination, resourceController.getResources);
 
-// Get single resource by ID (must be after specific routes)
+// Get single resource by ID
 router.get('/:id', validateId('id'), resourceController.getResourceById);
 
 // Like/Unlike resource
 router.post('/:id/like', verifyToken, validateId('id'), resourceController.likeResource);
 router.post('/:id/unlike', verifyToken, validateId('id'), resourceController.unlikeResource);
 
-// Create resource (authenticated users can create)
+// Create resource (user - unpublished initially)
 router.post('/', verifyToken, validateCreateResource, resourceController.createResource);
 
-// Update resource (author or admin only)
-router.put('/:id', verifyToken, validateId('id'), validateUpdateResource, resourceController.updateResource);
+// Approve resource (admin)
+router.post(
+  '/:id/approve',
+  verifyToken,
+  isAdmin,
+  validateId('id'),
+  resourceController.approveResource
+);
 
-// Delete resource (author or admin only)
+// Reject resource (admin)
+router.post(
+  '/:id/reject',
+  verifyToken,
+  isAdmin,
+  validateId('id'),
+  resourceController.rejectResource
+);
+
+// Update resource
+router.put(
+  '/:id',
+  verifyToken,
+  validateId('id'),
+  validateUpdateResource,
+  resourceController.updateResource
+);
+
+// Delete resource
 router.delete('/:id', verifyToken, validateId('id'), resourceController.deleteResource);
 
-
-// Toggle featured status
+// Toggle featured (admin)
 router.post(
   '/:id/feature',
   verifyToken,

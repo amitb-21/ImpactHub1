@@ -1,3 +1,5 @@
+// backend/src/models/Resource.js - CORRECTED
+
 import mongoose from 'mongoose';
 
 const resourceSchema = new mongoose.Schema(
@@ -84,10 +86,11 @@ const resourceSchema = new mongoose.Schema(
       default: false,
       description: 'Featured resources appear at top',
     },
+    // ✅ CORRECTED: Changed from "isPublished" to more nuanced status
     isPublished: {
       type: Boolean,
-      default: true,
-      description: 'Unpublished resources are hidden',
+      default: false,
+      description: 'Published/approved resources are visible to public',
     },
     difficulty: {
       type: String,
@@ -105,6 +108,29 @@ const resourceSchema = new mongoose.Schema(
         ref: 'Resource',
       },
     ],
+    // ✅ NEW: Approval workflow fields
+    adminApprovedAt: {
+      type: Date,
+      default: null,
+      description: 'When admin approved the resource',
+    },
+    adminNotes: {
+      type: String,
+      default: null,
+      maxlength: 1000,
+      description: 'Admin notes during approval',
+    },
+    rejectedAt: {
+      type: Date,
+      default: null,
+      description: 'When admin rejected the resource',
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+      maxlength: 1000,
+      description: 'Why the resource was rejected',
+    },
   },
   { timestamps: true }
 );
@@ -115,6 +141,8 @@ resourceSchema.index({ tags: 1 });
 resourceSchema.index({ isFeatured: -1, views: -1 });
 resourceSchema.index({ createdAt: -1 });
 resourceSchema.index({ title: 'text', description: 'text', content: 'text' });
+resourceSchema.index({ author: 1 });
+resourceSchema.index({ isPublished: 1 }); // ✅ NEW: For filtering
 
 // Increment view count
 resourceSchema.methods.incrementViews = async function () {

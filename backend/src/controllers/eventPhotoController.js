@@ -1,3 +1,5 @@
+// backend/src/controllers/eventPhotoController.js - CORRECTED COMPLETE
+
 import EventPhoto from '../models/EventPhoto.js';
 import Event from '../models/Event.js';
 import User from '../models/User.js';
@@ -8,13 +10,22 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
 import * as socketService from '../services/socketService.js';
 
+// ✅ CORRECTED: Only event creator (moderator) can upload photos
 export const uploadEventPhoto = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { photoType, description, isOfficial } = req.body;
     const userId = req.userId;
 
-    // ✅ FIX: Validate file exists
+    // ✅ Check if user is moderator or admin
+    if (!['moderator', 'admin'].includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only moderators can upload event photos',
+      });
+    }
+
+    // ✅ Validate file exists
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -31,7 +42,15 @@ export const uploadEventPhoto = async (req, res) => {
       });
     }
 
-    // ✅ FIX: Fetch user before socket notification
+    // ✅ Check if user is event creator (or admin)
+    if (!event.createdBy.equals(userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the event creator can upload photos',
+      });
+    }
+
+    // ✅ Fetch user before socket notification
     const user = await User.findById(userId).select('name profileImage');
     if (!user) {
       return res.status(404).json({
@@ -39,9 +58,6 @@ export const uploadEventPhoto = async (req, res) => {
         message: 'User not found',
       });
     }
-
-    // Check if user is event creator (for official photos)
-    const isEventCreator = event.createdBy.equals(userId);
 
     // Validate photo type
     if (!['event_preview', 'during_event', 'after_event'].includes(photoType)) {
@@ -53,7 +69,7 @@ export const uploadEventPhoto = async (req, res) => {
 
     let photoUrl;
 
-    // ✅ FIX: Upload file to Cloudinary
+    // ✅ Upload file to Cloudinary
     try {
       const uploadResult = await uploadToCloudinary(req.file, 'impacthub/events');
       photoUrl = uploadResult.url;
@@ -72,13 +88,13 @@ export const uploadEventPhoto = async (req, res) => {
       event: eventId,
       community: event.community,
       uploadedBy: userId,
-      photoUrl, // URL from Cloudinary
+      photoUrl,
       photoType,
       description: description || null,
-      isOfficial: isOfficial && isEventCreator, // Only creator can mark as official
+      isOfficial: true, // ✅ CORRECTED: Only moderator uploads, so always official
     });
 
-    // ✅ FIX: Now socket notification has proper user data
+    // ✅ Socket notification with proper user data
     socketService.notifyEventPhotoUploaded(eventId, event.community, {
       photoId: photo._id,
       photoUrl: photo.photoUrl,
@@ -208,13 +224,14 @@ export const getPhotosByType = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only photo uploader or event creator can edit
 export const updatePhotoDescription = async (req, res) => {
   try {
     const { photoId } = req.params;
     const { description } = req.body;
     const userId = req.userId;
 
-    const photo = await EventPhoto.findById(photoId);
+    const photo = await EventPhoto.findById(photoId).populate('event');
 
     if (!photo) {
       return res.status(404).json({
@@ -223,8 +240,12 @@ export const updatePhotoDescription = async (req, res) => {
       });
     }
 
-    // Only creator can edit
-    if (!photo.uploadedBy.equals(userId)) {
+    // ✅ Only uploader or event creator can edit
+    const isUploader = photo.uploadedBy.equals(userId);
+    const isEventCreator = photo.event.createdBy.equals(userId);
+    const isAdmin = req.userRole === 'admin';
+
+    if (!isUploader && !isEventCreator && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
@@ -250,6 +271,7 @@ export const updatePhotoDescription = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only event creator or photo uploader can delete
 export const deleteEventPhoto = async (req, res) => {
   try {
     const { photoId } = req.params;
@@ -264,11 +286,12 @@ export const deleteEventPhoto = async (req, res) => {
       });
     }
 
-    // Check authorization: photo uploader or event creator
+    // Check authorization: photo uploader, event creator, or admin
     const isPhotoUploader = photo.uploadedBy.equals(userId);
     const isEventCreator = photo.event.createdBy.equals(userId);
+    const isAdmin = req.userRole === 'admin';
 
-    if (!isPhotoUploader && !isEventCreator) {
+    if (!isPhotoUploader && !isEventCreator && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,

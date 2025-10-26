@@ -3,7 +3,7 @@ import CommunityVerification from '../models/CommunityVerification.js';
 import User from '../models/User.js';
 import Activity from '../models/Activity.js';
 import { awardCommunityCreation } from '../services/impactService.js';
-import { buildLocationObject } from '../services/geocodingService.js'; // ✅ UPDATED
+import { buildLocationObject } from '../services/geocodingService.js';
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
@@ -14,6 +14,14 @@ export const createCommunity = async (req, res) => {
   try {
     const { name, description, location, category, image, organizationDetails } = req.body;
     const userId = req.userId;
+
+    // ✅ Only moderators and admins can create communities
+    if (!['moderator', 'admin'].includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only moderators can create communities',
+      });
+    }
 
     // Validate organization details
     if (!organizationDetails) {
@@ -54,7 +62,6 @@ export const createCommunity = async (req, res) => {
       });
     }
 
-    // ✅ SIMPLIFIED: Use buildLocationObject from Leaflet coordinates
     const locationData = buildLocationObject(location);
 
     // Create community with UNVERIFIED status
@@ -121,8 +128,8 @@ export const getCommunities = async (req, res) => {
 
     let query = { isActive: true };
 
-    // Only show verified communities by default
-    if (showUnverified !== 'true') {
+    // ✅ Only show verified communities by default
+    if (showUnverified !== 'true' || req.userRole !== 'admin') {
       query.verificationStatus = 'verified';
     }
 
@@ -139,7 +146,7 @@ export const getCommunities = async (req, res) => {
 
     const communities = await Community.find(query)
       .populate('createdBy', 'name profileImage')
-      .populate('members', 'name profileImage')
+      // ✅ CORRECTED: Don't populate members for regular users
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip);
@@ -169,9 +176,7 @@ export const getCommunityById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const community = await Community.findById(id)
-      .populate('createdBy', 'name profileImage')
-      .populate('members', 'name profileImage email');
+    const community = await Community.findById(id).populate('createdBy', 'name profileImage');
 
     if (!community) {
       return res.status(404).json({
@@ -183,9 +188,35 @@ export const getCommunityById = async (req, res) => {
     // Get verification status
     const verification = await CommunityVerification.findOne({ community: id });
 
+    // ✅ CORRECTED: Don't include members list in response for regular users
+    const response = {
+      _id: community._id,
+      name: community.name,
+      description: community.description,
+      image: community.image,
+      location: community.location,
+      category: community.category,
+      createdBy: community.createdBy,
+      totalMembers: community.totalMembers,
+      totalEvents: community.totalEvents,
+      avgRating: community.avgRating,
+      totalRatings: community.totalRatings,
+      isActive: community.isActive,
+      createdAt: community.createdAt,
+      updatedAt: community.updatedAt,
+    };
+
+    // Only moderator/admin/creator can see members
+    if (
+      req.userRole === 'admin' ||
+      community.createdBy._id.equals(req.userId)
+    ) {
+      response.members = community.members;
+    }
+
     res.json({
       success: true,
-      community,
+      community: response,
       verification: {
         status: verification?.status || 'unverified',
         verifiedAt: verification?.verifiedAt || null,
@@ -215,6 +246,7 @@ export const joinCommunity = async (req, res) => {
       });
     }
 
+    // ✅ CORRECTED: Only verified communities can be joined
     if (community.verificationStatus !== 'verified') {
       return res.status(400).json({
         success: false,
@@ -239,7 +271,7 @@ export const joinCommunity = async (req, res) => {
       $addToSet: { communitiesJoined: id },
     });
 
-    // Award points for joining
+    // Award points for joining (to community, not user)
     await pointsService.awardCommunityMemberJoinedPoints(id, userId);
 
     await Activity.create({
@@ -311,6 +343,7 @@ export const leaveCommunity = async (req, res) => {
   }
 };
 
+// ✅ CORRECTED: Only community creator can update
 export const updateCommunity = async (req, res) => {
   try {
     const { id } = req.params;
@@ -326,7 +359,7 @@ export const updateCommunity = async (req, res) => {
       });
     }
 
-    if (!community.createdBy.equals(userId)) {
+    if (!community.createdBy.equals(userId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: ERROR_MESSAGES.UNAUTHORIZED,
@@ -339,7 +372,6 @@ export const updateCommunity = async (req, res) => {
     if (category) updateData.category = category;
     if (image) updateData.image = image;
 
-    // ✅ SIMPLIFIED: Handle location updates with buildLocationObject
     if (location) {
       updateData.location = buildLocationObject(location);
     }
@@ -404,6 +436,56 @@ export const getCommunityVerificationStatus = async (req, res) => {
   }
 };
 
+// ✅ NEW: Get community members (only for creator/admin)
+export const getCommunityMembers = async (req, res) => {
+  try {
+    const { communityId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    const { skip } = parseQueryParams({ page, limit });
+
+    const community = await Community.findById(communityId);
+
+    if (!community) {
+      return res.status(404).json({
+        success: false,
+        message: 'Community not found',
+      });
+    }
+
+    // ✅ Only creator or admin can view members
+    if (!community.createdBy.equals(req.userId) && req.userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only community manager can view members',
+      });
+    }
+
+    const members = await User.find({ _id: { $in: community.members } })
+      .select('-googleId -password')
+      .limit(limit)
+      .skip(skip);
+
+    const total = community.members.length;
+
+    res.json({
+      success: true,
+      data: members.map((m) => m.toJSON()),
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching community members', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
+  }
+};
+
 export default {
   createCommunity,
   getCommunities,
@@ -412,4 +494,5 @@ export default {
   leaveCommunity,
   updateCommunity,
   getCommunityVerificationStatus,
+  getCommunityMembers,
 };

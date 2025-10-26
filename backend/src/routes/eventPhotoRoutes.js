@@ -1,26 +1,28 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit'; // ✅ ADD
+import rateLimit from 'express-rate-limit';
 import * as eventPhotoController from '../controllers/eventPhotoController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
 import { uploadSingle, handleUploadError, validateFileExists } from '../middleware/uploadMiddleware.js';
+import { isModeratorOrAdmin } from '../middleware/roleValidation.js';
 
 const router = express.Router();
 
-// ✅ ADD THIS - Upload rate limiter
+// Upload rate limiter
 const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // 50 uploads per 15 minutes per IP
+  windowMs: 15 * 60 * 1000,
+  max: 50,
   message: 'Too many uploads, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// ✅ ADD uploadLimiter to this route
+// Upload event photo - ✅ ONLY MODERATORS
 router.post(
   '/:eventId/upload',
   verifyToken,
-  uploadLimiter, // ✅ ADD THIS
+  isModeratorOrAdmin,
+  uploadLimiter,
   validateId('eventId'),
   uploadSingle,
   handleUploadError,
@@ -28,14 +30,14 @@ router.post(
   eventPhotoController.uploadEventPhoto
 );
 
-// Get photos by type (must be BEFORE generic /:eventId route)
+// Get photos by type
 router.get(
   '/:eventId/type/:photoType',
   validateId('eventId'),
   eventPhotoController.getPhotosByType
 );
 
-// Get community photo gallery (specific path)
+// Get community photo gallery
 router.get(
   '/community/:communityId/gallery',
   validateId('communityId'),
@@ -51,7 +53,7 @@ router.put(
   eventPhotoController.updatePhotoDescription
 );
 
-// Like photo
+// Like/Unlike photo
 router.post(
   '/photo/:photoId/like',
   verifyToken,
@@ -59,7 +61,6 @@ router.post(
   eventPhotoController.likePhoto
 );
 
-// Unlike photo
 router.post(
   '/photo/:photoId/unlike',
   verifyToken,
@@ -75,7 +76,7 @@ router.delete(
   eventPhotoController.deleteEventPhoto
 );
 
-// Get all photos for an event (generic - LAST)
+// Get all photos for an event
 router.get(
   '/:eventId',
   validateId('eventId'),
