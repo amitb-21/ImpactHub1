@@ -25,6 +25,9 @@ const activitySchema = new mongoose.Schema(
         'community_verification_verified',
         'community_verification_rejected',
         'user_deactivated',
+        'community_manager_application_submitted',
+        'community_manager_application_approved',
+        'community_manager_application_rejected',
       ],
       required: true,
     },
@@ -33,12 +36,12 @@ const activitySchema = new mongoose.Schema(
       required: true,
     },
     relatedEntity: {
-      entityType: {
-        type: String,
-        enum: ['Event', 'Community', 'Badge', 'User'],
-      },
-      entityId: mongoose.Schema.Types.ObjectId,
-    },
+  entityType: {
+    type: String,
+    enum: ['Event', 'Community', 'Badge', 'User', 'CommunityManagerApplication'], // ✅ ADD THIS
+  },
+  entityId: mongoose.Schema.Types.ObjectId,
+},
     metadata: {
       pointsEarned: {
         type: Number,

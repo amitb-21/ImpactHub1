@@ -52,7 +52,10 @@ export const ACTIVITY_TYPES = [
   'community_verification_verified',
   'community_verification_rejected',
   'user_deactivated',
-  'resource_created', // ✅ NEW
+  'resource_created',
+  'community_manager_application_submitted',
+  'community_manager_application_approved',
+  'community_manager_application_rejected',
 ];
 
 export const RESOURCE_CATEGORIES = [

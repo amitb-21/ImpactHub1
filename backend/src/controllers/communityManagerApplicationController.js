@@ -204,6 +204,11 @@ export const applyAsCommunityManager = async (req, res) => {
         entityId: application._id,
       },
     });
+    socketService.notifyAdminsNewCommunityManagerApplication(
+  user.name,
+  communityDetails.name,
+  application._id
+);
 
     logger.success(`Community manager application submitted by user ${applicantId}`);
 
