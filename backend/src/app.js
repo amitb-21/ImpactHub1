@@ -2,6 +2,9 @@ import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import cors from 'cors';
+import helmet from 'helmet'; // ✅ ADD
+import mongoSanitize from 'express-mongo-sanitize'; // ✅ ADD
+import xss from 'xss-clean'; // ✅ ADD
 import './config/passport.js';
 
 // Routes
@@ -18,13 +21,18 @@ import eventPhotoRoutes from './routes/eventPhotoRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import locationCalendarRoutes from './routes/locationCalendarRoutes.js';
 import pointsRoutes from './routes/pointsRoutes.js';
-import resourceRoutes from './routes/resourceRoutes.js'; // ✅ NEW
+import resourceRoutes from './routes/resourceRoutes.js';
 import realtimeRoutes from './routes/realtimeRoutes.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
+
+// ✅ SECURITY MIDDLEWARE - ADD THESE 3 LINES FIRST
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(xss());
 
 // CORS configuration
 app.use(cors({
@@ -77,7 +85,7 @@ app.use('/participations', participationRoutes);
 app.use('/event-photos', eventPhotoRoutes);
 app.use('/location', locationCalendarRoutes);
 app.use('/points', pointsRoutes);
-app.use('/resources', resourceRoutes); // ✅ NEW
+app.use('/resources', resourceRoutes);
 app.use('/realtime', realtimeRoutes);
 
 // 404 handler

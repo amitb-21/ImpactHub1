@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import Participation from '../models/Participation.js';
 import Activity from '../models/Activity.js';
 import { awardEventCreation, awardEventParticipation } from '../services/impactService.js';
-import { getCoordinatesFromAddress, formatCoordinates } from '../services/geocodingService.js';
+import { formatCoordinates, buildLocationObject } from '../services/geocodingService.js'; // ✅ UPDATED
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES, POINTS_CONFIG } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
@@ -185,43 +185,10 @@ export const createEvent = async (req, res) => {
         message: 'Community not found',
       });
     }
-    
-    let locationData = {
-      address: location?.address || '',
-      city: location?.city || '',
-      state: location?.state || '',
-      zipCode: location?.zipCode || '',
-      coordinates: {
-        type: 'Point',
-        coordinates: [0, 0], // Default coordinates
-      },
-    };
 
-    // Try to geocode if address and city are provided
-    if (location?.address && location?.city) {
-      try {
-        const coordinates = await getCoordinatesFromAddress(
-          location.address,
-          location.city,
-          location.state,
-          location.zipCode
-        );
+    // ✅ SIMPLIFIED: Use Leaflet coordinates from frontend
+    const locationData = buildLocationObject(location);
 
-        if (coordinates) {
-          locationData.coordinates = formatCoordinates(coordinates.lat, coordinates.lng);
-          logger.success(`Geocoded event location: ${coordinates.lat}, ${coordinates.lng}`);
-        }
-      } catch (geocodeError) {
-        logger.warn('Geocoding failed, using default coordinates', geocodeError.message);
-      }
-    } else if (location?.coordinates?.lat && location?.coordinates?.lng) {
-      // Use provided coordinates
-      locationData.coordinates = formatCoordinates(
-        location.coordinates.lat,
-        location.coordinates.lng
-      );
-    }
-    
     const event = await Event.create({
       title,
       description,
@@ -229,7 +196,7 @@ export const createEvent = async (req, res) => {
       createdBy: userId,
       startDate,
       endDate,
-      location,
+      location: locationData,
       category: category || 'Other',
       image,
       maxParticipants,
@@ -333,7 +300,6 @@ export const joinEvent = async (req, res) => {
       });
     }
 
-    // ✅ FIXED: Fetch user before socket notification
     const user = await User.findById(userId).select('name profileImage');
 
     event.participants.push(userId);
@@ -350,14 +316,12 @@ export const joinEvent = async (req, res) => {
       status: 'Registered',
     });
 
-    // ✅ FIXED: Now socket notifications have correct data
     socketService.notifyEventNewParticipant(event.createdBy, event._id, {
       _id: user._id,
       name: user.name,
       profileImage: user.profileImage,
     });
 
-    // Update event capacity in real-time
     socketService.updateEventCapacity(event._id, {
       registered: event.participants.length,
       available: event.maxParticipants ? event.maxParticipants - event.participants.length : null,
@@ -473,48 +437,14 @@ export const updateEvent = async (req, res) => {
     if (description) updateData.description = description;
     if (startDate) updateData.startDate = startDate;
     if (endDate) updateData.endDate = endDate;
-    if (location) updateData.location = location;
     if (category) updateData.category = category;
     if (image) updateData.image = image;
     if (status) updateData.status = status;
     if (maxParticipants !== undefined) updateData.maxParticipants = maxParticipants;
 
+    // ✅ SIMPLIFIED: Use buildLocationObject
     if (location) {
-      let locationData = {
-        address: location.address || event.location?.address || '',
-        city: location.city || event.location?.city || '',
-        state: location.state || event.location?.state || '',
-        zipCode: location.zipCode || event.location?.zipCode || '',
-        coordinates: event.location?.coordinates || {
-          type: 'Point',
-          coordinates: [0, 0],
-        },
-      };
-
-      // Try to geocode if address changed
-      if (location.address || location.city) {
-        try {
-          const coordinates = await getCoordinatesFromAddress(
-            locationData.address,
-            locationData.city,
-            locationData.state,
-            locationData.zipCode
-          );
-
-          if (coordinates) {
-            locationData.coordinates = formatCoordinates(coordinates.lat, coordinates.lng);
-          }
-        } catch (geocodeError) {
-          logger.warn('Geocoding failed during update', geocodeError.message);
-        }
-      } else if (location.coordinates?.lat && location.coordinates?.lng) {
-        locationData.coordinates = formatCoordinates(
-          location.coordinates.lat,
-          location.coordinates.lng
-        );
-      }
-
-      updateData.location = locationData;
+      updateData.location = buildLocationObject(location);
     }
 
     const updated = await Event.findByIdAndUpdate(id, updateData, { new: true })

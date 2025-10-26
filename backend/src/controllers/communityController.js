@@ -3,7 +3,7 @@ import CommunityVerification from '../models/CommunityVerification.js';
 import User from '../models/User.js';
 import Activity from '../models/Activity.js';
 import { awardCommunityCreation } from '../services/impactService.js';
-import { getCoordinatesFromAddress, formatCoordinates } from '../services/geocodingService.js';
+import { buildLocationObject } from '../services/geocodingService.js'; // ✅ UPDATED
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
@@ -54,43 +54,8 @@ export const createCommunity = async (req, res) => {
       });
     }
 
-    // ✅ FIX: Properly structure location data
-    let locationData = {
-      address: location?.address || '',
-      city: location?.city || '',
-      state: location?.state || '',
-      zipCode: location?.zipCode || '',
-      coordinates: {
-        type: 'Point',
-        coordinates: [0, 0], // Default coordinates
-      },
-    };
-
-    // Try to geocode if address and city are provided
-    if (location?.address && location?.city) {
-      try {
-        const coordinates = await getCoordinatesFromAddress(
-          location.address,
-          location.city,
-          location.state,
-          location.zipCode
-        );
-
-        if (coordinates) {
-          locationData.coordinates = formatCoordinates(coordinates.lat, coordinates.lng);
-          logger.success(`Geocoded community location: ${coordinates.lat}, ${coordinates.lng}`);
-        }
-      } catch (geocodeError) {
-        logger.warn('Geocoding failed, using default coordinates', geocodeError.message);
-        // Continue with default coordinates
-      }
-    } else if (location?.coordinates?.lat && location?.coordinates?.lng) {
-      // Use provided coordinates
-      locationData.coordinates = formatCoordinates(
-        location.coordinates.lat,
-        location.coordinates.lng
-      );
-    }
+    // ✅ SIMPLIFIED: Use buildLocationObject from Leaflet coordinates
+    const locationData = buildLocationObject(location);
 
     // Create community with UNVERIFIED status
     const community = await Community.create({
@@ -374,43 +339,9 @@ export const updateCommunity = async (req, res) => {
     if (category) updateData.category = category;
     if (image) updateData.image = image;
 
-    // ✅ FIX: Handle location updates properly
+    // ✅ SIMPLIFIED: Handle location updates with buildLocationObject
     if (location) {
-      let locationData = {
-        address: location.address || community.location?.address || '',
-        city: location.city || community.location?.city || '',
-        state: location.state || community.location?.state || '',
-        zipCode: location.zipCode || community.location?.zipCode || '',
-        coordinates: community.location?.coordinates || {
-          type: 'Point',
-          coordinates: [0, 0],
-        },
-      };
-
-      // Try to geocode if address changed
-      if (location.address || location.city) {
-        try {
-          const coordinates = await getCoordinatesFromAddress(
-            locationData.address,
-            locationData.city,
-            locationData.state,
-            locationData.zipCode
-          );
-
-          if (coordinates) {
-            locationData.coordinates = formatCoordinates(coordinates.lat, coordinates.lng);
-          }
-        } catch (geocodeError) {
-          logger.warn('Geocoding failed during update', geocodeError.message);
-        }
-      } else if (location.coordinates?.lat && location.coordinates?.lng) {
-        locationData.coordinates = formatCoordinates(
-          location.coordinates.lat,
-          location.coordinates.lng
-        );
-      }
-
-      updateData.location = locationData;
+      updateData.location = buildLocationObject(location);
     }
 
     const updated = await Community.findByIdAndUpdate(id, updateData, { new: true }).populate(
@@ -434,7 +365,6 @@ export const updateCommunity = async (req, res) => {
   }
 };
 
-// GET COMMUNITY VERIFICATION STATUS
 export const getCommunityVerificationStatus = async (req, res) => {
   try {
     const { communityId } = req.params;

@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit'; // ✅ ADD
 import * as eventPhotoController from '../controllers/eventPhotoController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
@@ -6,14 +7,24 @@ import { uploadSingle, handleUploadError, validateFileExists } from '../middlewa
 
 const router = express.Router();
 
-// ✅ FIXED: Upload photo to event with multer middleware
+// ✅ ADD THIS - Upload rate limiter
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // 50 uploads per 15 minutes per IP
+  message: 'Too many uploads, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ✅ ADD uploadLimiter to this route
 router.post(
   '/:eventId/upload',
   verifyToken,
+  uploadLimiter, // ✅ ADD THIS
   validateId('eventId'),
-  uploadSingle, // ✅ Multer middleware to handle file upload
-  handleUploadError, // ✅ Handle upload errors
-  validateFileExists, // ✅ Validate file was uploaded
+  uploadSingle,
+  handleUploadError,
+  validateFileExists,
   eventPhotoController.uploadEventPhoto
 );
 
@@ -31,8 +42,6 @@ router.get(
   validatePagination,
   eventPhotoController.getCommunityPhotoGallery
 );
-
-// ✅ SPLIT PHOTO ROUTES INTO SEPARATE PATHS
 
 // Update photo description
 router.put(
