@@ -1,0 +1,464 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Hero Section */
+.heroSection {
+  margin-bottom: 40px;
+}
+
+.heroImage {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.heroImageTag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2f1 0%, #ccf0eb 100%);
+  font-size: 80px;
+}
+
+.placeholderIcon {
+  display: block;
+}
+
+.statusBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Hero Content */
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.heroHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Meta Container */
+.metaContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Error Card */
+.errorCard {
+  margin-top: 40px;
+}
+
+.errorContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.errorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.errorTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.errorText {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 24px 0;
+}
+
+/* Grid Layout */
+.gridContainer {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+/* Card Components */
+.detailsCard,
+.organizerCard,
+.statsCard,
+.capacityCard,
+.locationCard {
+  width: 100%;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 16px 0;
+}
+
+/* Details Grid */
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detailItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.detailLabel {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212121;
+  display: block;
+}
+
+/* Organizer Content */
+.organizerContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.organizerImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #00796B;
+}
+
+.organizerImagePlaceholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #00796B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #FAFAFA;
+  border: 3px solid #00796B;
+  flex-shrink: 0;
+}
+
+.organizerInfo {
+  flex: 1;
+}
+
+.organizerName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 2px 0;
+}
+
+.organizerRole {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.statIcon {
+  font-size: 24px;
+  display: block;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* Capacity Card */
+.progressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #00796B;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  margin: 0;
+}
+
+.fullText {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Location Info */
+.locationInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.locationText {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.participantNote {
+  font-size: 13px;
+  color: #666;
+  background-color: #f0f9ff;
+  border-left: 4px solid #3b82f6;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .gridContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .heroImage {
+    height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .heroHeader {
+    flex-direction: column;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .heroImage {
+    height: 240px;
+  }
+
+  .metaContainer {
+    gap: 12px;
+  }
+
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .organizerContent {
+    gap: 12px;
+  }
+
+  .organizerImage,
+  .organizerImagePlaceholder {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .organizerName {
+    font-size: 13px;
+  }
+
+  .organizerRole {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 8px;
+  }
+
+  .heroHeader {
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .heroImage {
+    height: 200px;
+    margin-bottom: 16px;
+  }
+
+  .statusBadge {
+    top: 12px;
+    right: 12px;
+    flex-direction: column;
+  }
+
+  .metaContainer {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .buttonGroup {
+    gap: 8px;
+  }
+
+  .errorContent {
+    padding: 40px 20px;
+  }
+
+  .heroImagePlaceholder {
+    font-size: 48px;
+  }
+}

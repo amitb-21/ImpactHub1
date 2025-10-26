@@ -1,0 +1,215 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Warning Alert */
+.warningAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.warningTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 4px 0;
+}
+
+.warningText {
+  font-size: 13px;
+  color: #92400e;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Participant Card */
+.participantCard {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.participantHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.participantAvatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #00796B;
+}
+
+.avatarPlaceholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #00796B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #FAFAFA;
+  border: 3px solid #00796B;
+  flex-shrink: 0;
+}
+
+.participantInfo {
+  flex: 1;
+}
+
+.participantName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 4px 0;
+}
+
+.participantEmail {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* Form Section */
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #212121;
+}
+
+/* Quick Reasons */
+.quickReasons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reasonButton {
+  padding: 10px 12px;
+  background-color: #f5f5f5;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #212121;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-weight: 500;
+}
+
+.reasonButton:hover {
+  background-color: #efefef;
+  border-color: #00796B;
+}
+
+.reasonButtonActive {
+  background-color: #ccf0eb;
+  border-color: #00796B;
+  color: #00796B;
+}
+
+/* Textarea */
+.textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #FAFAFA;
+  color: #212121;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  border-color: #00796B;
+  background-color: #fff;
+}
+
+.hint {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+/* Error Alert */
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Info Box */
+.infoBox {
+  background-color: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  color: #0c4a6e;
+}
+
+.infoText {
+  font-size: 13px;
+  color: #0c4a6e;
+  margin: 0;
+}
+
+/* Buttons */
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    gap: 16px;
+  }
+
+  .participantHeader {
+    gap: 12px;
+  }
+
+  .participantAvatar,
+  .avatarPlaceholder {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .quickReasons {
+    gap: 6px;
+  }
+
+  .reasonButton {
+    font-size: 12px;
+  }
+}
