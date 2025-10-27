@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import eventReducer from './slices/eventSlice';
 import communityReducer from './slices/communitySlice';
+import communityManagerReducer from './slices/communityManagerSlice';
 import impactReducer from './slices/impactSlice';
 import notificationReducer from './slices/notificationSlice';
 import photoReducer from './slices/photoSlice';
@@ -11,6 +12,7 @@ import verificationReducer from './slices/verificationSlice';
 import participationReducer from './slices/participationSlice';
 import ratingReducer from './slices/ratingSlice';
 import resourceReducer from './slices/resourceSlice';
+import resourceAdminReducer from './slices/resourceAdminSlice';
 import activityReducer from './slices/activitySlice';
 import locationReducer from './slices/locationSlice';
 
@@ -20,6 +22,7 @@ export const store = configureStore({
     user: userReducer,
     event: eventReducer,
     community: communityReducer,
+    communityManager: communityManagerReducer,
     impact: impactReducer,
     notification: notificationReducer,
     photo: photoReducer,
@@ -27,8 +30,9 @@ export const store = configureStore({
     verification: verificationReducer,
     participation: participationReducer,
     rating: ratingReducer,
-    resources: resourceReducer,    
-    activities: activityReducer,   
+    resources: resourceReducer,
+    resourceAdmin: resourceAdminReducer,
+    activities: activityReducer,
     location: locationReducer
   },
   middleware: (getDefaultMiddleware) =>
@@ -45,4 +49,3 @@ export const store = configureStore({
 });
 
 export default store;
-

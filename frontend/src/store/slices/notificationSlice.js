@@ -10,6 +10,10 @@ const initialState = {
     attendanceVerified: null,
     participationRejected: null,
     communityVerification: null,
+    communityManagerApproved: null,
+    communityManagerRejected: null,
+    resourceApproved: null,
+    resourceRejected: null,
     newParticipant: null,
     newRating: null,
     photoUploaded: null,
@@ -24,12 +28,16 @@ const notificationSlice = createSlice({
   name: 'notification',
   initialState,
   reducers: {
+    // =====================
+    // BASIC OPERATIONS
+    // =====================
+
     // Add a new notification to queue
     addNotification: (state, action) => {
       const notification = {
         id: Date.now(),
         timestamp: new Date(),
-        ...action.payload // { title, message, type, duration, action }
+        ...action.payload
       };
       state.notifications.unshift(notification);
       if (!action.payload.dismissed) {
@@ -163,6 +171,91 @@ const notificationSlice = createSlice({
       state.unreadCount += 1;
     },
 
+    // ===== NEW: Community Manager Approved =====
+    communityManagerApproved: (state, action) => {
+      const { communityName, communityId } = action.payload;
+      state.realtimeEvents.communityManagerApproved = action.payload;
+      
+      state.notifications.unshift({
+        id: Date.now(),
+        timestamp: new Date(),
+        title: '🎉 Application Approved!',
+        message: `Congratulations! You've been approved as a community manager. Your community "${communityName}" is now live and verified!`,
+        type: 'success',
+        icon: '🏆',
+        read: false,
+        duration: 5000,
+        relatedEntity: { entityType: 'Community', entityId: communityId },
+        action: {
+          label: 'View Community',
+          link: `/communities/${communityId}`
+        }
+      });
+      state.unreadCount += 1;
+    },
+
+    // ===== NEW: Community Manager Rejected =====
+    communityManagerRejected: (state, action) => {
+      const { communityName, reason } = action.payload;
+      state.realtimeEvents.communityManagerRejected = action.payload;
+      
+      state.notifications.unshift({
+        id: Date.now(),
+        timestamp: new Date(),
+        title: '❌ Application Not Approved',
+        message: `Your community manager application for "${communityName}" was not approved.\n\nReason: ${reason}\n\nYou can reapply in 30 days.`,
+        type: 'error',
+        icon: '📋',
+        read: false,
+        relatedEntity: { entityType: 'Community', entityName: communityName },
+        action: {
+          label: 'View Application',
+          link: '/community-manager/my-application'
+        }
+      });
+      state.unreadCount += 1;
+    },
+
+    // ===== NEW: Resource Approved =====
+    resourceApproved: (state, action) => {
+      const { resourceId, resourceTitle } = action.payload;
+      state.realtimeEvents.resourceApproved = action.payload;
+      
+      state.notifications.unshift({
+        id: Date.now(),
+        timestamp: new Date(),
+        title: '✅ Resource Published!',
+        message: `Your resource "${resourceTitle}" has been approved and published!`,
+        type: 'success',
+        icon: '📖',
+        read: false,
+        relatedEntity: { entityType: 'Resource', entityId: resourceId },
+        action: {
+          label: 'View Resource',
+          link: `/resources/${resourceId}`
+        }
+      });
+      state.unreadCount += 1;
+    },
+
+    // ===== NEW: Resource Rejected =====
+    resourceRejected: (state, action) => {
+      const { resourceId, resourceTitle, reason } = action.payload;
+      state.realtimeEvents.resourceRejected = action.payload;
+      
+      state.notifications.unshift({
+        id: Date.now(),
+        timestamp: new Date(),
+        title: '❌ Resource Rejected',
+        message: `Your resource "${resourceTitle}" was not approved.\n\nReason: ${reason}`,
+        type: 'error',
+        icon: '📋',
+        read: false,
+        relatedEntity: { entityType: 'Resource', entityId: resourceId }
+      });
+      state.unreadCount += 1;
+    },
+
     // New event participant notification
     newParticipant: (state, action) => {
       const { eventId, participant } = action.payload;
@@ -201,7 +294,7 @@ const notificationSlice = createSlice({
 
     // Photo uploaded notification
     photoUploaded: (state, action) => {
-      const { eventId, photoUrl } = action.payload;
+      const { eventId } = action.payload;
       state.realtimeEvents.photoUploaded = action.payload;
       
       state.notifications.unshift({
@@ -311,13 +404,15 @@ const notificationSlice = createSlice({
 
     // Clear real-time event
     clearRealtimeEvent: (state, action) => {
-      const eventKey = action.payload; // e.g., 'pointsEarned'
+      const eventKey = action.payload;
       if (state.realtimeEvents[eventKey]) {
         state.realtimeEvents[eventKey] = null;
       }
     }
   }
 });
+
+// ===== EXPORTS =====
 
 export const {
   addNotification,
@@ -330,6 +425,10 @@ export const {
   attendanceVerified,
   participationRejected,
   communityVerification,
+  communityManagerApproved,
+  communityManagerRejected,
+  resourceApproved,
+  resourceRejected,
   newParticipant,
   newRating,
   photoUploaded,

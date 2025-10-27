@@ -7,12 +7,9 @@ export const authAPI = {
   getCurrentUser: () => API.get('/auth/me'),
   logout: () => API.post('/auth/logout'),
   googleLogin: () => {
-    // Redirect to backend Google OAuth
-    window.location.href = `${API_URL}/auth/google`;
+    window.location.href = `${API.defaults.baseURL}/auth/google`;
   },
-  
   handleGoogleCallback: (token) => {
-    // Store token from URL callback
     localStorage.setItem('token', token);
     return API.get('/auth/me');
   }
@@ -31,11 +28,30 @@ export const userAPI = {
 export const communityAPI = {
   getAll: (filters = {}) => API.get('/communities', { params: filters }),
   getById: (id) => API.get(`/communities/${id}`),
-  create: (data) => API.post('/communities', data),
   update: (id, data) => API.put(`/communities/${id}`, data),
   join: (id) => API.post(`/communities/${id}/join`),
   leave: (id) => API.post(`/communities/${id}/leave`),
-  getVerificationStatus: (id) => API.get(`/communities/${id}/verification-status`)
+  getVerificationStatus: (id) => API.get(`/communities/${id}/verification-status`),
+  getMembers: (communityId, page = 1) => 
+    API.get(`/communities/${communityId}/members?page=${page}&limit=20`)
+};
+
+// ===== COMMUNITY MANAGER APPLICATIONS =====
+export const communityManagerAPI = {
+  apply: (data) => API.post('/community-manager/apply', data),
+  getMyApplication: () => API.get('/community-manager/my-application'),
+  getApplicationHistory: (page = 1) => 
+    API.get(`/community-manager/my-history?page=${page}&limit=10`),
+  
+  // Admin endpoints
+  getPendingApplications: (page = 1) => 
+    API.get(`/community-manager/admin/pending?page=${page}&limit=20`),
+  viewApplication: (applicationId) => 
+    API.get(`/community-manager/admin/${applicationId}`),
+  approveApplication: (applicationId, approvalNotes) => 
+    API.post(`/community-manager/admin/${applicationId}/approve`, { approvalNotes }),
+  rejectApplication: (applicationId, rejectionReason) => 
+    API.post(`/community-manager/admin/${applicationId}/reject`, { rejectionReason })
 };
 
 // ===== EVENTS =====
@@ -65,10 +81,9 @@ export const participationAPI = {
   removeFromWishlist: (eventId) => 
     API.delete(`/participations/${eventId}/wishlist/remove`),
   getWishlist: (userId, page = 1) => 
-    API.get(`/participations/user/${userId}/wishlist?page=${page}&limit=10`)
-  , // end getWishlist
-  // Get participation details
-  getParticipationDetails: (participationId) => API.get(`/participations/${participationId}`)
+    API.get(`/participations/user/${userId}/wishlist?page=${page}&limit=10`),
+  getParticipationDetails: (participationId) => 
+    API.get(`/participations/${participationId}`)
 };
 
 // ===== RATINGS =====
@@ -108,8 +123,20 @@ export const resourceAPI = {
   delete: (id) => API.delete(`/resources/${id}`),
   search: (query, page = 1) => API.get(`/resources/search?q=${query}&page=${page}&limit=10`),
   getFeatured: () => API.get('/resources/featured'),
+  getByCategory: (category, page = 1) => 
+    API.get(`/resources/category/${category}?page=${page}&limit=10`),
   like: (id) => API.post(`/resources/${id}/like`),
-  unlike: (id) => API.post(`/resources/${id}/unlike`)
+  unlike: (id) => API.post(`/resources/${id}/unlike`),
+  
+  // Admin endpoints
+  getPending: (page = 1) => 
+    API.get(`/resources/admin/pending?page=${page}&limit=20`),
+  approve: (id, notes) => 
+    API.post(`/resources/${id}/approve`, { notes }),
+  reject: (id, rejectionReason) => 
+    API.post(`/resources/${id}/reject`, { rejectionReason }),
+  toggleFeatured: (id) => API.post(`/resources/${id}/feature`),
+  getStats: () => API.get('/resources/admin/stats')
 };
 
 // ===== PHOTOS =====
@@ -144,9 +171,9 @@ export const locationAPI = {
 // ===== CALENDAR =====
 export const calendarAPI = {
   downloadICS: (eventId) => 
-    API.get(`/location/calendar/events/${eventId}/download.ics`),
+    API.get(`/location/calendar/${eventId}/download.ics`),
   getInviteURLs: (eventId) => 
-    API.get(`/location/calendar/events/${eventId}/invite-urls`)
+    API.get(`/location/calendar/${eventId}/urls`)
 };
 
 // ===== ACTIVITY =====
@@ -170,7 +197,12 @@ export const verificationAPI = {
   approve: (verificationId, notes) => 
     API.post(`/verifications/${verificationId}/approve`, { notes }),
   reject: (verificationId, rejectionReason, notes) => 
-    API.post(`/verifications/${verificationId}/reject`, { rejectionReason, notes })
+    API.post(`/verifications/${verificationId}/reject`, { rejectionReason, notes }),
+  getVerificationHistory: (page = 1, status = null) => {
+    const params = { page, limit: 20 };
+    if (status) params.status = status;
+    return API.get(`/verifications/admin/history`, { params });
+  }
 };
 
 // ===== ADMIN =====
