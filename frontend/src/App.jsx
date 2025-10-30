@@ -26,6 +26,9 @@ import UserProfile from "./pages/UserProfile";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
 
+// Pages - Community Manager (NEW - Day 7/8)
+import BecomeCommunityManager from "./pages/BecomeCommunityManager"; // <-- IMPORT
+
 // Error Pages (to be created)
 const NotFound = () => (
   <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -151,6 +154,20 @@ const AppContent = () => {
             <ProtectedRoute>
               {/* <NearbyCommunities /> - To be created on Day 23 */}
               <div>Nearby Communities (Coming Soon)</div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* =====================
+          COMMUNITY MANAGER (Day 7/8)
+          ===================== */}
+
+        {/* Apply to be Community Manager */}
+        <Route
+          path="/apply-community-manager"
+          element={
+            <ProtectedRoute>
+              <BecomeCommunityManager />
             </ProtectedRoute>
           }
         />

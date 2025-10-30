@@ -1,0 +1,347 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.header button {
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Messages */
+.successMessage {
+  background-color: #d1fae5;
+  border: 1px solid #6ee7b7;
+  margin-bottom: 20px;
+}
+
+.errorMessage {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  margin-bottom: 20px;
+}
+
+.messageContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.successMessage .messageContent {
+  color: #065f46;
+}
+
+.errorMessage .messageContent {
+  color: #991b1b;
+}
+
+.messageIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Info Card */
+.infoCard {
+  margin-bottom: 32px;
+}
+
+.infoTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 20px 0;
+}
+
+.infoBenefits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.infoBenefits > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.infoBenefits > div:hover {
+  background-color: #f0f0f0;
+  border-color: #00796b;
+}
+
+.infoBenefits > div span:first-child {
+  font-size: 24px;
+}
+
+.infoBenefits > div span:nth-child(2) {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212121;
+}
+
+.infoBenefits > div span:nth-child(3) {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Content Sections */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.formSection,
+.statusSection,
+.historySection {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.formTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.closeFormButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.closeFormButton:hover {
+  background-color: #f0f0f0;
+  color: #212121;
+}
+
+/* CTA Card */
+.ctaCard {
+  background: linear-gradient(135deg, #00796b 0%, #004d40 100%);
+  color: #fafafa;
+}
+
+.ctaContent {
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.ctaIcon {
+  font-size: 48px;
+}
+
+.ctaTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  color: #fafafa;
+}
+
+.ctaText {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 400px;
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.ctaCard button {
+  align-self: center;
+  min-width: 200px;
+}
+
+/* Requirements Card */
+.requirementsCard {
+  margin-bottom: 32px;
+}
+
+.requirementsTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 16px 0;
+}
+
+.requirementsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.requirementsList li {
+  font-size: 14px;
+  color: #212121;
+  padding-left: 24px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.requirementsList li:before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* FAQ Card */
+.faqCard {
+  margin-bottom: 32px;
+}
+
+.faqTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 16px 0;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faqList > div {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.faqList button {
+  width: 100%;
+  padding: 16px;
+  background-color: #f9fafb;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #212121;
+  transition: all 0.2s ease;
+}
+
+.faqList button:hover {
+  background-color: #f0f0f0;
+  color: #00796b;
+}
+
+.faqList .open button {
+  background-color: #f0f0f0;
+  border-bottom: 2px solid #00796b;
+}
+
+.faqList p {
+  padding: 16px;
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  background-color: #fafafa;
+  line-height: 1.6;
+}
+
+.faqIcon {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .infoBenefits {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaContent {
+    padding: 12px;
+  }
+
+  .ctaTitle {
+    font-size: 20px;
+  }
+
+  .ctaText {
+    font-size: 13px;
+  }
+
+  .ctaCard button {
+    width: 100%;
+  }
+}

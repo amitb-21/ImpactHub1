@@ -1,0 +1,158 @@
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #666;
+  font-size: 14px;
+}
+
+.errorCard {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.errorContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #991b1b;
+}
+
+.statusContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.statusHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.iconPending {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.iconApproved {
+  color: #10b981;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.iconRejected {
+  color: #ef4444;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.statusInfo {
+  flex: 1;
+}
+
+.statusTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.statusDescription {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.statusDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border-left: 4px solid #00796b;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.detailLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  min-width: 100px;
+}
+
+.detailValue {
+  font-size: 14px;
+  color: #212121;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+.canReapply {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.infoBox {
+  padding: 12px 16px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 6px;
+}
+
+.infoText {
+  font-size: 13px;
+  color: #0d47a1;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.actions button {
+  flex: 0 1 auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statusHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .statusDetails {
+    flex-direction: column;
+  }
+
+  .detailItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detailValue {
+    text-align: left;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

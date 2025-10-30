@@ -9,6 +9,7 @@ import {
   FiLogOut,
   FiUser,
   FiSearch,
+  FiBriefcase, // <-- IMPORT
 } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import Modal from "./Modal";
@@ -40,6 +41,9 @@ const Navbar = ({ onMenuClick }) => {
       joinAdmin?.();
     }
   }, [isAdmin, joinAdmin]);
+
+  // <-- CHECK IF USER IS *ONLY* A USER -->
+  const isRegularUser = isAuthenticated && user?.role === "user";
 
   return (
     <>
@@ -127,6 +131,18 @@ const Navbar = ({ onMenuClick }) => {
                       <span>Profile</span>
                     </Link>
 
+                    {/* <-- ADDED APPLY BUTTON --> */}
+                    {isRegularUser && (
+                      <Link
+                        to="/apply-community-manager"
+                        style={styles.dropdownItem}
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FiBriefcase size={16} />
+                        <span>Become a Manager</span>
+                      </Link>
+                    )}
+
                     {isAdmin?.() && (
                       <Link
                         to="/admin"
@@ -181,6 +197,7 @@ const Navbar = ({ onMenuClick }) => {
   );
 };
 
+// Styles (no changes, only added comment for clarity)
 const styles = {
   navbar: {
     display: "flex",
