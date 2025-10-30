@@ -1,0 +1,297 @@
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Progress Indicator */
+.progressContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stepContainer {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 150px;
+  gap: 8px;
+}
+
+.stepNumber {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.stepNumberActive {
+  background-color: #00796B;
+  color: #FAFAFA;
+  box-shadow: 0 2px 8px rgba(0, 121, 107, 0.3);
+}
+
+.stepLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  white-space: nowrap;
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background-color: #e0e0e0;
+  margin: 0 12px;
+  min-width: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.stepLineActive {
+  background-color: #00796B;
+}
+
+/* Error Alert */
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-left: 4px solid #991b1b;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Form Group */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #212121;
+  display: block;
+}
+
+.input,
+.textarea,
+select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #FAFAFA;
+  color: #212121;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input:focus,
+.textarea:focus,
+select:focus {
+  border-color: #00796B;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1);
+}
+
+.inputError {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.inputError:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.errorMessage {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Grid Two Columns */
+.gridTwoColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .gridTwoColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Step Title & Description */
+.stepTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.stepDescription {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 24px 0;
+}
+
+/* Review Section */
+.reviewSection {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.reviewSection:last-of-type {
+  border-bottom: none;
+}
+
+.reviewTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #00796B;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reviewRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.reviewRow:last-child {
+  border-bottom: none;
+}
+
+.reviewLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  min-width: 120px;
+}
+
+.reviewValue {
+  font-size: 13px;
+  color: #212121;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Info Box */
+.infoBox {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196F3;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 24px;
+}
+
+.infoText {
+  font-size: 13px;
+  color: #0d47a1;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Button Container */
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.buttonContainer button {
+  flex: 1;
+  max-width: 200px;
+}
+
+@media (max-width: 600px) {
+  .buttonContainer {
+    flex-direction: column;
+  }
+
+  .buttonContainer button {
+    max-width: 100%;
+  }
+}
+
+/* Step Indicator */
+.stepIndicator {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .progressContainer {
+    margin-bottom: 32px;
+  }
+
+  .stepContainer {
+    min-width: 120px;
+  }
+
+  .stepLabel {
+    font-size: 11px;
+  }
+
+  .stepNumber {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .stepLine {
+    min-width: 12px;
+  }
+}
