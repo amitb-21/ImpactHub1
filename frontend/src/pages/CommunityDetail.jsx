@@ -8,7 +8,7 @@ import {
   joinCommunity,
   leaveCommunity,
 } from "../store/slices/communitySlice";
-import { fetchCommunityActivity } from "../store/slices/activitySlice";
+import { fetchCommunityActivities } from "../store/slices/activitySlice";
 import Layout from "../components/common/Layout";
 import CommunityStats from "../components/community/CommunityStats";
 import CommunityGallery from "../components/community/CommunityGallery";
@@ -53,7 +53,7 @@ const CommunityDetail = () => {
   useEffect(() => {
     if (communityId) {
       dispatch(fetchCommunityById(communityId));
-      dispatch(fetchCommunityActivity(communityId));
+      dispatch(fetchCommunityActivities(communityId));
     }
   }, [communityId, dispatch]);
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCommunityActivity } from "../../store/slices/activitySlice";
+import { fetchCommunityActivities } from "../../store/slices/activitySlice";
 import { Card } from "../common/Card";
 import { Badge } from "../common/Badge";
 import { Button } from "../common/Button";
@@ -23,7 +23,7 @@ const CommunityActivityFeed = ({
 
   useEffect(() => {
     if (communityId) {
-      dispatch(fetchCommunityActivity(communityId));
+      dispatch(fetchCommunityActivities(communityId));
     }
   }, [communityId, dispatch]);
 

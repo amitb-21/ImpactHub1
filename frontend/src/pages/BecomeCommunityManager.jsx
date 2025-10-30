@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getMyApplication,
-  clearMessages,
-} from "../../store/slices/communityManagerSlice";
-import Layout from "../../components/common/Layout";
-import CMApplicationForm from "../../components/communityManager/CMApplicationForm";
-import CMApplicationStatus from "../../components/communityManager/CMApplicationStatus";
-import CMApplicationHistory from "../../components/communityManager/CMApplicationHistory";
-import { Card } from "../../components/common/Card";
-import { Button } from "../../components/common/Button";
+  clearError,
+  clearSuccessMessage,
+} from "../store/slices/communityManagerSlice";
+import Layout from "../components/common/Layout";
+import CMApplicationForm from "../components/communityManager/CMApplicationForm";
+import CMApplicationStatus from "../components/communityManager/CMApplicationStatus";
+import CMApplicationHistory from "../components/communityManager/CMApplicationHistory";
+import { Card } from "../components/common/Card";
+import { Button } from "../components/common/Button";
 import { FiArrowLeft, FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import styles from "./styles/BecomeCommunityManager.module.css";
@@ -41,7 +42,8 @@ const BecomeCommunityManager = () => {
   useEffect(() => {
     if (successMessage || error) {
       const timer = setTimeout(() => {
-        dispatch(clearMessages());
+        if (error) dispatch(clearError());
+        if (successMessage) dispatch(clearSuccessMessage());
       }, 5000);
       return () => clearTimeout(timer);
     }
