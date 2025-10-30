@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.participantCard {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.participantHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.participantAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #c62828;
+}
+
+.participantInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.participantName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.participantEmail {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+.formSection {
+  width: 100%;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #424242;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+  outline: none;
+  resize: vertical;
+}
+
+.textarea:focus {
+  border-color: #c62828;
+}
+
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}

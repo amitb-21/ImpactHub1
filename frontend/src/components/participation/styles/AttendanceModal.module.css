@@ -1,0 +1,144 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.participantCard {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.participantHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.participantAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00796B;
+}
+
+.participantInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.participantName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0;
+}
+
+.participantEmail {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+.formSection {
+  width: 100%;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #424242;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.inputWrapper:focus-within {
+  border-color: #00796B;
+}
+
+.input {
+  flex-grow: 1;
+  border: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: transparent;
+  outline: none;
+}
+
+.inputUnit {
+  padding: 0 12px;
+  font-size: 13px;
+  color: #999;
+  background-color: #f5f5f5;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-left: 2px solid #e0e0e0;
+}
+
+.infoBox {
+  background-color: #f0f8f7;
+  border: 1px solid #b2dfdb;
+}
+
+.infoText {
+  font-size: 13px;
+  font-weight: 600;
+  color: #004D40;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.infoList {
+  list-style: none;
+  padding-left: 10px;
+  margin: 0;
+  font-size: 13px;
+  color: #00695C;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.totalPoints {
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #b2dfdb;
+  color: #004D40;
+}
+
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}

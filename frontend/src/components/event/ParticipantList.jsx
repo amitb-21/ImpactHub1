@@ -70,8 +70,8 @@ const ParticipantList = ({
 
   // Submit approval
   const handleSubmitApproval = async () => {
-    if (!hoursContributed || isNaN(hoursContributed)) {
-      alert("Please enter valid hours contributed");
+    if (!hoursContributed || isNaN(hoursContributed) || hoursContributed < 0) {
+      alert("Please enter valid hours contributed (0 or greater)");
       return;
     }
 
@@ -139,6 +139,29 @@ const ParticipantList = ({
   if (!currentData || currentData.length === 0) {
     return (
       <Card padding="lg" shadow="md">
+        {/* Render tabs even if empty */}
+        {isEventOrganizer && (
+          <div className={styles.tabsContainer}>
+            <button
+              onClick={() => setActiveTab("pending")}
+              className={`${styles.tab} ${
+                activeTab === "pending" ? styles.tabActive : ""
+              }`}
+            >
+              <FiAlertCircle size={16} />
+              Pending ({pendingParticipants.data.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("verified")}
+              className={`${styles.tab} ${
+                activeTab === "verified" ? styles.tabActive : ""
+              }`}
+            >
+              <FiCheckCircle size={16} />
+              Verified ({verifiedParticipants.data.length})
+            </button>
+          </div>
+        )}
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>👥</div>
           <p className={styles.emptyStateTitle}>No Participants</p>
