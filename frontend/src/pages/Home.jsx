@@ -486,7 +486,7 @@ const CommunityCardPreview = ({ community, onClick }) => (
 const StatsCard = ({ icon: Icon, label, value }) => (
   <Card shadow="sm" padding="md" className={styles.statsCard}>
     <div className={styles.statsCardContent}>
-      <Icon style={styles.statsIcon} size={28} />
+      <Icon className={styles.statsIcon} size={28} />
       <div className={styles.statsCardText}>
         <p className={styles.statsValue}>{value}</p>
         <p className={styles.statsLabel}>{label}</p>

@@ -3,8 +3,6 @@ import passport from 'passport';
 import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
 import './config/passport.js';
 
 // Routes
@@ -38,8 +36,6 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
-app.use(mongoSanitize());
-app.use(xss());
 
 // =====================
 // CORS CONFIGURATION
