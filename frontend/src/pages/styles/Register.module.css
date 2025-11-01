@@ -1,0 +1,526 @@
+/* ===========================
+   PAGE CONTAINER
+   =========================== */
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===========================
+   ANIMATED BACKGROUND SHAPES
+   =========================== */
+
+.backgroundShapes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.shape1 {
+  position: absolute;
+  top: -10%;
+  left: -5%;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(0, 121, 107, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float1 22s ease-in-out infinite;
+}
+
+.shape2 {
+  position: absolute;
+  bottom: -15%;
+  right: -10%;
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.05) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float2 28s ease-in-out infinite;
+}
+
+.shape3 {
+  position: absolute;
+  top: 35%;
+  right: 15%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(0, 172, 193, 0.04) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float3 20s ease-in-out infinite;
+}
+
+@keyframes float1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(35px, -35px) scale(1.12);
+  }
+  66% {
+    transform: translate(-25px, 25px) scale(0.88);
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-45px, 35px) scale(1.08);
+  }
+  66% {
+    transform: translate(25px, -30px) scale(0.92);
+  }
+}
+
+@keyframes float3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, 30px) scale(1.18);
+  }
+}
+
+/* ===========================
+   BRANDING SECTION (LEFT SIDE)
+   =========================== */
+
+.brandingSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #00796B 0%, #00897b 50%, #00acc1 100%);
+  padding: 80px 60px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.brandingSection::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -15%;
+  width: 750px;
+  height: 750px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.11) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulseGlow 11s ease-in-out infinite;
+}
+
+.brandingSection::after {
+  content: '';
+  position: absolute;
+  bottom: -35%;
+  right: -18%;
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulseGlow 13s ease-in-out infinite reverse;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.85;
+  }
+}
+
+.brandingContent {
+  position: relative;
+  z-index: 2;
+  max-width: 540px;
+  animation: slideInLeft 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Logo */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 44px;
+}
+
+.logo {
+  font-size: 68px;
+  animation: rotate3d 20s linear infinite;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes rotate3d {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+.brandTitle {
+  font-size: 42px;
+  font-weight: 900;
+  color: white;
+  margin: 0;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Tagline */
+.tagline {
+  font-size: 36px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 24px;
+  line-height: 1.25;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.taglineAccent {
+  color: #FFC107;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 32px rgba(255, 193, 7, 0.85);
+  }
+}
+
+.description {
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 44px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Benefits List */
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 48px;
+}
+
+.benefitItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: all 0.3s ease;
+}
+
+.benefitItem:hover {
+  background: rgba(255, 255, 255, 0.17);
+  transform: translateX(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.benefitIcon {
+  font-size: 30px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+.benefitTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+  letter-spacing: 0.2px;
+}
+
+.benefitDesc {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+/* Testimonial */
+.testimonial {
+  padding: 28px 32px;
+  background: rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.testimonialQuote {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-size: 80px;
+  font-weight: 900;
+  color: rgba(255, 193, 7, 0.3);
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.testimonialText {
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.7;
+  color: white;
+  margin: 0 0 20px;
+  padding-left: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.testimonialAuthor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 40px;
+}
+
+.authorAvatar {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.authorName {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.authorRole {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ===========================
+   FORM SECTION (RIGHT SIDE)
+   =========================== */
+
+.formSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 60px;
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 520px;
+  animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+@media (max-width: 1200px) {
+  .brandingSection {
+    padding: 60px 40px;
+  }
+
+  .formSection {
+    padding: 60px 40px;
+  }
+
+  .tagline {
+    font-size: 32px;
+  }
+
+  .description {
+    font-size: 16px;
+  }
+
+  .benefits {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .brandingSection {
+    display: none;
+  }
+
+  .formSection {
+    padding: 40px 24px;
+    min-height: 100vh;
+  }
+
+  .formContainer {
+    max-width: 540px;
+  }
+}
+
+@media (max-width: 768px) {
+  .formSection {
+    padding: 32px 20px;
+  }
+
+  .formContainer {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .formSection {
+    padding: 24px 16px;
+  }
+}
+
+/* ===========================
+   MOBILE HEADER BRANDING
+   =========================== */
+
+@media (max-width: 1024px) {
+  .formSection::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 220px;
+    background: linear-gradient(135deg, #00796B 0%, #00897b 50%, #00acc1 100%);
+    z-index: -1;
+    border-radius: 0 0 32px 32px;
+  }
+
+  .formContainer {
+    position: relative;
+    margin-top: 100px;
+    padding: 44px 36px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 121, 107, 0.2);
+  }
+
+  /* Mini logo for mobile */
+  .formContainer::before {
+    content: '🌍';
+    position: absolute;
+    top: -160px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 88px;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
+    animation: rotate3d 20s linear infinite;
+  }
+
+  /* Mobile title and tagline */
+  .formContainer::after {
+    content: 'Join ImpactHub';
+    position: absolute;
+    top: -65px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 26px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .formContainer {
+    padding: 36px 28px;
+    margin-top: 90px;
+  }
+
+  .formContainer::before {
+    font-size: 72px;
+    top: -140px;
+  }
+
+  .formContainer::after {
+    font-size: 24px;
+    top: -58px;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY & FOCUS STATES
+   =========================== */
+
+.benefitItem:focus-visible,
+.testimonial:focus-visible {
+  outline: 3px solid #FFC107;
+  outline-offset: 4px;
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+
+@media print {
+  .backgroundShapes,
+  .brandingSection::before,
+  .brandingSection::after {
+    display: none;
+  }
+  
+  .page {
+    background: white;
+  }
+}
