@@ -7,7 +7,6 @@ const userSchema = new mongoose.Schema(
   {
     googleId: {
       type: String,
-      index: true,
       sparse: true,
     },
     name: {
@@ -25,7 +24,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       default: null,
-      select: false, // Don't include by default in queries
+      select: false,
       minlength: 6,
     },
     profileImage: {
@@ -77,6 +76,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Add indexes - googleId with sparse only (no index: true)
+userSchema.index({ googleId: 1, sparse: true });
+
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
@@ -100,7 +102,7 @@ userSchema.methods.generateJWT = function () {
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.googleId;
-  delete obj.password; // Never include password in JSON
+  delete obj.password;
   return obj;
 };
 

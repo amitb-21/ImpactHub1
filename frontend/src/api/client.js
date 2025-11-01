@@ -6,9 +6,6 @@ console.log('API URL:', API_URL); // Debug log
 
 const API = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
   timeout: 10000, // 10 seconds timeout
   validateStatus: function (status) {
     return status >= 200 && status < 500; // Don't reject responses with status < 500
@@ -21,6 +18,12 @@ API.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // If sending FormData, let the browser set Content-Type with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    } else {
+      config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
     }
     return config;
   },
@@ -57,25 +60,33 @@ API.interceptors.response.use(
     if (error.response?.status === 500) {
       toast.error('Server error. Please try again later.');
     }
-
-    // Network error
-    if (!error.response) {
-      console.error('Network Error Details:', {
-        message: error.message,
-        config: error.config,
-        url: error.config?.url,
-        baseURL: error.config?.baseURL
-      });
-      
-      // Check if server is reachable
-      fetch(API_URL)
-        .then(() => {
-          toast.error('Network error. API server is reachable but request failed.');
-        })
-        .catch(() => {
-          toast.error(`Cannot reach server at ${API_URL}. Please check if backend is running.`);
-        });
+    // For responses with a body (server returned an HTTP status), show the server message
+    if (error.response) {
+      console.error('API Error Response:', error.response);
+      const serverMessage = error.response.data?.message || `Request failed with status ${error.response.status}`;
+      // Show server-provided message for non-handled statuses
+      if (![401, 403, 404, 500].includes(error.response.status)) {
+        toast.error(serverMessage);
+      }
+      return Promise.reject(error);
     }
+
+    // Network error (no response received)
+    console.error('Network Error Details:', {
+      message: error.message,
+      config: error.config,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL
+    });
+
+    // Check if server base URL is reachable (quick probe)
+    fetch(API_URL)
+      .then(() => {
+        toast.error('Network error. API server is reachable but the request failed. Check server logs or the specific endpoint.');
+      })
+      .catch(() => {
+        toast.error(`Cannot reach server at ${API_URL}. Please check if backend is running.`);
+      });
 
     return Promise.reject(error);
   }

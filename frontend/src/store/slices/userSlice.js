@@ -2,15 +2,16 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { userAPI } from '../../api/services';
 import { toast } from 'react-toastify';
 
-// Async thunks
+// Async Thunks
 export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (userId, { rejectWithValue }) => {
     try {
       const response = await userAPI.getProfile(userId);
-      return response.data;
+      return response.data.user; // payload is the user object
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      console.error('Profile fetch error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -20,9 +21,10 @@ export const fetchUserStats = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const response = await userAPI.getStats(userId);
-      return response.data;
+      return response.data.stats;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      console.error('Stats fetch error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -32,9 +34,10 @@ export const fetchUserActivity = createAsyncThunk(
   async ({ userId, page = 1 }, { rejectWithValue }) => {
     try {
       const response = await userAPI.getActivity(userId, page);
-      return response.data;
+      return response.data; // { data, pagination }
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      console.error('Activity fetch error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -45,7 +48,7 @@ export const updateUserProfile = createAsyncThunk(
     try {
       const response = await userAPI.updateProfile(userId, data);
       toast.success('Profile updated successfully!');
-      return response.data.user;
+      return response.data.user; // ✅ FIXED: Extract user from response
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to update profile';
       toast.error(message);
@@ -59,9 +62,9 @@ export const searchUsers = createAsyncThunk(
   async ({ query, page = 1 }, { rejectWithValue }) => {
     try {
       const response = await userAPI.search(query, page);
-      return response.data;
+      return response.data; // ✅ Already has { data, pagination }
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -118,24 +121,26 @@ const userSlice = createSlice({
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.profile = action.payload.user;
+        state.profile = action.payload; // ✅ FIXED: payload is the user object
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
+      
       // Fetch stats
       .addCase(fetchUserStats.pending, (state) => {
         state.isLoading = true;
       })
       .addCase(fetchUserStats.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.stats = action.payload.stats;
+        state.stats = action.payload; // ✅ FIXED: payload is the stats object
       })
       .addCase(fetchUserStats.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
+      
       // Fetch activity
       .addCase(fetchUserActivity.pending, (state) => {
         state.isLoading = true;
@@ -149,6 +154,7 @@ const userSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
+      
       // Update profile
       .addCase(updateUserProfile.pending, (state) => {
         state.isUpdating = true;
@@ -156,12 +162,13 @@ const userSlice = createSlice({
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.isUpdating = false;
-        state.profile = action.payload;
+        state.profile = action.payload; // ✅ FIXED: payload is the user object
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.isUpdating = false;
         state.error = action.payload;
       })
+      
       // Search users
       .addCase(searchUsers.pending, (state) => {
         state.isSearching = true;

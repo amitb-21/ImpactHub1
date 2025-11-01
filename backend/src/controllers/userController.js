@@ -4,6 +4,7 @@ import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants.js';
 import { parseQueryParams } from '../utils/helpers.js';
+import { uploadToCloudinary, uploadBase64ToCloudinary } from '../services/uploadService.js';
 
 export const getUserProfile = async (req, res) => {
   try {
@@ -39,7 +40,9 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, bio, location, profileImage } = req.body;
+    const { name, bio, location } = req.body;
+    // profileImage may come as multipart file (req.file) or as a string in body
+    let profileImage = req.body.profileImage;
 
     if (req.userId !== id && req.userRole !== 'admin') {
       return res.status(403).json({
@@ -52,7 +55,31 @@ export const updateUserProfile = async (req, res) => {
     if (name) updateData.name = name;
     if (bio) updateData.bio = bio;
     if (location) updateData.location = location;
-    if (profileImage) updateData.profileImage = profileImage;
+
+    // If a file was uploaded via multer, req.file will be present (memoryStorage)
+    if (req.file) {
+      try {
+        const uploadResult = await uploadToCloudinary(req.file, 'impacthub/profiles');
+        updateData.profileImage = uploadResult.url;
+      } catch (err) {
+        logger.error('Error uploading profile image', err);
+        return res.status(500).json({ success: false, message: 'Failed to upload profile image' });
+      }
+    } else if (profileImage) {
+      // If profileImage is provided as string (URL or base64), handle accordingly
+      if (typeof profileImage === 'string' && profileImage.startsWith('data:')) {
+        // base64 string
+        try {
+          const uploadResult = await uploadBase64ToCloudinary(profileImage, 'impacthub/profiles');
+          updateData.profileImage = uploadResult.url;
+        } catch (err) {
+          logger.error('Error uploading base64 profile image', err);
+          return res.status(500).json({ success: false, message: 'Failed to upload profile image' });
+        }
+      } else if (typeof profileImage === 'string') {
+        updateData.profileImage = profileImage;
+      }
+    }
 
     const user = await User.findByIdAndUpdate(id, updateData, { new: true });
 

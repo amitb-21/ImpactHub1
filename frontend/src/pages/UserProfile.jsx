@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
@@ -25,31 +25,19 @@ const UserProfile = () => {
   const { profile, stats, isLoading, error } = useSelector(
     (state) => state.user
   );
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
-  // Fetch user data on mount or when userId changes
+  // ✅ FIXED: Only fetch when userId changes, remove currentUser dependency
   useEffect(() => {
     if (!userId) {
       return;
     }
 
-    const loadUserData = async () => {
-      try {
-        await Promise.all([
-          dispatch(fetchUserProfile(userId)).unwrap(),
-          dispatch(fetchUserStats(userId)).unwrap(),
-          dispatch(fetchUserActivity({ userId, page: 1 })).unwrap(),
-        ]);
-      } catch (err) {
-        console.error("Error loading user data:", err);
-      }
-    };
+    dispatch(fetchUserProfile(userId));
+    dispatch(fetchUserStats(userId));
+    dispatch(fetchUserActivity({ userId, page: 1 }));
+  }, [userId, dispatch]); // ✅ Only depend on userId
 
-    loadUserData();
-
-    // Check if it's own profile
-    setIsOwnProfile(userId === currentUser?._id);
-  }, [userId, currentUser?._id, dispatch]);
+  const isOwnProfile = userId === currentUser?._id;
 
   if (error) {
     return (
@@ -59,8 +47,7 @@ const UserProfile = () => {
             <div className={styles.errorIcon}>❌</div>
             <h2 className={styles.errorTitle}>Error Loading Profile</h2>
             <p className={styles.errorText}>
-              {error ||
-                "There was an error loading this user's profile. Please try again."}
+              {error || "There was an error loading this user's profile."}
             </p>
             <Button
               variant="primary"
@@ -75,7 +62,10 @@ const UserProfile = () => {
     );
   }
 
-  if (isLoading || !profile) {
+  // Show loader only while profile is not yet loaded.
+  // Avoid using global `isLoading` because other user requests (activity/stats)
+  // may set it and cause the profile to spinner indefinitely.
+  if (!profile) {
     return (
       <Layout>
         <div className={styles.container}>
@@ -171,7 +161,7 @@ const UserProfile = () => {
               </Card>
             </div>
 
-            {/* Badges Section (if any) */}
+            {/* Badges Section */}
             {profile?.badges && profile.badges.length > 0 && (
               <div className={styles.section}>
                 <Card padding="lg" shadow="md">
@@ -198,7 +188,7 @@ const UserProfile = () => {
                       icon="🎯"
                       title="Event Master"
                       description={`Participated in ${
-                        stats?.eventsAttended || 0
+                        stats?.eventsParticipated || 0
                       } events`}
                     />
                     <AchievementItem
@@ -211,7 +201,7 @@ const UserProfile = () => {
                     <AchievementItem
                       icon="⭐"
                       title="Points Collector"
-                      description={`Earned ${stats?.totalPoints || 0} points`}
+                      description={`Earned ${stats?.points || 0} points`}
                     />
                     <AchievementItem
                       icon="⏱️"

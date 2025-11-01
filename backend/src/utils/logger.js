@@ -18,19 +18,19 @@ export const logger = {
   },
 
   success: (message, data = '') => {
-    if (isDev) {
-      console.log(`✅ [SUCCESS] ${message}`, data);
-    }
+    console.log(`✅ [SUCCESS] ${message}`, data);
   },
 
   debug: (message, data = '') => {
-    if (isDev) {
+    // Only show debug logs if DEBUG=true is set
+    if (isDev && process.env.DEBUG === 'true') {
       console.log(`🐛 [DEBUG] ${message}`, data);
     }
   },
 
   request: (method, endpoint, status = '') => {
-    if (isDev) {
+    // Suppress request logs unless DEBUG=true
+    if (isDev && process.env.DEBUG === 'true') {
       console.log(`📡 [${method}] ${endpoint} ${status ? `[${status}]` : ''}`);
     }
   },

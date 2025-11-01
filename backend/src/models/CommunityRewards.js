@@ -1,5 +1,3 @@
-// backend/src/models/CommunityRewards.js
-
 import mongoose from 'mongoose';
 
 const communityRewardsSchema = new mongoose.Schema(
@@ -8,7 +6,6 @@ const communityRewardsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Community',
       required: true,
-      unique: true,
     },
     totalPoints: {
       type: Number,
@@ -59,14 +56,14 @@ const communityRewardsSchema = new mongoose.Schema(
     rewardsHistory: [
       {
         points: Number,
-        type: String, // member_joined, event_created, etc.
+        type: String,
         description: String,
         relatedUser: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User',
         },
         relatedEntity: {
-          entityType: String, // Event, User, etc.
+          entityType: String,
           entityId: mongoose.Schema.Types.ObjectId,
         },
         awardedAt: {
@@ -142,9 +139,9 @@ const communityRewardsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes for faster queries
-// communityRewardsSchema.index({ community: 1 }); // <-- This line was removed as 'unique: true' already creates an index.
-communityRewardsSchema.index({ totalPoints: -1 }); // For leaderboard
+// Indexes for faster queries - only once each
+communityRewardsSchema.index({ community: 1 }, { unique: true });
+communityRewardsSchema.index({ totalPoints: -1 });
 communityRewardsSchema.index({ communityTier: 1 });
 communityRewardsSchema.index({ verificationStatus: 1 });
 communityRewardsSchema.index({ 'rewardsHistory.awardedAt': -1 });
