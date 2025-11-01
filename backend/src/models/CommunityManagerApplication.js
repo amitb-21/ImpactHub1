@@ -160,7 +160,7 @@ const communityManagerApplicationSchema = new mongoose.Schema(
       email: Boolean,
       inApp: Boolean,
     },
-    // ✅ NEW FIELD: Link to auto-created community
+    // Link to auto-created community
     communityCreated: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Community',
@@ -174,12 +174,10 @@ const communityManagerApplicationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes for faster queries
 communityManagerApplicationSchema.index({ applicant: 1, status: 1 });
 communityManagerApplicationSchema.index({ status: 1, createdAt: -1 });
 communityManagerApplicationSchema.index({ 'communityDetails.category': 1 });
 communityManagerApplicationSchema.index({ 'communityDetails.location.coordinates': '2dsphere' });
-communityManagerApplicationSchema.index({ communityCreated: 1 }); // ✅ NEW INDEX
 
 const CommunityManagerApplication =
   mongoose.models.CommunityManagerApplication ||

@@ -1,5 +1,3 @@
-// backend/src/server.js - UPDATED
-import 'dotenv/config';
 import { createServer } from 'http';
 import app from './app.js';
 import { connectDB } from './config/db.js';
@@ -23,7 +21,7 @@ async function start() {
     // Initialize Socket.IO
     initializeSocket(httpServer);
 
-    // ✅ NEW: Start event reminder service (checks every 15 minutes)
+    // Start event reminder service (checks every 15 minutes)
     if (config.NODE_ENV !== 'test') {
       startEventReminderService();
     }
@@ -33,8 +31,6 @@ async function start() {
       logger.success(`🚀 Server running on http://localhost:${PORT}`);
       logger.success(`🔌 WebSocket ready on ws://localhost:${PORT}`);
       logger.info(`📡 Client URL: ${config.CLIENT_URL}`);
-      logger.info(`🔐 JWT Secret configured: ${config.JWT_SECRET ? 'Yes' : 'No'}`);
-      logger.info(`🔔 Event reminders: ${config.NODE_ENV !== 'test' ? 'Enabled' : 'Disabled (test mode)'}`);
     });
 
     // Graceful shutdown

@@ -115,13 +115,15 @@ const ProfileCard = ({ user, isOwnProfile = false, onEdit }) => {
             </div>
           )}
 
-          {/* Member Since */}
-          <div style={styles.infoItem}>
-            <FiCalendar size={16} style={{ color: "#00796B" }} />
-            <span style={styles.infoText}>
-              Member since {formatDate(user.createdAt)}
-            </span>
-          </div>
+          {/* Member Since (only show when available) */}
+          {user?.createdAt && (
+            <div style={styles.infoItem}>
+              <FiCalendar size={16} style={{ color: "#00796B" }} />
+              <span style={styles.infoText}>
+                Member since {formatDate(user.createdAt)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Points & Level */}

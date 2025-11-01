@@ -2,6 +2,7 @@ import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination } from '../middleware/validator.js';
+import uploadMiddleware from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -28,7 +29,10 @@ router.put(
   '/:id',
   verifyToken,
   validateId('id'),
-  userController.updateUserProfile
+  // Accept a single file under field name 'profileImage' (frontend uses this key)
+  uploadMiddleware.uploadProfileImage,
+  userController.updateUserProfile,
+  uploadMiddleware.handleUploadError
 );
 
 // Get user profile - GENERIC (must be LAST)

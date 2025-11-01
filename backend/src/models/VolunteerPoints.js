@@ -1,5 +1,3 @@
-// backend/src/models/VolunteerPoints.js
-
 import mongoose from 'mongoose';
 
 const volunteerPointsSchema = new mongoose.Schema(
@@ -8,7 +6,6 @@ const volunteerPointsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     totalPoints: {
       type: Number,
@@ -59,7 +56,7 @@ const volunteerPointsSchema = new mongoose.Schema(
     pointsHistory: [
       {
         points: Number,
-        type: String, // event_participation, event_creation, etc.
+        type: String,
         description: String,
         eventId: mongoose.Schema.Types.ObjectId,
         relatedEntity: {
@@ -86,17 +83,13 @@ const volunteerPointsSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   { timestamps: true }
 );
 
-// Index for faster queries
-volunteerPointsSchema.index({ user: 1 });
-volunteerPointsSchema.index({ totalPoints: -1 }); // For leaderboard
+// Add indexes for faster queries - only once each
+volunteerPointsSchema.index({ user: 1 }, { unique: true });
+volunteerPointsSchema.index({ totalPoints: -1 });
 volunteerPointsSchema.index({ currentRank: 1 });
 volunteerPointsSchema.index({ 'pointsHistory.awardedAt': -1 });
 

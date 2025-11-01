@@ -56,6 +56,16 @@ const RegisterForm = () => {
           <p style={styles.subtitle}>
             Join ImpactHub and start making a difference
           </p>
+          <a
+            href="/"
+            style={styles.backLink}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/");
+            }}
+          >
+            ← Back to Home
+          </a>
         </div>
 
         {/* Error Alert */}
@@ -252,6 +262,15 @@ const RegisterForm = () => {
 };
 
 const styles = {
+  backLink: {
+    display: "inline-block",
+    color: "#00796B",
+    textDecoration: "none",
+    fontSize: "14px",
+    marginTop: "8px",
+    cursor: "pointer",
+    transition: "color 0.2s",
+  },
   container: {
     display: "flex",
     alignItems: "center",

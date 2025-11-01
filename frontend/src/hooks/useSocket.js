@@ -41,18 +41,33 @@ export const useSocket = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     
-    if (!token || socketRef.current?.connected) {
+    if (!token) {
+      console.log('No token available for socket connection');
+      return;
+    }
+
+    if (socketRef.current?.connected) {
+      console.log('Socket already connected:', socketRef.current.id);
       return;
     }
 
     // Create socket connection
+    console.log('Attempting socket connection to:', SOCKET_URL);
+    
     socketRef.current = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 5,
+      timeout: 10000
+    });
+
+    // Add connection error handler
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+      toast.error(`Socket connection failed: ${error.message}`);
     });
 
     // Connection event

@@ -14,7 +14,10 @@ import UserActivity from "../components/user/UserActivity";
 import { Card } from "../components/common/Card";
 import { Button } from "../components/common/Button";
 import { Loader } from "../components/common/Loader";
-import { FiArrowLeft, FiMessageSquare, FiShare2 } from "react-icons/fi";
+import { FiArrowLeft, FiShare2 } from "react-icons/fi";
+import { toast } from "react-toastify";
+import Modal from "../components/common/Modal";
+import UserSearch from "../components/user/UserSearch";
 import styles from "./styles/UserProfile.module.css";
 
 const UserProfile = () => {
@@ -25,19 +28,27 @@ const UserProfile = () => {
   const { profile, stats, isLoading, error } = useSelector(
     (state) => state.user
   );
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
-  // Fetch user data on mount or when userId changes
+  // ✅ FIXED: Only fetch when userId changes, remove currentUser dependency
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchUserProfile(userId));
-      dispatch(fetchUserStats(userId));
-      dispatch(fetchUserActivity({ userId, page: 1 }));
-
-      // Check if it's own profile
-      setIsOwnProfile(userId === currentUser?._id);
+    if (!userId) {
+      return;
     }
-  }, [userId, currentUser?._id, dispatch]);
+
+    dispatch(fetchUserProfile(userId));
+    dispatch(fetchUserStats(userId));
+    dispatch(fetchUserActivity({ userId, page: 1 }));
+  }, [userId, dispatch]); // ✅ Only depend on userId
+
+  const isOwnProfile = userId === currentUser?._id;
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  const handleUserSelect = (selectedUser) => {
+    setShowSearchModal(false);
+    if (selectedUser && selectedUser._id) {
+      navigate(`/profile/${selectedUser._id}`);
+    }
+  };
 
   if (error) {
     return (
@@ -45,13 +56,13 @@ const UserProfile = () => {
         <div className={styles.container}>
           <div className={styles.errorContainer}>
             <div className={styles.errorIcon}>❌</div>
-            <h2 className={styles.errorTitle}>User Not Found</h2>
+            <h2 className={styles.errorTitle}>Error Loading Profile</h2>
             <p className={styles.errorText}>
-              The user you're looking for doesn't exist or has been removed.
+              {error || "There was an error loading this user's profile."}
             </p>
             <Button
               variant="primary"
-              onClick={() => navigate("/communities")}
+              onClick={() => setShowSearchModal(true)}
               icon={FiArrowLeft}
             >
               Go Back
@@ -62,7 +73,10 @@ const UserProfile = () => {
     );
   }
 
-  if (isLoading || !profile) {
+  // Show loader only while profile is not yet loaded.
+  // Avoid using global `isLoading` because other user requests (activity/stats)
+  // may set it and cause the profile to spinner indefinitely.
+  if (!profile) {
     return (
       <Layout>
         <div className={styles.container}>
@@ -81,21 +95,64 @@ const UserProfile = () => {
             variant="ghost"
             size="sm"
             icon={FiArrowLeft}
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              // If viewing own profile from navbar, go to dashboard
+              if (isOwnProfile && document.referrer.includes("/profile/")) {
+                navigate("/");
+              } else {
+                setShowSearchModal(true);
+              }
+            }}
           >
             Back
           </Button>
           {!isOwnProfile && (
             <div className={styles.actionButtons}>
-              <Button variant="outline" size="sm" icon={FiMessageSquare}>
-                Message
-              </Button>
-              <Button variant="primary" size="sm" icon={FiShare2}>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={FiShare2}
+                onClick={() => {
+                  const profileUrl = `${window.location.origin}/profile/${userId}`;
+                  if (navigator.share) {
+                    navigator
+                      .share({
+                        title: profile.name || "Profile",
+                        url: profileUrl,
+                      })
+                      .catch(() => {
+                        /* ignore */
+                      });
+                  } else if (navigator.clipboard) {
+                    navigator.clipboard
+                      .writeText(profileUrl)
+                      .then(() =>
+                        toast.success("Profile link copied to clipboard")
+                      )
+                      .catch(() => toast.error("Failed to copy link"));
+                  } else {
+                    // Fallback: open a small prompt to let user copy
+                    window.prompt("Copy this link", profileUrl);
+                  }
+                }}
+              >
                 Share Profile
               </Button>
             </div>
           )}
         </div>
+
+        <Modal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
+          title="Search Users"
+          size="lg"
+        >
+          <UserSearch
+            onUserSelect={handleUserSelect}
+            excludeUserId={currentUser?._id}
+          />
+        </Modal>
 
         {/* Main Grid */}
         <div className={styles.gridContainer}>
@@ -158,7 +215,7 @@ const UserProfile = () => {
               </Card>
             </div>
 
-            {/* Badges Section (if any) */}
+            {/* Badges Section */}
             {profile?.badges && profile.badges.length > 0 && (
               <div className={styles.section}>
                 <Card padding="lg" shadow="md">
@@ -185,7 +242,7 @@ const UserProfile = () => {
                       icon="🎯"
                       title="Event Master"
                       description={`Participated in ${
-                        stats?.eventsAttended || 0
+                        stats?.eventsParticipated || 0
                       } events`}
                     />
                     <AchievementItem
@@ -198,7 +255,7 @@ const UserProfile = () => {
                     <AchievementItem
                       icon="⭐"
                       title="Points Collector"
-                      description={`Earned ${stats?.totalPoints || 0} points`}
+                      description={`Earned ${stats?.points || 0} points`}
                     />
                     <AchievementItem
                       icon="⏱️"

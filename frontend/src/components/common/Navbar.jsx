@@ -16,7 +16,7 @@ import Modal from "./Modal";
 import UserSearch from "../user/UserSearch";
 
 const Navbar = ({ onMenuClick }) => {
-  const { user, isAuthenticated, isModerator, isAdmin } = useAuth();
+  const { user, isAuthenticated, isModerator, isAdmin, logout } = useAuth();
   const { joinAdmin } = useSocket();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -24,9 +24,17 @@ const Navbar = ({ onMenuClick }) => {
   const unreadCount = useSelector((state) => state.notification.unreadCount);
 
   // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // useAuth provides a logout function that dispatches the logout thunk
+      await (typeof logout === "function" ? logout() : Promise.resolve());
+    } catch (err) {
+      console.error("Logout failed:", err);
+      // still proceed to clear local token as fallback
+      localStorage.removeItem("token");
+    } finally {
+      navigate("/");
+    }
   };
 
   // Handle user selection from search
@@ -191,7 +199,8 @@ const Navbar = ({ onMenuClick }) => {
         title="Search Users"
         size="lg"
       >
-        <UserSearch onUserSelect={handleUserSelect} />
+        {/* Pass excludeUserId so the current user won't appear in results */}
+        <UserSearch onUserSelect={handleUserSelect} excludeUserId={user?._id} />
       </Modal>
     </>
   );

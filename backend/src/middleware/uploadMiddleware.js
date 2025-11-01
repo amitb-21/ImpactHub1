@@ -65,11 +65,14 @@ export const validateFileExists = (req, res, next) => {
 };
 
 export const uploadSingle = upload.single('photo');
+// Named export for profile image uploads (frontend uses 'profileImage' field)
+export const uploadProfileImage = upload.single('profileImage');
 export const uploadMultiple = upload.array('photos', 5); // Max 5 files
 
 export default {
   uploadSingle,
   uploadMultiple,
+  uploadProfileImage,
   handleUploadError,
   validateFileExists,
 };

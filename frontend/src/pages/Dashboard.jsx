@@ -65,23 +65,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Welcome back, {user.name}! 👋</h1>
-            <p className={styles.subtitle}>
-              Track your impact and stay connected
-            </p>
-          </div>
-          <Button
-            size="md"
-            variant="primary"
-            icon={FiEdit}
-            onClick={() => setShowEditForm(true)}
-          >
-            Edit Profile
-          </Button>
-        </div>
+        {/* --- HEADER BLOCK REMOVED --- */}
 
         {/* Edit Profile Modal */}
         <Modal
@@ -103,7 +87,13 @@ const Dashboard = () => {
           <div className={styles.leftColumn}>
             {/* Profile Card */}
             <div className={styles.section}>
-              <ProfileCard key={refreshKey} user={user} isOwnProfile={true} />
+              {/* --- MODIFIED: Added onEdit prop to make the button work --- */}
+              <ProfileCard
+                key={refreshKey}
+                user={user}
+                isOwnProfile={true}
+                onEdit={() => setShowEditForm(true)}
+              />
             </div>
 
             {/* User Stats */}

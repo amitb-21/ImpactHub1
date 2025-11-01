@@ -1,21 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useCallback, useEffect } from 'react';
-import { getCurrentUser } from '../store/slices/authSlice';
+import { getCurrentUser, logoutUser } from '../store/slices/authSlice';
 
-/**
- * useAuth Hook
- * Provides authentication state and methods
- * 
- * Returns:
- * - user: Current user object
- * - token: JWT token
- * - isAuthenticated: Whether user is logged in
- * - isLoading: Loading state
- * - error: Error message
- * - loadUser: Function to reload current user
- * - isAdmin: Whether user is admin
- * - isModerator: Whether user is moderator
- */
 export const useAuth = () => {
   const dispatch = useDispatch();
   const { user, token, isAuthenticated, isLoading, error } = useSelector(
@@ -43,6 +29,15 @@ export const useAuth = () => {
     return user?.role === 'moderator' || user?.role === 'admin';
   }, [user]);
 
+  const logout = useCallback(async () => {
+    try {
+      await dispatch(logoutUser()).unwrap?.();
+    } catch (err) {
+      // Even if logout thunk fails, ensure local cleanup
+      console.error('Logout error:', err);
+    }
+  }, [dispatch]);
+
   return {
     user,
     token,
@@ -51,7 +46,8 @@ export const useAuth = () => {
     error,
     loadUser,
     isAdmin,
-    isModerator
+    isModerator,
+    logout
   };
 };
 

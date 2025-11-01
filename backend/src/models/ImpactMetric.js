@@ -6,7 +6,6 @@ const impactMetricSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     totalPoints: {
       type: Number,
@@ -62,6 +61,8 @@ const impactMetricSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+impactMetricSchema.index({ user: 1 }, { unique: true });
 
 const ImpactMetric = mongoose.models.ImpactMetric || mongoose.model('ImpactMetric', impactMetricSchema);
 export default ImpactMetric;
