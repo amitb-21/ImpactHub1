@@ -2,12 +2,17 @@ import axios from 'axios';
 import { API_URL } from '../config/constants';
 import { toast } from 'react-toastify';
 
+console.log('API URL:', API_URL); // Debug log
+
 const API = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000 // 10 seconds timeout
+  timeout: 10000, // 10 seconds timeout
+  validateStatus: function (status) {
+    return status >= 200 && status < 500; // Don't reject responses with status < 500
+  }
 });
 
 // Request interceptor - Add token to every request
@@ -55,7 +60,21 @@ API.interceptors.response.use(
 
     // Network error
     if (!error.response) {
-      toast.error('Network error. Please check your connection.');
+      console.error('Network Error Details:', {
+        message: error.message,
+        config: error.config,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL
+      });
+      
+      // Check if server is reachable
+      fetch(API_URL)
+        .then(() => {
+          toast.error('Network error. API server is reachable but request failed.');
+        })
+        .catch(() => {
+          toast.error(`Cannot reach server at ${API_URL}. Please check if backend is running.`);
+        });
     }
 
     return Promise.reject(error);

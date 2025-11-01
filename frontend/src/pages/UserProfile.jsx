@@ -29,14 +29,26 @@ const UserProfile = () => {
 
   // Fetch user data on mount or when userId changes
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchUserProfile(userId));
-      dispatch(fetchUserStats(userId));
-      dispatch(fetchUserActivity({ userId, page: 1 }));
-
-      // Check if it's own profile
-      setIsOwnProfile(userId === currentUser?._id);
+    if (!userId) {
+      return;
     }
+
+    const loadUserData = async () => {
+      try {
+        await Promise.all([
+          dispatch(fetchUserProfile(userId)).unwrap(),
+          dispatch(fetchUserStats(userId)).unwrap(),
+          dispatch(fetchUserActivity({ userId, page: 1 })).unwrap(),
+        ]);
+      } catch (err) {
+        console.error("Error loading user data:", err);
+      }
+    };
+
+    loadUserData();
+
+    // Check if it's own profile
+    setIsOwnProfile(userId === currentUser?._id);
   }, [userId, currentUser?._id, dispatch]);
 
   if (error) {
@@ -45,9 +57,10 @@ const UserProfile = () => {
         <div className={styles.container}>
           <div className={styles.errorContainer}>
             <div className={styles.errorIcon}>❌</div>
-            <h2 className={styles.errorTitle}>User Not Found</h2>
+            <h2 className={styles.errorTitle}>Error Loading Profile</h2>
             <p className={styles.errorText}>
-              The user you're looking for doesn't exist or has been removed.
+              {error ||
+                "There was an error loading this user's profile. Please try again."}
             </p>
             <Button
               variant="primary"
