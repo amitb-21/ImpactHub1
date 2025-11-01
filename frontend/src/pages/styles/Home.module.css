@@ -59,7 +59,6 @@
   padding-bottom: 40px;
 }
 
-
 /* ===========================
    CONTAINER & LAYOUT (MODIFIED FOR SIDEBAR)
    =========================== */
@@ -186,8 +185,8 @@
 }
 
 /* ===========================
-   HERO VISUAL
-   =========================== */
+   HERO VISUAL
+   =========================== */
 
 .heroVisual {
   display: flex;
@@ -273,8 +272,8 @@
 }
 
 /* ===========================
-   STATS SECTION
-   =========================== */
+   STATS SECTION
+   =========================== */
 
 .statsSection {
   /* Removed horizontal margin (0 60px) as it's now on .container */
@@ -376,8 +375,8 @@
 }
 
 /* ===========================
-   SECTION HEADERS
-   =========================== */
+   SECTION HEADERS
+   =========================== */
 
 .sectionTitle {
   font-size: 36px;
@@ -412,8 +411,8 @@
 }
 
 /* ===========================
-   CARDS GRID
-   =========================== */
+   CARDS GRID
+   =========================== */
 
 .cardsGrid {
   display: grid;
@@ -422,8 +421,8 @@
 }
 
 /* ===========================
-   EVENT CARDS
-   =========================== */
+   EVENT CARDS
+   =========================== */
 
 .eventCard {
   background: white;
@@ -518,8 +517,8 @@
 }
 
 /* ===========================
-   COMMUNITY CARDS
-   =========================== */
+   COMMUNITY CARDS
+   =========================== */
 
 .communityCard {
   background: white;
@@ -602,8 +601,8 @@
 }
 
 /* ===========================
-   CTA SECTION
-   =========================== */
+   CTA SECTION
+   =========================== */
 
 .ctaSection {
   background: linear-gradient(135deg, #00796B 0%, #00897b 100%);
@@ -668,8 +667,8 @@
 }
 
 /* ===========================
-   FEATURES SECTION
-   =========================== */
+   FEATURES SECTION
+   =========================== */
 
 .featuresSection {
   /* Removed horizontal margin (0 60px) as it's now on .container */
@@ -742,8 +741,8 @@
 }
 
 /* ===========================
-   FOOTER CTA
-   =========================== */
+   FOOTER CTA
+   =========================== */
 
 .footerCTA {
   text-align: center;
@@ -764,8 +763,8 @@
 }
 
 /* ===========================
-   EMPTY STATE
-   =========================== */
+   EMPTY STATE
+   =========================== */
 
 .emptyState {
   text-align: center;
@@ -808,8 +807,8 @@
 }
 
 /* ===========================
-   LOADING CONTAINER
-   =========================== */
+   LOADING CONTAINER
+   =========================== */
 
 .loadingContainer {
   display: flex;
@@ -819,8 +818,8 @@
 }
 
 /* ===========================
-   RESPONSIVE DESIGN
-   =========================== */
+   RESPONSIVE DESIGN
+   =========================== */
 
 @media (max-width: 1200px) {
   .sidebar {
