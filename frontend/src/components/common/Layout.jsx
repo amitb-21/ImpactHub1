@@ -48,7 +48,6 @@ const styles = {
   content: {
     flex: 1,
     padding: "30px 20px",
-    marginLeft: "250px",
     backgroundColor: "#FAFAFA",
     transition: "margin-left 0.3s ease",
   },

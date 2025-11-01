@@ -33,7 +33,7 @@ const Navbar = ({ onMenuClick }) => {
       // still proceed to clear local token as fallback
       localStorage.removeItem("token");
     } finally {
-      navigate("/login");
+      navigate("/");
     }
   };
 
@@ -199,7 +199,8 @@ const Navbar = ({ onMenuClick }) => {
         title="Search Users"
         size="lg"
       >
-        <UserSearch onUserSelect={handleUserSelect} />
+        {/* Pass excludeUserId so the current user won't appear in results */}
+        <UserSearch onUserSelect={handleUserSelect} excludeUserId={user?._id} />
       </Modal>
     </>
   );

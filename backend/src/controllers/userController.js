@@ -23,9 +23,20 @@ export const getUserProfile = async (req, res) => {
 
     const metrics = await ImpactMetric.findOne({ user: id });
 
+    // Ensure createdAt is present — derive from ObjectId timestamp as a fallback
+    const userObj = user.toObject({ getters: true, virtuals: false });
+    if (!userObj.createdAt) {
+      try {
+        // Mongoose ObjectId has getTimestamp() which returns a Date
+        userObj.createdAt = user._id.getTimestamp();
+      } catch (err) {
+        // ignore and leave createdAt undefined
+      }
+    }
+
     res.json({
       success: true,
-      user: user.toJSON(),
+      user: userObj,
       metrics,
     });
   } catch (error) {

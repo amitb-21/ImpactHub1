@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
@@ -14,7 +14,10 @@ import UserActivity from "../components/user/UserActivity";
 import { Card } from "../components/common/Card";
 import { Button } from "../components/common/Button";
 import { Loader } from "../components/common/Loader";
-import { FiArrowLeft, FiMessageSquare, FiShare2 } from "react-icons/fi";
+import { FiArrowLeft, FiShare2 } from "react-icons/fi";
+import { toast } from "react-toastify";
+import Modal from "../components/common/Modal";
+import UserSearch from "../components/user/UserSearch";
 import styles from "./styles/UserProfile.module.css";
 
 const UserProfile = () => {
@@ -38,6 +41,14 @@ const UserProfile = () => {
   }, [userId, dispatch]); // ✅ Only depend on userId
 
   const isOwnProfile = userId === currentUser?._id;
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  const handleUserSelect = (selectedUser) => {
+    setShowSearchModal(false);
+    if (selectedUser && selectedUser._id) {
+      navigate(`/profile/${selectedUser._id}`);
+    }
+  };
 
   if (error) {
     return (
@@ -51,7 +62,7 @@ const UserProfile = () => {
             </p>
             <Button
               variant="primary"
-              onClick={() => navigate("/communities")}
+              onClick={() => setShowSearchModal(true)}
               icon={FiArrowLeft}
             >
               Go Back
@@ -84,21 +95,64 @@ const UserProfile = () => {
             variant="ghost"
             size="sm"
             icon={FiArrowLeft}
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              // If viewing own profile from navbar, go to dashboard
+              if (isOwnProfile && document.referrer.includes("/profile/")) {
+                navigate("/");
+              } else {
+                setShowSearchModal(true);
+              }
+            }}
           >
             Back
           </Button>
           {!isOwnProfile && (
             <div className={styles.actionButtons}>
-              <Button variant="outline" size="sm" icon={FiMessageSquare}>
-                Message
-              </Button>
-              <Button variant="primary" size="sm" icon={FiShare2}>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={FiShare2}
+                onClick={() => {
+                  const profileUrl = `${window.location.origin}/profile/${userId}`;
+                  if (navigator.share) {
+                    navigator
+                      .share({
+                        title: profile.name || "Profile",
+                        url: profileUrl,
+                      })
+                      .catch(() => {
+                        /* ignore */
+                      });
+                  } else if (navigator.clipboard) {
+                    navigator.clipboard
+                      .writeText(profileUrl)
+                      .then(() =>
+                        toast.success("Profile link copied to clipboard")
+                      )
+                      .catch(() => toast.error("Failed to copy link"));
+                  } else {
+                    // Fallback: open a small prompt to let user copy
+                    window.prompt("Copy this link", profileUrl);
+                  }
+                }}
+              >
                 Share Profile
               </Button>
             </div>
           )}
         </div>
+
+        <Modal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
+          title="Search Users"
+          size="lg"
+        >
+          <UserSearch
+            onUserSelect={handleUserSelect}
+            excludeUserId={currentUser?._id}
+          />
+        </Modal>
 
         {/* Main Grid */}
         <div className={styles.gridContainer}>

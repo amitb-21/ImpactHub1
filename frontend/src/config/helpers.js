@@ -1,5 +1,11 @@
 export const formatDate = (dateString) => {
+  if (!dateString) return 'Date not available';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  // --- FIX END ---
+
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -8,7 +14,14 @@ export const formatDate = (dateString) => {
 };
 
 export const formatDateTime = (dateString) => {
+  // --- FIX START ---
+  if (!dateString) return 'Date not available';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  // --- FIX END ---
+
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -20,6 +33,11 @@ export const formatDateTime = (dateString) => {
 
 export const timeAgo = (dateString) => {
   const date = new Date(dateString);
+  // --- FIX START ---
+  if (isNaN(date.getTime())) {
+    return 'Unknown time';
+  }
+  // --- FIX END ---
   const now = new Date();
   const seconds = Math.floor((now - date) / 1000);
 

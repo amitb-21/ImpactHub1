@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { searchUsers, clearSearchResults } from "../../store/slices/userSlice";
 import { Card } from "../common/Card";
@@ -9,15 +9,17 @@ import { debounce } from "../../config/helpers";
 import { formatDate } from "../../config/helpers";
 import { calculateRank } from "../../config/helpers";
 
-const UserSearch = ({ onUserSelect }) => {
+const UserSearch = ({ onUserSelect, excludeUserId = null }) => {
   const dispatch = useDispatch();
-  const { searchResults, isSearching } = useSelector((state) => state.user);
+  const { searchResults = {}, isSearching = false } =
+    useSelector((state) => state.user) || {};
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((searchQuery) => {
+  const debouncedSearchRef = React.useRef(null);
+
+  if (!debouncedSearchRef.current) {
+    debouncedSearchRef.current = debounce((searchQuery) => {
       if (searchQuery.trim().length > 0) {
         dispatch(searchUsers({ query: searchQuery, page: 1 }));
         setHasSearched(true);
@@ -25,15 +27,13 @@ const UserSearch = ({ onUserSelect }) => {
         dispatch(clearSearchResults());
         setHasSearched(false);
       }
-    }, 500),
-    [dispatch]
-  );
+    }, 500);
+  }
 
-  // Handle input change
   const handleInputChange = (e) => {
     const value = e.target.value;
     setQuery(value);
-    debouncedSearch(value);
+    debouncedSearchRef.current(value);
   };
 
   // Handle clear
@@ -75,49 +75,71 @@ const UserSearch = ({ onUserSelect }) => {
         </div>
       )}
 
-      {hasSearched && !isSearching && searchResults.data.length === 0 && (
-        <Card padding="lg" style={styles.emptyState}>
-          <div style={styles.emptyIcon}>🔍</div>
-          <p style={styles.emptyStateTitle}>No users found</p>
-          <p style={styles.emptyStateText}>
-            Try searching with different keywords
-          </p>
-        </Card>
-      )}
+      {hasSearched &&
+        !isSearching &&
+        (searchResults?.data?.length || 0) === 0 && (
+          <Card padding="lg" style={styles.emptyState}>
+            <div style={styles.emptyIcon}>🔍</div>
+            <p style={styles.emptyStateTitle}>No users found</p>
+            <p style={styles.emptyStateText}>
+              Try searching with different keywords
+            </p>
+          </Card>
+        )}
 
-      {searchResults.data.length > 0 && (
-        <div style={styles.resultsContainer}>
-          <p style={styles.resultsCount}>
-            Found {searchResults.pagination?.total || 0} user
-            {searchResults.pagination?.total !== 1 ? "s" : ""}
-          </p>
+      {(searchResults?.data?.length || 0) > 0 &&
+        (() => {
+          // ✅ FIX: Prepare displayed results (exclude current user if requested)
+          const allResults = searchResults?.data || [];
+          const displayedResults = excludeUserId
+            ? allResults.filter(
+                (user) => String(user._id) !== String(excludeUserId)
+              )
+            : allResults;
 
-          <div style={styles.resultsList}>
-            {searchResults.data.map((user) => (
-              <UserSearchResult
-                key={user._id}
-                user={user}
-                onSelect={onUserSelect}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+          // ✅ FIX: Handle case where all results were filtered out
+          if (displayedResults.length === 0) {
+            return (
+              <Card padding="lg" style={styles.emptyState}>
+                <div style={styles.emptyIcon}>🔍</div>
+                <p style={styles.emptyStateTitle}>No other users available</p>
+                <p style={styles.emptyStateText}>
+                  You're viewing your own profile
+                </p>
+              </Card>
+            );
+          }
 
-      {!hasSearched && !isSearching && (
-        <div style={styles.initialState}>
-          <div style={styles.initialIcon}>👥</div>
-          <p style={styles.initialStateText}>
-            Search for users to view their profiles and connect
-          </p>
-        </div>
-      )}
+          return (
+            <div style={styles.resultsContainer}>
+              <p style={styles.resultsCount}>
+                Found {displayedResults.length} user
+                {displayedResults.length !== 1 ? "s" : ""}
+              </p>
+
+              <div style={styles.resultsList}>
+                {displayedResults.map((user) => (
+                  <UserSearchResult
+                    key={user._id}
+                    user={user}
+                    onSelect={onUserSelect}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 };
 
 // User Search Result Card
 const UserSearchResult = ({ user, onSelect }) => {
+  // ✅ FIX: Add safety checks for user object
+  if (!user || !user._id) {
+    return null;
+  }
+
   const rank = calculateRank(user.totalPoints || 0);
   const rankColor = rank?.color || "#10b981";
 
@@ -135,7 +157,7 @@ const UserSearchResult = ({ user, onSelect }) => {
           {user.profileImage ? (
             <img
               src={user.profileImage}
-              alt={user.name}
+              alt={user.name || "User"}
               style={styles.avatar}
               onError={(e) => {
                 e.target.src = "https://via.placeholder.com/60?text=User";
@@ -157,7 +179,7 @@ const UserSearchResult = ({ user, onSelect }) => {
 
         {/* User Info */}
         <div style={styles.userInfo}>
-          <h3 style={styles.userName}>{user.name}</h3>
+          <h3 style={styles.userName}>{user.name || "Unknown User"}</h3>
 
           {/* Role Badge */}
           {user.role && user.role !== "user" && (
@@ -170,7 +192,7 @@ const UserSearchResult = ({ user, onSelect }) => {
           )}
 
           {/* Email */}
-          <p style={styles.userEmail}>{user.email}</p>
+          {user.email && <p style={styles.userEmail}>{user.email}</p>}
 
           {/* Bio */}
           {user.bio && <p style={styles.userBio}>{user.bio}</p>}
@@ -183,10 +205,12 @@ const UserSearchResult = ({ user, onSelect }) => {
                 <span>{user.location}</span>
               </div>
             )}
-            <div style={styles.metaItem}>
-              <FiCalendar size={14} style={{ color: "#00796B" }} />
-              <span>Joined {formatDate(user.createdAt)}</span>
-            </div>
+            {user.createdAt && (
+              <div style={styles.metaItem}>
+                <FiCalendar size={14} style={{ color: "#00796B" }} />
+                <span>Joined {formatDate(user.createdAt)}</span>
+              </div>
+            )}
           </div>
 
           {/* Stats */}

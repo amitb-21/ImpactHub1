@@ -176,8 +176,10 @@ const userSlice = createSlice({
       })
       .addCase(searchUsers.fulfilled, (state, action) => {
         state.isSearching = false;
-        state.searchResults.data = action.payload.data;
-        state.searchResults.pagination = action.payload.pagination;
+        // Defensive: if API returns unexpected payload, ensure data is an array
+        const payload = action.payload || {};
+        state.searchResults.data = payload.data || [];
+        state.searchResults.pagination = payload.pagination || null;
       })
       .addCase(searchUsers.rejected, (state, action) => {
         state.isSearching = false;

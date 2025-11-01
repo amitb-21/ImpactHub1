@@ -38,6 +38,16 @@ const LoginForm = () => {
         <div style={styles.header}>
           <h1 style={styles.title}>Welcome Back</h1>
           <p style={styles.subtitle}>Sign in to continue to ImpactHub</p>
+          <a
+            href="/"
+            style={styles.backLink}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/");
+            }}
+          >
+            ← Back to Home
+          </a>
         </div>
 
         {/* Error Alert */}
@@ -155,6 +165,15 @@ const LoginForm = () => {
 };
 
 const styles = {
+  backLink: {
+    display: "inline-block",
+    color: "#00796B",
+    textDecoration: "none",
+    fontSize: "14px",
+    marginTop: "8px",
+    cursor: "pointer",
+    transition: "color 0.2s",
+  },
   container: {
     display: "flex",
     alignItems: "center",
