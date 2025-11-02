@@ -1,0 +1,88 @@
+/* Small */
+.smallBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Medium */
+.mediumBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
+.mediumIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.mediumInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mediumName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212121;
+}
+
+.mediumPoints {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Large */
+.largeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.largeIcon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.largeName {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.largePoints {
+  font-size: 16px;
+  font-weight: 600;
+  color: #666;
+  margin: 0;
+}
+
+.largeNext {
+  font-size: 13px;
+  color: #00796B;
+  font-weight: 500;
+  margin: 4px 0 0 0;
+}

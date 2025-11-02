@@ -41,6 +41,12 @@ import NearbyCommunities from "./pages/NearbyCommunities";
 import EventsByCity from "./pages/EventsByCity";
 import TodayEvents from "./pages/TodayEvents";
 
+// --- NEWLY ADDED PAGES (Phase 10) ---
+import Impact from "./pages/Impact";
+import Leaderboard from "./pages/Leaderboard";
+import ImpactSummary from "./pages/ImpactSummary";
+// --- END ---
+
 // Error Pages
 const NotFound = () => (
   <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -246,8 +252,7 @@ const AppContent = () => {
           path="/impact"
           element={
             <ProtectedRoute>
-              {/* <Impact /> - To be created on Day 27 */}
-              <div>Impact Dashboard (Coming Soon)</div>
+              <Impact />
             </ProtectedRoute>
           }
         />
@@ -257,8 +262,7 @@ const AppContent = () => {
           path="/impact/summary"
           element={
             <ProtectedRoute>
-              {/* <ImpactSummary /> - To be created on Day 27 */}
-              <div>Impact Summary (Coming Soon)</div>
+              <ImpactSummary />
             </ProtectedRoute>
           }
         />
@@ -268,8 +272,7 @@ const AppContent = () => {
           path="/leaderboard"
           element={
             <ProtectedRoute>
-              {/* <Leaderboard /> - To be created on Day 27 */}
-              <div>Leaderboard (Coming Soon)</div>
+              <Leaderboard />
             </ProtectedRoute>
           }
         />

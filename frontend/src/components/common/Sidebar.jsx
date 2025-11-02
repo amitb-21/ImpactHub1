@@ -10,6 +10,8 @@ import {
   FiActivity,
   FiSettings,
   FiX,
+  FiAward, // --- ADDED ---
+  FiGlobe, // --- ADDED ---
 } from "react-icons/fi";
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -35,9 +37,19 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: FiUsers,
     },
     {
-      label: "Impact",
+      label: "My Impact", // --- RENAMED ---
       path: "/impact",
-      icon: FiTrendingUp,
+      icon: FiTrendingUp, // --- CHANGED ICON ---
+    },
+    {
+      label: "Leaderboard", // --- NEW ---
+      path: "/leaderboard",
+      icon: FiAward,
+    },
+    {
+      label: "Platform Stats", // --- NEW ---
+      path: "/impact/summary",
+      icon: FiGlobe,
     },
     {
       label: "Resources",

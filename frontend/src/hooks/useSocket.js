@@ -4,8 +4,8 @@ import io from 'socket.io-client';
 import { SOCKET_URL } from '../config/constants';
 import { toast } from 'react-toastify';
 import {
-  pointsEarned,
-  levelUp,
+  pointsEarned as notifyPointsEarned, // Renamed import
+  levelUp as notifyLevelUp, // Renamed import
   attendanceVerified,
   participationRejected,
   communityVerification,
@@ -16,17 +16,24 @@ import {
   newMember,
   eventUpdate
 } from '../store/slices/notificationSlice';
+// --- ADDED ---
+import { 
+  pointsEarned as impactPointsEarned, 
+  levelUp as impactLevelUp,
+  streakUpdated,
+  achievementUnlocked,
+  badgeEarned
+} from '../store/slices/impactSlice';
+// --- END ADDED ---
 import { updateEventCapacity } from '../store/slices/eventSlice';
 
 /**
  * useSocket Hook
  * Manages WebSocket connection and listens to real-time events
- * 
- * Usage:
+ * * Usage:
  * const socket = useSocket();
  * socket?.emit('join:community', communityId);
- * 
- * Emits:
+ * * Emits:
  * - join:community(communityId)
  * - leave:community(communityId)
  * - join:event(eventId)
@@ -96,11 +103,13 @@ export const useSocket = () => {
     // =====================
 
     socketRef.current.on('points:earned', (data) => {
-      dispatch(pointsEarned(data));
+      dispatch(notifyPointsEarned(data)); // For toast notification
+      dispatch(impactPointsEarned(data)); // --- ADDED: For impact slice update
     });
 
     socketRef.current.on('user:levelup', (data) => {
-      dispatch(levelUp(data));
+      dispatch(notifyLevelUp(data)); // For toast notification
+      dispatch(impactLevelUp(data)); // --- ADDED: For impact slice update
     });
 
     // =====================

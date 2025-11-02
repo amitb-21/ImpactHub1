@@ -1,0 +1,66 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.currentUserRank {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f0f8f7;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.currentUserRank p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #004D40;
+}
+
+.currentUserRank strong {
+  color: #00796B;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+  .title {
+    font-size: 24px;
+  }
+  .subtitle {
+    font-size: 14px;
+  }
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

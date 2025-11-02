@@ -1,0 +1,96 @@
+/* Compact */
+.compactContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+.compactIcon {
+  font-size: 16px;
+}
+.compactText {
+  font-size: 14px;
+}
+
+/* Full */
+.container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.icon {
+  font-size: 64px;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.content {
+  flex: 1;
+}
+
+.streakValue {
+  font-size: 48px;
+  font-weight: 800;
+  color: #f59e0b;
+  margin: 0;
+  line-height: 1;
+}
+
+.streakLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: #212121;
+  margin: 0;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: right;
+}
+
+.bestStreak {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+.bestStreak strong {
+  color: #212121;
+}
+
+.milestone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.milestoneText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00796B;
+}
+
+.milestoneBar {
+  width: 120px;
+  height: 6px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.milestoneFill {
+  height: 100%;
+  background-color: #f59e0b;
+  border-radius: 3px;
+}

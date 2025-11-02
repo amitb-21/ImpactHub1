@@ -62,6 +62,20 @@ export const fetchVolunteerLeaderboard = createAsyncThunk(
   }
 );
 
+// --- NEW THUNK ---
+export const fetchImpactSummary = createAsyncThunk(
+  'impact/fetchSummary',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await impactAPI.getSummary();
+      return response.data.summary;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+// --- END NEW THUNK ---
+
 // Initial state
 const initialState = {
   metrics: null,
@@ -75,6 +89,10 @@ const initialState = {
     pagination: null
   },
   userRank: null,
+  summary: null,
+  streak: null,
+  achievements: [],
+  badges: [],
   isLoading: false,
   error: null
 };
@@ -83,6 +101,75 @@ const initialState = {
 const impactSlice = createSlice({
   name: 'impact',
   initialState,
+  reducers: {
+    // Socket event handlers
+    pointsEarned: (state, action) => {
+      if (state.metrics) {
+        state.metrics.totalPoints += action.payload.points;
+        if (state.metrics.pointsBreakdown) {
+          const category = action.payload.category || 'other';
+          state.metrics.pointsBreakdown[category] = 
+            (state.metrics.pointsBreakdown[category] || 0) + action.payload.points;
+        }
+      }
+    },
+    levelUp: (state, action) => {
+      if (state.progress) {
+        state.progress.currentLevel = action.payload.newLevel;
+        state.progress.progress = action.payload.progress;
+      }
+    },
+    streakUpdated: (state, action) => {
+      if (state.metrics) {
+        state.metrics.streak = action.payload.streak;
+        state.metrics.bestStreak = Math.max(
+          state.metrics.bestStreak || 0,
+          action.payload.streak
+        );
+      }
+    },
+    achievementUnlocked: (state, action) => {
+      if (!state.achievements) state.achievements = [];
+      state.achievements.push(action.payload);
+    },
+    badgeEarned: (state, action) => {
+      if (!state.badges) state.badges = [];
+      state.badges.push(action.payload);
+    },
+  },
+  reducers: {
+    // Socket event handlers
+    pointsEarned: (state, action) => {
+      if (state.metrics) {
+        state.metrics.totalPoints += action.payload.points;
+      }
+      if (state.progress) {
+        state.progress.currentPoints += action.payload.points;
+        state.progress.progress.pointsInLevel += action.payload.points;
+        // Recalculate percentage
+        state.progress.progress.percentage = 
+          (state.progress.progress.pointsInLevel / state.progress.progress.required) * 100;
+      }
+    },
+    levelUp: (state, action) => {
+      if (state.progress) {
+        state.progress.currentLevel = action.payload.newLevel;
+        state.progress.progress.pointsInLevel = action.payload.pointsInLevel;
+        state.progress.progress.required = action.payload.requiredPoints;
+        state.progress.progress.percentage = 
+          (action.payload.pointsInLevel / action.payload.requiredPoints) * 100;
+      }
+    },
+    streakUpdated: (state, action) => {
+      state.streak = action.payload;
+    },
+    achievementUnlocked: (state, action) => {
+      state.achievements.push(action.payload);
+    },
+    badgeEarned: (state, action) => {
+      state.badges.push(action.payload);
+    },
+  },
   reducers: {
     clearError: (state) => {
       state.error = null;
@@ -113,18 +200,30 @@ const impactSlice = createSlice({
       // Fetch metrics
       .addCase(fetchUserMetrics.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchUserMetrics.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.metrics = action.payload.metrics;
+        state.metrics = action.payload;
+        state.error = null;
       })
       .addCase(fetchUserMetrics.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
       // Fetch progress
+      .addCase(fetchUserProgress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(fetchUserProgress.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.progress = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchUserProgress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       })
       // Fetch leaderboard
       .addCase(fetchLeaderboard.fulfilled, (state, action) => {
@@ -139,9 +238,31 @@ const impactSlice = createSlice({
       .addCase(fetchVolunteerLeaderboard.fulfilled, (state, action) => {
         state.volunteerLeaderboard.data = action.payload.data;
         state.volunteerLeaderboard.pagination = action.payload.pagination;
+      })
+      // --- ADDED FOR SUMMARY ---
+      .addCase(fetchImpactSummary.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchImpactSummary.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.summary = action.payload;
+      })
+      .addCase(fetchImpactSummary.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       });
+      // --- END ADDED ---
   }
 });
 
-export const { clearError, pointsEarned, levelUp, leaderboardUpdated } = impactSlice.actions;
+export const {
+  clearError,
+  pointsEarned,
+  levelUp,
+  leaderboardUpdated,
+  streakUpdated,
+  achievementUnlocked,
+  badgeEarned
+} = impactSlice.actions;
+
 export default impactSlice.reducer;

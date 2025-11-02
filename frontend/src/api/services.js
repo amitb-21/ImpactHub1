@@ -95,11 +95,10 @@ export const ratingAPI = {
   markHelpful: (id, helpful) => API.post(`/ratings/${id}/helpful`, { helpful })
 };
 
-// ===== IMPACT & POINTS =====
 // ===== CALENDAR =====
 export const calendarAPI = {
-  getInviteURLs: (eventId) => API.get(`/events/${eventId}/calendar-urls`),
-  downloadICS: (eventId) => API.get(`/events/${eventId}/calendar.ics`, {
+  getInviteURLs: (eventId) => API.get(`/location/calendar/${eventId}/urls`),
+  downloadICS: (eventId) => API.get(`/location/calendar/${eventId}/download.ics`, {
     responseType: 'blob'
   }).then(response => {
     // Create a download link
@@ -122,7 +121,13 @@ export const impactAPI = {
   getLeaderboard: (page = 1, metric = 'points') => 
     API.get(`/impact/leaderboard?page=${page}&limit=20&metric=${metric}`),
   getRank: (userId) => API.get(`/impact/rank/${userId}`),
-  getSummary: () => API.get(`/impact/summary`)
+  getSummary: () => API.get(`/impact/summary`),
+  // New endpoints for gamification
+  getStreak: (userId) => API.get(`/impact/streak/${userId}`),
+  getLevelDefinitions: () => API.get('/impact/levels'),
+  getLevelRequirements: (level) => API.get(`/impact/level-requirements/${level}`),
+  getAchievements: (userId) => API.get(`/impact/achievements/${userId}`),
+  getBadges: (userId) => API.get(`/impact/badges/${userId}`)
 };
 
 export const pointsAPI = {
