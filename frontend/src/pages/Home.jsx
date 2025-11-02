@@ -57,7 +57,7 @@ const Home = () => {
             <h1 className={styles.heroTitle}>
               Make a Real Impact,
               <br />
-              <span className={styles.accentText}>One Action at a Time</span>
+              <span className={styles.accentText}>From Searching to Joining,We have your back!</span>
             </h1>
 
             <p className={styles.heroSubtitle}>
@@ -77,13 +77,6 @@ const Home = () => {
                     iconPosition="right"
                   >
                     Get Started Free
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => navigate("/login")}
-                  >
-                    Sign In
                   </Button>
                 </>
               ) : (
@@ -271,6 +264,7 @@ const Home = () => {
             </p>
             {!isAuthenticated ? (
               <Button
+                style={{marginLeft:240}}
                 size="lg"
                 variant="primary"
                 onClick={() => navigate("/register")}
@@ -336,20 +330,6 @@ const Home = () => {
         </section>
 
         {/* Footer CTA */}
-        {!isAuthenticated && (
-          <section className={styles.footerCTA}>
-            <h3 className={styles.footerCTATitle}>
-              Don't miss out on making a difference
-            </h3>
-            <Button
-              size="lg"
-              variant="primary"
-              onClick={() => navigate("/register")}
-            >
-              Sign Up Free
-            </Button>
-          </section>
-        )}
       </div>
     </Layout>
   );
