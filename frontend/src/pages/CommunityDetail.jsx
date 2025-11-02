@@ -1,3 +1,4 @@
+/* frontend/src/pages/CommunityDetail.jsx */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,6 +10,12 @@ import {
   leaveCommunity,
 } from "../store/slices/communitySlice";
 import { fetchCommunityActivities } from "../store/slices/activitySlice";
+// --- (1) IMPORTS ADDED ---
+import { fetchEntityRatings } from "../store/slices/ratingSlice";
+import RatingStats from "../components/rating/RatingStats";
+import RatingList from "../components/rating/RatingList";
+import RatingForm from "../components/rating/RatingForm";
+// --- (End 1) ---
 import Layout from "../components/common/Layout";
 import CommunityStats from "../components/community/CommunityStats";
 import CommunityGallery from "../components/community/CommunityGallery";
@@ -35,13 +42,16 @@ const CommunityDetail = () => {
   const { communityId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth(); // <-- Get isAuthenticated
   const { joinCommunity: joinCommunitySocket } = useSocket();
 
   // Redux selectors
   const { currentCommunity, isLoading, error } = useSelector(
     (state) => state.community
   );
+  // --- (2) RATING STATE ---
+  const { entityRatings, myRating } = useSelector((state) => state.rating);
+  // --- (End 2) ---
 
   // Local state
   const [showEditForm, setShowEditForm] = useState(false);
@@ -54,6 +64,11 @@ const CommunityDetail = () => {
     if (communityId) {
       dispatch(fetchCommunityById(communityId));
       dispatch(fetchCommunityActivities(communityId));
+      // --- (3) FETCH RATINGS ---
+      dispatch(
+        fetchEntityRatings({ entityType: "Community", entityId: communityId })
+      );
+      // --- (End 3) ---
     }
   }, [communityId, dispatch]);
 
@@ -81,6 +96,8 @@ const CommunityDetail = () => {
     if (result.payload) {
       setIsMember(true);
       joinCommunitySocket(communityId);
+      // Refetch community data to get updated member list
+      dispatch(fetchCommunityById(communityId));
     }
   };
 
@@ -90,7 +107,8 @@ const CommunityDetail = () => {
       const result = await dispatch(leaveCommunity(communityId));
       if (result.payload === communityId) {
         setIsMember(false);
-        navigate("/communities");
+        // Refetch community data to get updated member list
+        dispatch(fetchCommunityById(communityId));
       }
     }
   };
@@ -145,6 +163,15 @@ const CommunityDetail = () => {
   }
 
   const isVerified = currentCommunity.verificationStatus === "verified";
+
+  // --- (4) RATING FORM VISIBILITY LOGIC ---
+  // Backend `createRating` for Community checks if user is member OR has attended an event.
+  // We can just check `isMember` on the frontend as a simple proxy.
+  const showRatingForm = isAuthenticated && isMember && !myRating;
+  const showUpdateForm = isAuthenticated && isMember && myRating;
+  const showJoinMessage = isAuthenticated && !isMember;
+  const showLoginMessage = !isAuthenticated;
+  // --- (End 4) ---
 
   return (
     <Layout>
@@ -306,6 +333,71 @@ const CommunityDetail = () => {
               />
             </div>
 
+            {/* --- (5) RATING SECTION --- */}
+            <div className={styles.section}>
+              <h3 className={styles.cardTitle}>Ratings & Reviews</h3>
+              <Card padding="lg" shadow="md">
+                <RatingStats
+                  avgRating={currentCommunity.avgRating}
+                  totalRatings={currentCommunity.totalRatings}
+                  distribution={entityRatings.distribution}
+                />
+              </Card>
+            </div>
+
+            <div className={styles.section}>
+              {/* Show update form if user has already rated */}
+              {showUpdateForm && (
+                <RatingForm
+                  entityType="Community"
+                  entityId={communityId}
+                  myRating={myRating}
+                />
+              )}
+
+              {/* Show create form if user is member but hasn't rated */}
+              {showRatingForm && (
+                <RatingForm entityType="Community" entityId={communityId} />
+              )}
+
+              {/* Show message if not member */}
+              {showJoinMessage && (
+                <Card padding="lg" shadow="md">
+                  <p className={styles.participantNote}>
+                    {" "}
+                    {/* Using shared style */}
+                    You must join this community to leave a review.
+                  </p>
+                </Card>
+              )}
+
+              {/* Show login message if not authenticated */}
+              {showLoginMessage && (
+                <Card padding="lg" shadow="md">
+                  <p className={styles.participantNote}>
+                    {" "}
+                    {/* Using shared style */}
+                    Please{" "}
+                    <a
+                      href="/login"
+                      style={{
+                        fontWeight: "bold",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      login
+                    </a>{" "}
+                    to rate this community.
+                  </p>
+                </Card>
+              )}
+            </div>
+
+            <div className={styles.section}>
+              <RatingList entityType="Community" entityId={communityId} />
+            </div>
+            {/* --- (End 5) --- */}
+
             {/* Community Gallery */}
             {isMember && (
               <div className={styles.section}>
@@ -333,19 +425,17 @@ const CommunityDetail = () => {
                 <InfoItem
                   icon="👥"
                   label="Members"
-                  value={currentCommunity.members?.length || 0}
+                  value={currentCommunity.totalMembers || 0}
                 />
                 <InfoItem
                   icon="📅"
                   label="Events"
-                  value={currentCommunity.events?.length || 0}
+                  value={currentCommunity.totalEvents || 0}
                 />
                 <InfoItem
                   icon="⭐"
                   label="Rating"
-                  value={
-                    (currentCommunity.averageRating || 0).toFixed(1) + " / 5"
-                  }
+                  value={(currentCommunity.avgRating || 0).toFixed(1) + " / 5"}
                 />
                 <InfoItem
                   icon="🏆"

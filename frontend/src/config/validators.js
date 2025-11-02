@@ -64,6 +64,7 @@ export const communitySchema = z.object({
 
 // Rating schema
 export const ratingSchema = z.object({
-  rating: z.number().min(1).max(5),
-  review: z.string().optional()
+  // rating is handled by component state (stars)
+  rating: z.number().min(0).max(5).optional(), // Not strictly required by form, but by submit logic
+  review: z.string().max(500, "Review must be 500 characters or less").optional()
 });

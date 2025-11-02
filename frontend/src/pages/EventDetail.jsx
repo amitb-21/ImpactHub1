@@ -10,8 +10,14 @@ import {
   leaveEvent,
 } from "../store/slices/eventSlice";
 import { fetchCommunityGallery } from "../store/slices/photoSlice"; // <-- IMPORTED
+// --- (1) IMPORTS ADDED ---
+import { fetchEntityRatings } from "../store/slices/ratingSlice";
+import { getParticipationDetails } from "../store/slices/participationSlice"; // <-- Corrected import
+import RatingStats from "../components/rating/RatingStats";
+import RatingList from "../components/rating/RatingList";
+import RatingForm from "../components/rating/RatingForm";
+// --- (End 1) ---
 import Layout from "../components/common/Layout";
-import EventCard from "../components/event/EventCard";
 import ParticipantList from "../components/event/ParticipantList";
 import AttendanceModal from "../components/event/AttendanceModal";
 import RejectionModal from "../components/event/RejectionModal";
@@ -43,13 +49,18 @@ const EventDetail = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user: currentUser, isModerator } = useAuth(); // <-- Get isModerator
+  const { user: currentUser, isAuthenticated, isModerator } = useAuth(); // <-- Get isAuthenticated
   const { joinEvent: joinEventSocket } = useSocket();
 
   // Redux selectors
   const { currentEvent, isLoading, error } = useSelector(
     (state) => state.event
   );
+  // --- (2) RATING AND PARTICIPATION STATE ---
+  const { entityRatings, myRating } = useSelector((state) => state.rating);
+  // We need to know the user's participation status for this event
+  const { participationDetail } = useSelector((state) => state.participation);
+  // --- (End 2) ---
 
   // Local state
   const [showEditForm, setShowEditForm] = useState(false);
@@ -60,23 +71,52 @@ const EventDetail = () => {
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [participationId, setParticipationId] = useState(null);
 
   // Fetch event data on mount
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventById(eventId));
+      // --- (3) FETCH RATINGS ---
+      dispatch(fetchEntityRatings({ entityType: "Event", entityId }));
+      // --- (End 3) ---
     }
   }, [eventId, dispatch]);
 
   // Check if current user is participant or organizer
   useEffect(() => {
     if (currentEvent && currentUser) {
-      const participantIds = currentEvent.participants?.map((p) => p._id) || [];
-      setIsParticipant(participantIds.includes(currentUser._id));
+      // Check if participant
+      const participant = currentEvent.participants?.find(
+        (p) => p._id === currentUser._id
+      );
+      if (participant) {
+        setIsParticipant(true);
+        // Find the participation record ID
+        const participationRecord = currentEvent.participants.find(
+          (p) => p.user === currentUser._id
+        );
+        if (participationRecord) {
+          setParticipationId(participationRecord._id);
+        }
+      } else {
+        setIsParticipant(false);
+      }
+
       // Event organizer check
       setIsOrganizer(currentEvent.createdBy?._id === currentUser._id);
     }
   }, [currentEvent, currentUser]);
+
+  // --- (4) FETCH PARTICIPATION STATUS ---
+  // We need to know if the user attended to show the rating form
+  useEffect(() => {
+    if (eventId && currentUser && isParticipant && participationId) {
+      // Fetch the detailed participation record to check 'status'
+      dispatch(getParticipationDetails(participationId));
+    }
+  }, [eventId, currentUser, isParticipant, participationId, dispatch]);
+  // --- (End 4) ---
 
   // Fetch community gallery when event data is loaded
   useEffect(() => {
@@ -102,6 +142,8 @@ const EventDetail = () => {
     if (result.payload) {
       setIsParticipant(true);
       joinEventSocket(eventId);
+      // Refetch event to get new participant list
+      dispatch(fetchEventById(eventId));
     }
   };
 
@@ -111,7 +153,8 @@ const EventDetail = () => {
       const result = await dispatch(leaveEvent(eventId));
       if (result.payload === eventId) {
         setIsParticipant(false);
-        navigate("/events");
+        // Refetch event to update participant list
+        dispatch(fetchEventById(eventId));
       }
     }
   };
@@ -185,6 +228,18 @@ const EventDetail = () => {
 
   // Moderator/Admin who is *not* the organizer
   const isPrivilegedUser = isModerator() && !isOrganizer;
+
+  // --- (5) RATING FORM VISIBILITY LOGIC ---
+  const hasAttended =
+    participationDetail &&
+    ["Attended", "Completed"].includes(participationDetail.status);
+
+  const showRatingForm =
+    isAuthenticated && isParticipant && hasAttended && !myRating;
+  const showUpdateForm = isAuthenticated && hasAttended && myRating;
+  const showAttendedMessage =
+    isAuthenticated && isParticipant && !hasAttended && !isClosed;
+  // --- (End 5) ---
 
   return (
     <Layout>
@@ -508,6 +563,68 @@ const EventDetail = () => {
                 </Button>
               </Card>
             )}
+
+            {/* --- (6) RATING SECTION --- */}
+            <div className={styles.section}>
+              <h3 className={styles.cardTitle}>Ratings & Reviews</h3>
+              <Card padding="lg" shadow="md">
+                <RatingStats
+                  avgRating={currentEvent.avgRating}
+                  totalRatings={currentEvent.totalRatings}
+                  distribution={entityRatings.distribution}
+                />
+              </Card>
+            </div>
+
+            <div className={styles.section}>
+              {/* Show update form if user has already rated */}
+              {showUpdateForm && (
+                <RatingForm
+                  entityType="Event"
+                  entityId={eventId}
+                  myRating={myRating}
+                />
+              )}
+
+              {/* Show create form if user attended but hasn't rated */}
+              {showRatingForm && (
+                <RatingForm entityType="Event" entityId={eventId} />
+              )}
+
+              {/* Show message if user is participant but not yet marked as attended */}
+              {showAttendedMessage && (
+                <Card padding="lg" shadow="md">
+                  <p className={styles.participantNote}>
+                    You must be marked as 'Attended' by the organizer before you
+                    can review this event.
+                  </p>
+                </Card>
+              )}
+
+              {/* Show login message if not authenticated */}
+              {!isAuthenticated && (
+                <Card padding="lg" shadow="md">
+                  <p className={styles.participantNote}>
+                    Please{" "}
+                    <a
+                      href="/login"
+                      style={{
+                        fontWeight: "bold",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      login
+                    </a>{" "}
+                    and attend the event to leave a review.
+                  </p>
+                </Card>
+              )}
+            </div>
+
+            <div className={styles.section}>
+              <RatingList entityType="Event" entityId={eventId} />
+            </div>
+            {/* --- (End 6) --- */}
 
             {/* --- ADDED GALLERY --- */}
             <div className={styles.section}>
