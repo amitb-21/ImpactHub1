@@ -1,0 +1,45 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mapHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mapHeader p {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+    flex: 1;
+}
+
+.errorText {
+    font-size: 13px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 0;
+}
+
+.mapContainer {
+    height: 450px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    z-index: 1;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+}

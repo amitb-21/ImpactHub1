@@ -1,20 +1,52 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import apiClient from '../../api/services';
+import { locationAPI } from '../../api/services';
 
-export const fetchNearbyItems = createAsyncThunk(
-    'location/fetchNearby',
-    async ({ latitude, longitude, radius }, { rejectWithValue }) => {
-         // Construct query parameters
-        const params = new URLSearchParams();
-        if (latitude != null) params.append('latitude', latitude);
-        if (longitude != null) params.append('longitude', longitude);
-        if (radius != null) params.append('radius', radius);
-
+// Thunk for fetching nearby events
+export const fetchNearbyEvents = createAsyncThunk(
+    'location/fetchNearbyEvents',
+    async ({ latitude, longitude, radiusKm }, { rejectWithValue }) => {
         try {
-            // Adjust the endpoint if necessary based on your actual backend route for nearby items
-            const response = await apiClient.get(`/locations?${params.toString()}`);
-            // Assuming the backend returns an object like { events: [], activities: [] }
-            return response.data;
+            const response = await locationAPI.getNearbyEvents(latitude, longitude, radiusKm);
+            return response.data.data; // The API returns { success, data, metadata }
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
+
+// Thunk for fetching nearby communities
+export const fetchNearbyCommunities = createAsyncThunk(
+    'location/fetchNearbyCommunities',
+    async ({ latitude, longitude, radiusKm }, { rejectWithValue }) => {
+        try {
+            const response = await locationAPI.getNearbyCommunities(latitude, longitude, radiusKm);
+            return response.data.data; // The API returns { success, data, metadata }
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
+
+// Thunk for fetching events by city
+export const fetchEventsByCity = createAsyncThunk(
+    'location/fetchEventsByCity',
+    async (city, { rejectWithValue }) => {
+        try {
+            const response = await locationAPI.getEventsByCity(city);
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
+
+// Thunk for fetching today's nearby events
+export const fetchTodayNearby = createAsyncThunk(
+    'location/fetchTodayNearby',
+    async ({ latitude, longitude, radiusKm }, { rejectWithValue }) => {
+        try {
+            const response = await locationAPI.getTodayNearby(latitude, longitude, radiusKm);
+            return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
         }
@@ -23,7 +55,9 @@ export const fetchNearbyItems = createAsyncThunk(
 
 const initialState = {
     nearbyEvents: [],
-    nearbyActivities: [],
+    nearbyCommunities: [],
+    cityEvents: [],
+    todayEvents: [],
     status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
     error: null,
 };
@@ -38,27 +72,66 @@ const locationSlice = createSlice({
         },
         clearNearbyItems: (state) => {
             state.nearbyEvents = [];
-            state.nearbyActivities = [];
+            state.nearbyCommunities = [];
         }
     },
     extraReducers: (builder) => {
         builder
-            // fetchNearbyItems
-            .addCase(fetchNearbyItems.pending, (state) => {
+            // fetchNearbyEvents
+            .addCase(fetchNearbyEvents.pending, (state) => {
                 state.status = 'loading';
                 state.error = null;
             })
-            .addCase(fetchNearbyItems.fulfilled, (state, action) => {
+            .addCase(fetchNearbyEvents.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                // Assuming the payload is { events: [...], activities: [...] }
-                state.nearbyEvents = action.payload.events || [];
-                state.nearbyActivities = action.payload.activities || [];
+                state.nearbyEvents = action.payload || [];
             })
-            .addCase(fetchNearbyItems.rejected, (state, action) => {
+            .addCase(fetchNearbyEvents.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload;
                 state.nearbyEvents = [];
-                state.nearbyActivities = [];
+            })
+            // fetchNearbyCommunities
+            .addCase(fetchNearbyCommunities.pending, (state) => {
+                state.status = 'loading';
+                state.error = null;
+            })
+            .addCase(fetchNearbyCommunities.fulfilled, (state, action) => {
+                state.status = 'succeeded';
+                state.nearbyCommunities = action.payload || [];
+            })
+            .addCase(fetchNearbyCommunities.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.payload;
+                state.nearbyCommunities = [];
+            })
+            // fetchEventsByCity
+            .addCase(fetchEventsByCity.pending, (state) => {
+                state.status = 'loading';
+                state.error = null;
+            })
+            .addCase(fetchEventsByCity.fulfilled, (state, action) => {
+                state.status = 'succeeded';
+                state.cityEvents = action.payload || [];
+            })
+            .addCase(fetchEventsByCity.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.payload;
+                state.cityEvents = [];
+            })
+            // fetchTodayNearby
+            .addCase(fetchTodayNearby.pending, (state) => {
+                state.status = 'loading';
+                state.error = null;
+            })
+            .addCase(fetchTodayNearby.fulfilled, (state, action) => {
+                state.status = 'succeeded';
+                state.todayEvents = action.payload || [];
+            })
+            .addCase(fetchTodayNearby.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.payload;
+                state.todayEvents = [];
             });
     },
 });

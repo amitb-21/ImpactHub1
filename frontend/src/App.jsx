@@ -8,6 +8,8 @@ import {
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "leaflet/dist/leaflet.css"; // <-- ADD THIS IMPORT FOR LEAFLET
+
 import store from "./store/store";
 import { useAuth } from "./hooks/useAuth";
 import { API_URL } from "./config/constants";
@@ -22,14 +24,24 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import UserProfile from "./pages/UserProfile";
 
-// Pages - Communities (NEW - Day 16)
+// Pages - Communities
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
 
-// Pages - Community Manager (NEW - Day 7/8)
-import BecomeCommunityManager from "./pages/BecomeCommunityManager"; // <-- IMPORT
+// Pages - Community Manager
+import BecomeCommunityManager from "./pages/BecomeCommunityManager";
 
-// Error Pages (to be created)
+// Pages - Events
+import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
+
+// --- NEWLY ADDED PAGES (Phase 8) ---
+import NearbyEvents from "./pages/NearbyEvents";
+import NearbyCommunities from "./pages/NearbyCommunities";
+import EventsByCity from "./pages/EventsByCity";
+import TodayEvents from "./pages/TodayEvents";
+
+// Error Pages
 const NotFound = () => (
   <div style={{ textAlign: "center", padding: "60px 20px" }}>
     <h1>404 - Page Not Found</h1>
@@ -147,13 +159,12 @@ const AppContent = () => {
           }
         />
 
-        {/* Nearby Communities */}
+        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/nearby-communities"
           element={
             <ProtectedRoute>
-              {/* <NearbyCommunities /> - To be created on Day 23 */}
-              <div>Nearby Communities (Coming Soon)</div>
+              <NearbyCommunities />
             </ProtectedRoute>
           }
         />
@@ -181,8 +192,7 @@ const AppContent = () => {
           path="/events"
           element={
             <ProtectedRoute>
-              {/* <Events /> - To be created on Day 19 */}
-              <div>Events List (Coming Soon)</div>
+              <Events />
             </ProtectedRoute>
           }
         />
@@ -192,41 +202,37 @@ const AppContent = () => {
           path="/events/:eventId"
           element={
             <ProtectedRoute>
-              {/* <EventDetail /> - To be created on Day 19 */}
-              <div>Event Detail (Coming Soon)</div>
+              <EventDetail />
             </ProtectedRoute>
           }
         />
 
-        {/* Nearby Events */}
+        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/nearby-events"
           element={
             <ProtectedRoute>
-              {/* <NearbyEvents /> - To be created on Day 23 */}
-              <div>Nearby Events (Coming Soon)</div>
+              <NearbyEvents />
             </ProtectedRoute>
           }
         />
 
-        {/* Events by City */}
+        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/events/city/:cityName"
           element={
             <ProtectedRoute>
-              {/* <EventsByCity /> - To be created on Day 23 */}
-              <div>Events by City (Coming Soon)</div>
+              <EventsByCity />
             </ProtectedRoute>
           }
         />
 
-        {/* Today's Events */}
+        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/events/today"
           element={
             <ProtectedRoute>
-              {/* <TodayEvents /> - To be created on Day 23 */}
-              <div>Today's Events (Coming Soon)</div>
+              <TodayEvents />
             </ProtectedRoute>
           }
         />
