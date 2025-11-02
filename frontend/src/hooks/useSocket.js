@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import io from 'socket.io-client';
 import { SOCKET_URL } from '../config/constants';
+import { toast } from 'react-toastify';
 import {
   pointsEarned,
   levelUp,
@@ -37,6 +38,9 @@ export const useSocket = () => {
   const socketRef = useRef(null);
   const dispatch = useDispatch();
 
+  // Prevent spamming socket-related error toasts
+  let socketErrorToastShown = false;
+
   // Initialize socket connection
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -67,7 +71,14 @@ export const useSocket = () => {
     // Add connection error handler
     socketRef.current.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
-      toast.error(`Socket connection failed: ${error.message}`);
+      // Show at most one socket error toast every 30s
+      if (!socketErrorToastShown) {
+        socketErrorToastShown = true;
+        toast.error(`Socket connection failed: ${error.message}`);
+        setTimeout(() => {
+          socketErrorToastShown = false;
+        }, 30000);
+      }
     });
 
     // Connection event

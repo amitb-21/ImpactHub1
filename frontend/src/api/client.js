@@ -3,6 +3,8 @@ import { API_URL } from '../config/constants';
 import { toast } from 'react-toastify';
 
 console.log('API URL:', API_URL); // Debug log
+// Prevent spamming the user with the same "server down" toast repeatedly
+let serverDownToastShown = false;
 
 const API = axios.create({
   baseURL: API_URL,
@@ -76,17 +78,33 @@ API.interceptors.response.use(
       message: error.message,
       config: error.config,
       url: error.config?.url,
-      baseURL: error.config?.baseURL
+      baseURL: error.config?.baseURL,
     });
 
-    // Check if server base URL is reachable (quick probe)
-    fetch(API_URL)
-      .then(() => {
-        toast.error('Network error. API server is reachable but the request failed. Check server logs or the specific endpoint.');
-      })
-      .catch(() => {
-        toast.error(`Cannot reach server at ${API_URL}. Please check if backend is running.`);
-      });
+    // Avoid showing the same server-down toast for every failed request.
+    // Show at most one such toast every 30 seconds.
+    if (!serverDownToastShown) {
+      serverDownToastShown = true;
+
+      // Quick probe to check base API reachability. If probe resolves, the
+      // problem is the endpoint; otherwise backend appears down.
+      fetch(API_URL)
+        .then(() => {
+          toast.error(
+            'Network error. API server is reachable but the request failed. Check server logs or the specific endpoint.'
+          );
+        })
+        .catch(() => {
+          toast.error(`Cannot reach server at ${API_URL}. Please check if backend is running.`);
+        })
+        .finally(() => {
+          // Reset the flag after 30s so the user can be notified again if the
+          // problem persists later.
+          setTimeout(() => {
+            serverDownToastShown = false;
+          }, 30000);
+        });
+    }
 
     return Promise.reject(error);
   }
