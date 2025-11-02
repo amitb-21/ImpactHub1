@@ -96,6 +96,26 @@ export const ratingAPI = {
 };
 
 // ===== IMPACT & POINTS =====
+// ===== CALENDAR =====
+export const calendarAPI = {
+  getInviteURLs: (eventId) => API.get(`/events/${eventId}/calendar-urls`),
+  downloadICS: (eventId) => API.get(`/events/${eventId}/calendar.ics`, {
+    responseType: 'blob'
+  }).then(response => {
+    // Create a download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `event-${eventId}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    return response;
+  })
+};
+
+// ===== IMPACT & POINTS =====
 export const impactAPI = {
   getMetrics: (userId) => API.get(`/impact/metrics/${userId}`),
   getProgress: (userId) => API.get(`/impact/progress/${userId}`),
@@ -166,14 +186,6 @@ export const locationAPI = {
   getEventsByCity: (city) => API.get(`/location/city/${city}`),
   getTodayNearby: (lat, lng, radiusKm = 10) => 
     API.get(`/location/today?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`)
-};
-
-// ===== CALENDAR =====
-export const calendarAPI = {
-  downloadICS: (eventId) => 
-    API.get(`/location/calendar/${eventId}/download.ics`),
-  getInviteURLs: (eventId) => 
-    API.get(`/location/calendar/${eventId}/urls`)
 };
 
 // ===== ACTIVITY =====

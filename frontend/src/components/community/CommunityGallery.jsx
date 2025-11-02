@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCommunityGallery } from "../../store/slices/photoSlice";
+import {
+  fetchCommunityGallery,
+  likePhoto,
+} from "../../store/slices/photoSlice"; // <-- IMPORT likePhoto
 import { Card } from "../common/Card";
 import { Button } from "../common/Button";
 import { Loader } from "../common/Loader";
@@ -113,39 +116,49 @@ const CommunityGallery = ({ communityId, maxPhotos = 6 }) => {
  * Photo Thumbnail Component
  * Displays individual photo with hover overlay and badges
  */
-const PhotoThumbnail = ({ photo, index, onClick }) => (
-  <div className={styles.photoThumbnail} onClick={onClick}>
-    <img
-      src={photo.photoUrl}
-      alt={`Gallery ${index + 1}`}
-      className={styles.thumbnailImage}
-      onError={(e) => {
-        e.target.src = "https://via.placeholder.com/200x200?text=Photo";
-      }}
-    />
+const PhotoThumbnail = ({ photo, index, onClick }) => {
+  const dispatch = useDispatch(); // <-- ADDED
 
-    {/* Overlay on Hover */}
-    <div className={styles.thumbnailOverlay}>
-      <div className={styles.overlayContent}>
-        <span className={styles.viewIcon}>👁️</span>
-        <p className={styles.viewText}>View</p>
+  // <-- ADDED HANDLER -->
+  const handleLike = (e) => {
+    e.stopPropagation(); // Prevent modal from opening
+    dispatch(likePhoto(photo._id));
+  };
+
+  return (
+    <div className={styles.photoThumbnail} onClick={onClick}>
+      <img
+        src={photo.photoUrl}
+        alt={`Gallery ${index + 1}`}
+        className={styles.thumbnailImage}
+        onError={(e) => {
+          e.target.src = "https://via.placeholder.com/200x200?text=Photo";
+        }}
+      />
+
+      {/* Overlay on Hover */}
+      <div className={styles.thumbnailOverlay}>
+        <div className={styles.overlayContent}>
+          <span className={styles.viewIcon}>👁️</span>
+          <p className={styles.viewText}>View</p>
+        </div>
+
+        {/* Likes Badge --> ADDED onClick */}
+        <div className={styles.likesBadge} onClick={handleLike}>
+          <FiHeart size={14} />
+          <span>{photo.likes?.length || 0}</span>
+        </div>
       </div>
 
-      {/* Likes Badge */}
-      <div className={styles.likesBadge}>
-        <FiHeart size={14} />
-        <span>{photo.likes?.length || 0}</span>
-      </div>
+      {/* Photo Type Badge */}
+      {photo.photoType && (
+        <div className={styles.typeBadge}>
+          {getPhotoTypeLabel(photo.photoType)}
+        </div>
+      )}
     </div>
-
-    {/* Photo Type Badge */}
-    {photo.photoType && (
-      <div className={styles.typeBadge}>
-        {getPhotoTypeLabel(photo.photoType)}
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 /**
  * Photo Lightbox Modal Component
@@ -158,104 +171,130 @@ const PhotoLightbox = ({
   onClose,
   onNext,
   onPrev,
-}) => (
-  <Modal isOpen={true} onClose={onClose} title="" size="xl" showCloseBtn={true}>
-    <div className={styles.lightboxContainer}>
-      {/* Main Image */}
-      <div className={styles.lightboxImageContainer}>
-        <img
-          src={photo.photoUrl}
-          alt="Photo"
-          className={styles.lightboxImage}
-          onError={(e) => {
-            e.target.src = "https://via.placeholder.com/800x600?text=Photo";
-          }}
-        />
+}) => {
+  const dispatch = useDispatch(); // <-- ADDED
 
-        {/* Navigation Arrows */}
-        {currentIndex > 0 && (
-          <button
-            className={styles.navButton}
-            onClick={onPrev}
-            title="Previous photo"
-          >
-            ◀
-          </button>
-        )}
+  // <-- ADDED HANDLER -->
+  const handleLike = () => {
+    dispatch(likePhoto(photo._id));
+  };
 
-        {currentIndex < photos.length - 1 && (
-          <button
-            style={{ right: "16px", left: "auto" }}
-            className={styles.navButton}
-            onClick={onNext}
-            title="Next photo"
-          >
-            ▶
-          </button>
-        )}
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title=""
+      size="xl"
+      showCloseBtn={true}
+    >
+      <div className={styles.lightboxContainer}>
+        {/* Main Image */}
+        <div className={styles.lightboxImageContainer}>
+          <img
+            src={photo.photoUrl}
+            alt="Photo"
+            className={styles.lightboxImage}
+            onError={(e) => {
+              e.target.src = "https://via.placeholder.com/800x600?text=Photo";
+            }}
+          />
 
-        {/* Photo Counter */}
-        <div className={styles.photoCounter}>
-          {currentIndex + 1} / {photos.length}
+          {/* Navigation Arrows */}
+          {currentIndex > 0 && (
+            <button
+              className={styles.navButton}
+              onClick={onPrev}
+              title="Previous photo"
+            >
+              ◀
+            </button>
+          )}
+
+          {currentIndex < photos.length - 1 && (
+            <button
+              style={{ right: "16px", left: "auto" }}
+              className={styles.navButton}
+              onClick={onNext}
+              title="Next photo"
+            >
+              ▶
+            </button>
+          )}
+
+          {/* Photo Counter */}
+          <div className={styles.photoCounter}>
+            {currentIndex + 1} / {photos.length}
+          </div>
         </div>
-      </div>
 
-      {/* Photo Info */}
-      <div className={styles.lightboxInfo}>
-        {/* Description */}
-        {photo.description && (
-          <div className={styles.infoSection}>
-            <h4 className={styles.infoTitle}>Description</h4>
-            <p className={styles.infoText}>{photo.description}</p>
-          </div>
-        )}
-
-        {/* Photo Details */}
-        <div className={styles.detailsGrid}>
-          {/* Type */}
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Type</span>
-            <span className={styles.detailValue}>
-              {getPhotoTypeLabel(photo.photoType)}
-            </span>
-          </div>
-
-          {/* Uploaded By */}
-          {photo.uploadedBy && (
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Uploaded By</span>
-              <span className={styles.detailValue}>
-                {photo.uploadedBy.name}
-              </span>
+        {/* Photo Info */}
+        <div className={styles.lightboxInfo}>
+          {/* Description */}
+          {photo.description && (
+            <div className={styles.infoSection}>
+              <h4 className={styles.infoTitle}>Description</h4>
+              <p className={styles.infoText}>{photo.description}</p>
             </div>
           )}
 
-          {/* Date */}
-          {photo.createdAt && (
+          {/* Photo Details */}
+          <div className={styles.detailsGrid}>
+            {/* Type */}
             <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Date</span>
+              <span className={styles.detailLabel}>Type</span>
               <span className={styles.detailValue}>
-                {new Date(photo.createdAt).toLocaleDateString()}
+                {getPhotoTypeLabel(photo.photoType)}
               </span>
             </div>
-          )}
 
-          {/* Likes */}
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Likes</span>
-            <span className={styles.detailValue}>
-              <FiHeart
-                size={14}
-                style={{ display: "inline", marginRight: "4px" }}
-              />
-              {photo.likes?.length || 0}
-            </span>
+            {/* Uploaded By */}
+            {photo.uploadedBy && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Uploaded By</span>
+                <span className={styles.detailValue}>
+                  {photo.uploadedBy.name}
+                </span>
+              </div>
+            )}
+
+            {/* Date */}
+            {photo.createdAt && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Date</span>
+                <span className={styles.detailValue}>
+                  {new Date(photo.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+
+            {/* Likes --> MODIFIED TO BE A BUTTON */}
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Likes</span>
+              <button
+                className={styles.detailValue}
+                onClick={handleLike}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  color: "#00796B",
+                  fontWeight: 600,
+                }}
+              >
+                <FiHeart size={14} style={{ display: "inline" }} />
+                {photo.likes?.length || 0}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 /**
  * Helper function to get photo type label

@@ -1,3 +1,4 @@
+/* frontend/src/pages/EventDetail.jsx */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,12 +9,16 @@ import {
   joinEvent,
   leaveEvent,
 } from "../store/slices/eventSlice";
+import { fetchCommunityGallery } from "../store/slices/photoSlice"; // <-- IMPORTED
 import Layout from "../components/common/Layout";
 import EventCard from "../components/event/EventCard";
 import ParticipantList from "../components/event/ParticipantList";
 import AttendanceModal from "../components/event/AttendanceModal";
 import RejectionModal from "../components/event/RejectionModal";
 import PointsBreakdown from "../components/event/PointsBreakdown";
+import CalendarShare from "../components/event/CalendarShare"; // <-- IMPORTED
+import PhotoUploadModal from "../components/photo/PhotoUploadModal"; // <-- IMPORTED
+import CommunityGallery from "../components/community/CommunityGallery"; // <-- IMPORTED
 import { Card } from "../components/common/Card";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
@@ -29,6 +34,7 @@ import {
   FiClock,
   FiUsers,
   FiShare2,
+  FiUpload, // <-- IMPORTED
 } from "react-icons/fi";
 import { formatDate, formatDateTime, truncate } from "../config/helpers";
 import styles from "./styles/EventDetail.module.css";
@@ -37,7 +43,7 @@ const EventDetail = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isModerator } = useAuth(); // <-- Get isModerator
   const { joinEvent: joinEventSocket } = useSocket();
 
   // Redux selectors
@@ -47,8 +53,9 @@ const EventDetail = () => {
 
   // Local state
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false); // <-- ADDED STATE
   const [isParticipant, setIsParticipant] = useState(false);
-  const [isOrganizer, setIsOrganizer] = useState(false);
+  const [isOrganizer, setIsOrganizer] = useState(false); // <-- This is the event creator
   const [isJoining, setIsJoining] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
@@ -66,10 +73,19 @@ const EventDetail = () => {
     if (currentEvent && currentUser) {
       const participantIds = currentEvent.participants?.map((p) => p._id) || [];
       setIsParticipant(participantIds.includes(currentUser._id));
-      // IMPORTANT: Only the event organizer can manage attendance
-      setIsOrganizer(currentEvent.organizer?._id === currentUser._id);
+      // Event organizer check
+      setIsOrganizer(currentEvent.createdBy?._id === currentUser._id);
     }
   }, [currentEvent, currentUser]);
+
+  // Fetch community gallery when event data is loaded
+  useEffect(() => {
+    if (currentEvent?.community?._id) {
+      dispatch(
+        fetchCommunityGallery({ communityId: currentEvent.community._id })
+      );
+    }
+  }, [currentEvent?.community?._id, dispatch]);
 
   // Join Socket.io event room
   useEffect(() => {
@@ -160,10 +176,15 @@ const EventDetail = () => {
   }
 
   const registeredCount = currentEvent.participants?.length || 0;
-  const capacity = currentEvent.maxParticipants || 0;
-  const isEventFull = registeredCount >= capacity;
+  // Use capacity object if available (from event list) or fall back
+  const capacity =
+    currentEvent.capacity?.total || currentEvent.maxParticipants || 0;
+  const isEventFull = capacity > 0 && registeredCount >= capacity;
   const isClosed =
     currentEvent.status === "Cancelled" || currentEvent.status === "Completed";
+
+  // Moderator/Admin who is *not* the organizer
+  const isPrivilegedUser = isModerator() && !isOrganizer;
 
   return (
     <Layout>
@@ -243,6 +264,17 @@ const EventDetail = () => {
                     Edit
                   </Button>
                 )}
+                {/* --- ADDED UPLOAD BUTTON (Only for event organizer) --- */}
+                {isOrganizer && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={FiUpload}
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    Upload Photo
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -313,6 +345,8 @@ const EventDetail = () => {
                     : "Event Cancelled"}
                 </Button>
               )}
+              {/* --- ADDED CALENDAR SHARE --- */}
+              <CalendarShare eventId={eventId} />
             </div>
           </div>
         </div>
@@ -330,6 +364,25 @@ const EventDetail = () => {
             onSuccess={handleEditSuccess}
           />
         </Modal>
+
+        {/* --- ADDED UPLOAD MODAL --- */}
+        {showUploadModal && (
+          <PhotoUploadModal
+            eventId={eventId}
+            onClose={() => setShowUploadModal(false)}
+            onSuccess={() => {
+              setShowUploadModal(false);
+              // Refetch the community gallery to show the new photo
+              if (currentEvent.community?._id) {
+                dispatch(
+                  fetchCommunityGallery({
+                    communityId: currentEvent.community._id,
+                  })
+                );
+              }
+            }}
+          />
+        )}
 
         {/* Attendance Modal */}
         {selectedParticipant && (
@@ -384,13 +437,15 @@ const EventDetail = () => {
                 {currentEvent.location && (
                   <DetailItem
                     label="Location"
-                    value={`${currentEvent.location.city}, ${currentEvent.location.state}`}
+                    value={`${currentEvent.location.city}, ${
+                      currentEvent.location.state || ""
+                    }`}
                     icon={FiMapPin}
                   />
                 )}
                 <DetailItem
                   label="Capacity"
-                  value={`${registeredCount} / ${capacity}`}
+                  value={`${registeredCount} / ${capacity || "Unlimited"}`}
                   icon={FiUsers}
                 />
               </div>
@@ -408,14 +463,20 @@ const EventDetail = () => {
             )}
 
             {/* Organizer Card */}
-            {currentEvent.organizer && (
+            {currentEvent.createdBy && ( // Use createdBy instead of organizer
               <Card padding="lg" shadow="md" className={styles.organizerCard}>
                 <h3 className={styles.cardTitle}>Organized By</h3>
-                <div className={styles.organizerContent}>
-                  {currentEvent.organizer.profileImage ? (
+                <div
+                  className={styles.organizerContent}
+                  onClick={() =>
+                    navigate(`/profile/${currentEvent.createdBy._id}`)
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  {currentEvent.createdBy.profileImage ? (
                     <img
-                      src={currentEvent.organizer.profileImage}
-                      alt={currentEvent.organizer.name}
+                      src={currentEvent.createdBy.profileImage}
+                      alt={currentEvent.createdBy.name}
                       className={styles.organizerImage}
                       onError={(e) => {
                         e.target.src =
@@ -424,12 +485,12 @@ const EventDetail = () => {
                     />
                   ) : (
                     <div className={styles.organizerImagePlaceholder}>
-                      {currentEvent.organizer.name?.charAt(0).toUpperCase()}
+                      {currentEvent.createdBy.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className={styles.organizerInfo}>
                     <p className={styles.organizerName}>
-                      {currentEvent.organizer.name}
+                      {currentEvent.createdBy.name}
                     </p>
                     <p className={styles.organizerRole}>Event Organizer</p>
                   </div>
@@ -439,7 +500,7 @@ const EventDetail = () => {
                   variant="outline"
                   fullWidth
                   onClick={() =>
-                    navigate(`/profile/${currentEvent.organizer._id}`)
+                    navigate(`/profile/${currentEvent.createdBy._id}`)
                   }
                   style={{ marginTop: "12px" }}
                 >
@@ -447,6 +508,15 @@ const EventDetail = () => {
                 </Button>
               </Card>
             )}
+
+            {/* --- ADDED GALLERY --- */}
+            <div className={styles.section}>
+              <h3 className={styles.cardTitle}>Community Gallery</h3>
+              <CommunityGallery
+                communityId={currentEvent.community?._id}
+                maxPhotos={9}
+              />
+            </div>
           </div>
 
           {/* Right Column */}
@@ -460,11 +530,15 @@ const EventDetail = () => {
                   label="Registered"
                   value={registeredCount}
                 />
-                <StatItem icon="📊" label="Capacity" value={capacity} />
+                <StatItem
+                  icon="📊"
+                  label="Capacity"
+                  value={capacity || "N/A"}
+                />
                 <StatItem
                   icon="⭐"
                   label="Rating"
-                  value={(currentEvent.averageRating || 0).toFixed(1)}
+                  value={(currentEvent.avgRating || 0).toFixed(1)}
                 />
                 <StatItem
                   icon="⏱️"
@@ -475,32 +549,34 @@ const EventDetail = () => {
             </Card>
 
             {/* Capacity Progress */}
-            <Card padding="lg" shadow="md" className={styles.capacityCard}>
-              <h3 className={styles.cardTitle}>Registration</h3>
-              <div className={styles.progressContainer}>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: `${Math.min(
-                        (registeredCount / capacity) * 100,
-                        100
-                      )}%`,
-                      backgroundColor: isEventFull ? "#ef4444" : "#00796B",
-                    }}
-                  />
-                </div>
-                <p className={styles.progressText}>
-                  {registeredCount} of {capacity} spots filled (
-                  {((registeredCount / capacity) * 100).toFixed(0)}%)
-                </p>
-                {isEventFull && (
-                  <p className={styles.fullText}>
-                    This event has reached maximum capacity
+            {capacity > 0 && (
+              <Card padding="lg" shadow="md" className={styles.capacityCard}>
+                <h3 className={styles.cardTitle}>Registration</h3>
+                <div className={styles.progressContainer}>
+                  <div className={styles.progressBar}>
+                    <div
+                      className={styles.progressFill}
+                      style={{
+                        width: `${Math.min(
+                          (registeredCount / capacity) * 100,
+                          100
+                        )}%`,
+                        backgroundColor: isEventFull ? "#ef4444" : "#00796B",
+                      }}
+                    />
+                  </div>
+                  <p className={styles.progressText}>
+                    {registeredCount} of {capacity} spots filled (
+                    {((registeredCount / capacity) * 100).toFixed(0)}%)
                   </p>
-                )}
-              </div>
-            </Card>
+                  {isEventFull && (
+                    <p className={styles.fullText}>
+                      This event has reached maximum capacity
+                    </p>
+                  )}
+                </div>
+              </Card>
+            )}
 
             {/* Location Card */}
             {currentEvent.location && (
@@ -517,11 +593,14 @@ const EventDetail = () => {
                     {currentEvent.location.zipCode}
                   </p>
                 </div>
+                {/* Note: This button is a placeholder. 
+                  A real implementation would open a map modal.
+                */}
                 <Button
                   size="sm"
                   variant="outline"
                   fullWidth
-                  onClick={() => navigate("/nearby-events")}
+                  onClick={() => alert("Map view coming soon!")}
                   style={{ marginTop: "12px" }}
                 >
                   View on Map
@@ -531,19 +610,19 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Participants Section - ONLY FOR ORGANIZER */}
-        {isOrganizer && (
+        {/* Participants Section - ONLY FOR ORGANIZER or ADMIN */}
+        {(isOrganizer || isPrivilegedUser) && (
           <div className={styles.section}>
             <ParticipantList
               eventId={eventId}
-              isEventOrganizer={true}
+              isEventOrganizer={isOrganizer || isPrivilegedUser}
               compact={false}
             />
           </div>
         )}
 
         {/* View-Only Participant Count for Regular Users */}
-        {!isOrganizer && isParticipant && (
+        {!isOrganizer && !isPrivilegedUser && isParticipant && (
           <Card padding="lg" shadow="md" className={styles.section}>
             <h3 className={styles.cardTitle}>
               Participants ({registeredCount})
