@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useGeolocation } from "../hooks/useGeolocation";
-import { locationAPI } from "../api/services";
+import { fetchTodayNearby } from "../store/slices/locationSlice";
 import Layout from "../components/common/Layout";
 import EventList from "../components/event/EventList";
 import { Loader } from "../components/common/Loader";
@@ -16,49 +17,32 @@ const TodayEvents = () => {
     error: geoError,
     requestLocation,
   } = useGeolocation();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState(null);
+  const dispatch = useDispatch();
+  const {
+    todayEvents,
+    status,
+    error: apiError,
+  } = useSelector((state) => state.location);
   const [hasRequested, setHasRequested] = useState(false);
 
   const handleFetch = () => {
     setHasRequested(true);
-    setApiError(null);
     requestLocation();
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (latitude && longitude && hasRequested) {
-        setLoading(true);
-        setApiError(null);
-        try {
-          const response = await locationAPI.getTodayNearby(
-            latitude,
-            longitude,
-            25
-          );
-          setEvents(response.data.data || []);
-        } catch (err) {
-          setApiError(
-            err.response?.data?.message ||
-              err.message ||
-              "Failed to fetch events."
-          );
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    if (hasRequested) {
-      fetchData();
+    if (latitude && longitude && hasRequested) {
+      dispatch(fetchTodayNearby({ latitude, longitude, radiusKm: 25 }));
     }
-  }, [latitude, longitude, hasRequested]);
+  }, [latitude, longitude, hasRequested, dispatch]);
 
   const isLoading =
-    loading ||
-    (hasRequested && !geoError && !apiError && !events.length && !latitude);
+    status === "loading" ||
+    (hasRequested &&
+      !geoError &&
+      !apiError &&
+      !todayEvents.length &&
+      !latitude);
   const error = apiError || geoError;
 
   const renderContent = () => {

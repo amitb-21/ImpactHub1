@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { locationAPI } from "../api/services";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchEventsByCity } from "../store/slices/locationSlice";
 import Layout from "../components/common/Layout";
 import EventList from "../components/event/EventList";
 import { Loader } from "../components/common/Loader";
@@ -12,39 +13,22 @@ import styles from "./styles/LocationPages.module.css";
 const EventsByCity = () => {
   const { cityName } = useParams();
   const navigate = useNavigate();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const {
+    cityEvents: events,
+    status,
+    error,
+  } = useSelector((state) => state.location);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!cityName) {
-        setError("No city provided.");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await locationAPI.getEventsByCity(cityName);
-        setEvents(response.data.data || []);
-      } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            err.message ||
-            "Failed to fetch events."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [cityName]);
+    if (!cityName) {
+      return;
+    }
+    dispatch(fetchEventsByCity(cityName));
+  }, [cityName, dispatch]);
 
   const renderContent = () => {
-    if (loading) {
+    if (status === "loading") {
       return (
         <div className={styles.loadingContainer}>
           <Loader size="lg" text={`Finding events in ${cityName}...`} />
