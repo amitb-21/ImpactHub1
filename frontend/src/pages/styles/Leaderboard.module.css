@@ -1,66 +1,507 @@
+/* ===========================
+   CONTAINER & LAYOUT
+   =========================== */
+
 .container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 80px 80px;
+  background: #f5f7fa;
+  min-height: 100vh;
+  animation: fadeIn 0.6s ease-out;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===========================
+   HEADER SECTION
+   =========================== */
+
 .header {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid #e0e0e0;
+  padding: 60px 0 40px;
+  text-align: center;
+  position: relative;
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header::before {
+  content: '🏆';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 120px;
+  opacity: 0.1;
+  z-index: 0;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px);
+  }
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #212121;
-  margin: 0 0 8px 0;
+  font-size: 56px;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1a1a1a 0%, #00796B 50%, #FFC107 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .subtitle {
-  font-size: 16px;
-  color: #666;
+  font-size: 20px;
+  color: #64748b;
   margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
 }
+
+/* ===========================
+   MAIN CARD
+   =========================== */
+
+.container > div:last-child {
+  background: white;
+  border-radius: 28px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  animation: slideUp 0.6s ease-out 0.2s both;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container > div:last-child:hover {
+  box-shadow: 0 16px 48px rgba(0, 121, 107, 0.15);
+  border-color: #00796B;
+}
+
+.container > div:last-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #00796B 0%, #00acc1 50%, #FFC107 100%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===========================
+   FILTERS SECTION
+   =========================== */
 
 .filters {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 3px solid #e2e8f0;
   flex-wrap: wrap;
+  justify-content: center;
+  animation: slideUp 0.6s ease-out 0.3s both;
 }
 
+.filters button {
+  flex: 1;
+  min-width: 180px;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.filters button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.filters button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.filters button:not([variant="primary"]) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  color: #64748b;
+}
+
+.filters button:not([variant="primary"]):hover {
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+  border-color: #00796B;
+  color: #00796B;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 121, 107, 0.15);
+}
+
+/* ===========================
+   CURRENT USER RANK
+   =========================== */
+
 .currentUserRank {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #f0f8f7;
-  border-radius: 10px;
-  text-align: center;
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 3px solid #e2e8f0;
+  animation: slideUp 0.6s ease-out 0.5s both;
 }
 
 .currentUserRank p {
-  margin: 0;
-  font-size: 15px;
+  text-align: center;
+  font-size: 18px;
   font-weight: 600;
-  color: #004D40;
+  color: #64748b;
+  margin: 0;
+  padding: 20px 32px;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+  border-radius: 16px;
+  border: 2px solid #b2dfdb;
+  position: relative;
+  overflow: hidden;
+}
+
+.currentUserRank p::before {
+  content: '👤';
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.currentUserRank p {
+  padding-left: 72px;
 }
 
 .currentUserRank strong {
   color: #00796B;
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #00796B 0%, #00acc1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===========================
+   LEADERBOARD COMPONENT ENHANCEMENTS
+   =========================== */
+
+/* Add decorative elements around leaderboard */
+.container > div:last-child > div:nth-child(2) {
+  position: relative;
+  animation: slideUp 0.6s ease-out 0.4s both;
+}
+
+/* Top 3 spotlight effect */
+.container > div:last-child > div:nth-child(2)::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+/* ===========================
+   DECORATIVE ELEMENTS
+   =========================== */
+
+/* Trophy Icons */
+.container::before,
+.container::after {
+  content: '🏆';
+  position: fixed;
+  font-size: 80px;
+  opacity: 0.03;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.container::before {
+  top: 20%;
+  left: 5%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.container::after {
+  bottom: 15%;
+  right: 5%;
+  animation: float 10s ease-in-out infinite reverse;
+}
+
+/* ===========================
+   LOADING STATE
+   =========================== */
+
+.container :global(.loader-container) {
+  padding: 80px 40px;
+  text-align: center;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 0 50px 60px;
+  }
+
+  .title {
+    font-size: 48px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+  }
+
+  .filters button {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 24px 40px;
+  }
+
+  .header {
+    padding: 40px 0 32px;
+  }
+
+  .title {
+    font-size: 40px;
+  }
+
+  .subtitle {
+    font-size: 17px;
+  }
+
+  .header::before {
+    font-size: 80px;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filters button {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .currentUserRank p {
+    font-size: 16px;
+    padding: 18px 28px 18px 64px;
+  }
+
+  .currentUserRank p::before {
+    left: 24px;
+    font-size: 20px;
+  }
+
+  .currentUserRank strong {
+    font-size: 18px;
+  }
 }
 
 @media (max-width: 480px) {
   .container {
-    padding: 12px;
+    padding: 0 16px 32px;
   }
+
+  .header {
+    padding: 32px 0 24px;
+  }
+
   .title {
-    font-size: 24px;
+    font-size: 36px;
   }
+
   .subtitle {
-    font-size: 14px;
+    font-size: 16px;
   }
+
+  .header::before {
+    font-size: 64px;
+    opacity: 0.08;
+  }
+
   .filters {
-    display: grid;
-    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .filters button {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .currentUserRank p {
+    font-size: 15px;
+    padding: 16px 24px 16px 60px;
+  }
+
+  .currentUserRank p::before {
+    left: 20px;
+    font-size: 18px;
+  }
+}
+
+/* ===========================
+   FOCUS STATES & ACCESSIBILITY
+   =========================== */
+
+.filters button:focus-visible {
+  outline: 3px solid #00796B;
+  outline-offset: 4px;
+}
+
+/* ===========================
+   SPECIAL EFFECTS
+   =========================== */
+
+/* Winner podium effect */
+@keyframes winnerGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 193, 7, 0.6);
+  }
+}
+
+/* Medal icons for top 3 */
+.container :global(.rank-1),
+.container :global(.rank-2),
+.container :global(.rank-3) {
+  position: relative;
+}
+
+.container :global(.rank-1::before) {
+  content: '🥇';
+  position: absolute;
+  left: -40px;
+  font-size: 32px;
+}
+
+.container :global(.rank-2::before) {
+  content: '🥈';
+  position: absolute;
+  left: -40px;
+  font-size: 28px;
+}
+
+.container :global(.rank-3::before) {
+  content: '🥉';
+  position: absolute;
+  left: -40px;
+  font-size: 24px;
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+
+@media print {
+  .container {
+    background: white;
+  }
+
+  .container::before,
+  .container::after,
+  .header::before {
+    display: none;
+  }
+
+  .filters {
+    display: none;
+  }
+
+  .currentUserRank {
+    border-top: 2px solid #000;
   }
 }
