@@ -8,7 +8,8 @@ import {
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "leaflet/dist/leaflet.css"; 
+import "leaflet/dist/leaflet.css"; // <-- ADD THIS IMPORT FOR LEAFLET
+
 import store from "./store/store";
 import { useAuth } from "./hooks/useAuth";
 import { API_URL } from "./config/constants";
