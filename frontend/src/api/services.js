@@ -195,14 +195,18 @@ export const locationAPI = {
 
 // ===== ACTIVITY =====
 export const activityAPI = {
-  getUserActivity: (userId, page = 1) => 
-    API.get(`/activities/user/${userId}?page=${page}&limit=10`),
-  getCommunityActivity: (communityId, page = 1) => 
-    API.get(`/activities/community/${communityId}?page=${page}&limit=10`),
-  getGlobalActivity: (page = 1) => 
-    API.get(`/activities?page=${page}&limit=20`),
+  getUserActivity: (userId, page = 1, limit = 10, filters = {}) =>
+    API.get(`/activities/user/${userId}`, { params: { page, limit, ...filters } }),
+  getCommunityActivity: (communityId, page = 1, limit = 10, filters = {}) =>
+    API.get(`/activities/community/${communityId}`, { params: { page, limit, ...filters } }),
+  getGlobalActivity: (page = 1, limit = 20, filters = {}) =>
+    API.get('/activities', { params: { page, limit, ...filters } }),
   getStats: () => API.get(`/activities/stats`)
 };
+// Add create/update/delete helpers (optional convenience)
+activityAPI.createActivity = (data) => API.post('/activities', data);
+activityAPI.updateActivity = (id, data) => API.put(`/activities/${id}`, data);
+activityAPI.deleteActivity = (id) => API.delete(`/activities/${id}`);
 
 // ===== VERIFICATION =====
 export const verificationAPI = {

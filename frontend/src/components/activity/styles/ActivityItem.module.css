@@ -1,0 +1,129 @@
+.activityItem {
+  display: flex;
+  gap: 16px;
+  padding: 16px 12px;
+  background-color: #FAFAFA;
+  border-bottom: 1px solid #f0f0f0;
+  border-left-width: 4px;
+  border-left-style: solid;
+  transition: background-color 0.2s ease;
+}
+
+.activityItem:hover {
+  background-color: #f5f5f5;
+}
+
+.activityIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.activityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00796B;
+}
+
+.userAvatarPlaceholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #00796B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #FAFAFA;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #212121;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activityTime {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.activityDescription {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.entityLink {
+  font-weight: 600;
+  color: #00796B;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.entityLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .activityItem {
+    gap: 12px;
+  }
+  .activityIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  .activityHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .userName {
+    font-size: 13px;
+  }
+  .activityTime {
+    font-size: 11px;
+  }
+  .activityDescription {
+    font-size: 13px;
+  }
+}

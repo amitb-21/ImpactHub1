@@ -1,0 +1,42 @@
+.loadingContainer {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyState {
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.emptyStateTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #212121;
+  margin: 0 0 8px 0;
+}
+
+.emptyStateText {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212121;
+  margin: 0 0 20px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+}

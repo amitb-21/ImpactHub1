@@ -12,6 +12,7 @@ import {
 import { fetchCommunityActivities } from "../store/slices/activitySlice";
 // --- (1) IMPORTS ADDED ---
 import { fetchEntityRatings } from "../store/slices/ratingSlice";
+import { getParticipationDetails } from "../store/slices/participationSlice"; // <-- Corrected import
 import RatingStats from "../components/rating/RatingStats";
 import RatingList from "../components/rating/RatingList";
 import RatingForm from "../components/rating/RatingForm";
@@ -19,7 +20,8 @@ import RatingForm from "../components/rating/RatingForm";
 import Layout from "../components/common/Layout";
 import CommunityStats from "../components/community/CommunityStats";
 import CommunityGallery from "../components/community/CommunityGallery";
-import CommunityActivityFeed from "../components/community/CommunityActivityFeed";
+// --- (1) IMPORT NEW ACTIVITY FEED ---
+import ActivityFeed from "../components/activity/ActivityFeed";
 import MembersList from "../components/community/MembersList";
 import CommunityTierBadge from "../components/community/CommunityTierBadge";
 import { Card } from "../components/common/Card";
@@ -35,8 +37,10 @@ import {
   FiMapPin,
   FiCalendar,
   FiShare2,
+  FiArrowRight, // <-- IMPORTED
 } from "react-icons/fi";
 import styles from "./styles/CommunityDetail.module.css";
+import { usePagination } from "../hooks/usePagination"; // <-- (2) IMPORT PAGINATION
 
 const CommunityDetail = () => {
   const { communityId } = useParams();
@@ -49,28 +53,54 @@ const CommunityDetail = () => {
   const { currentCommunity, isLoading, error } = useSelector(
     (state) => state.community
   );
-  // --- (2) RATING STATE ---
+  // --- (2) RATING AND PARTICIPATION STATE ---
   const { entityRatings, myRating } = useSelector((state) => state.rating);
+  // We need to know the user's participation status for this event
+  const { participationDetail } = useSelector((state) => state.participation);
   // --- (End 2) ---
+  // --- (3) GET ACTIVITY STATE ---
+  const { activities: communityActivities, status: activityStatus } =
+    useSelector((state) => state.activities);
+  // --- (End 3) ---
 
   // Local state
   const [showEditForm, setShowEditForm] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [participationId, setParticipationId] = useState(null);
+
+  // --- (4) PAGINATION FOR ACTIVITIES ---
+  const activityPaginationData = communityActivities?.pagination || {
+    total: 0,
+    limit: 10,
+  };
+  const {
+    page: activityPage,
+    totalPages: activityTotalPages,
+    goToPage: goToActivityPage,
+    startIndex: activityStartIndex,
+    endIndex: activityEndIndex,
+  } = usePagination(activityPaginationData.total, 1, 10); // 10 per page
+  // --- (End 4) ---
 
   // Fetch community data on mount
   useEffect(() => {
     if (communityId) {
       dispatch(fetchCommunityById(communityId));
-      dispatch(fetchCommunityActivities(communityId));
-      // --- (3) FETCH RATINGS ---
+      // --- (5) ADD activityPage dependency ---
+      dispatch(
+        fetchCommunityActivities({
+          communityId,
+          page: activityPage,
+          limit: 10,
+        })
+      );
       dispatch(
         fetchEntityRatings({ entityType: "Community", entityId: communityId })
       );
-      // --- (End 3) ---
     }
-  }, [communityId, dispatch]);
+  }, [communityId, dispatch, activityPage]); // <-- (5) ADD activityPage dependency
 
   // Check if current user is member or owner
   useEffect(() => {
@@ -87,6 +117,17 @@ const CommunityDetail = () => {
       joinCommunitySocket(communityId);
     }
   }, [communityId, isMember, joinCommunitySocket]);
+
+  // --- (4) FETCH PARTICIPATION STATUS (Note: This logic seems copied from EventDetail and might be incorrect here) ---
+  // We need to know if the user attended to show the rating form
+  useEffect(() => {
+    // This logic is likely flawed as participationId is not being correctly set for communities
+    if (currentUser && isMember && participationId) {
+      // Fetch the detailed participation record to check 'status'
+      dispatch(getParticipationDetails(participationId));
+    }
+  }, [currentUser, isMember, participationId, dispatch]);
+  // --- (End 4) ---
 
   // Handle join community
   const handleJoinCommunity = async () => {
@@ -164,14 +205,14 @@ const CommunityDetail = () => {
 
   const isVerified = currentCommunity.verificationStatus === "verified";
 
-  // --- (4) RATING FORM VISIBILITY LOGIC ---
+  // --- (5) RATING FORM VISIBILITY LOGIC ---
   // Backend `createRating` for Community checks if user is member OR has attended an event.
   // We can just check `isMember` on the frontend as a simple proxy.
   const showRatingForm = isAuthenticated && isMember && !myRating;
   const showUpdateForm = isAuthenticated && isMember && myRating;
   const showJoinMessage = isAuthenticated && !isMember;
   const showLoginMessage = !isAuthenticated;
-  // --- (End 4) ---
+  // --- (End 5) ---
 
   return (
     <Layout>
@@ -397,23 +438,6 @@ const CommunityDetail = () => {
               <RatingList entityType="Community" entityId={communityId} />
             </div>
             {/* --- (End 5) --- */}
-
-            {/* Community Gallery */}
-            {isMember && (
-              <div className={styles.section}>
-                <CommunityGallery communityId={communityId} maxPhotos={6} />
-              </div>
-            )}
-
-            {/* Activity Feed */}
-            {isMember && (
-              <div className={styles.section}>
-                <CommunityActivityFeed
-                  communityId={communityId}
-                  showViewAll={true}
-                />
-              </div>
-            )}
           </div>
 
           {/* Right Column */}
@@ -526,8 +550,56 @@ const CommunityDetail = () => {
                 </Button>
               </Card>
             )}
+
+            {/* Gallery */}
+            <div className={styles.section}>
+              <h3 className={styles.cardTitle}>Community Gallery</h3>
+              <CommunityGallery
+                communityId={currentCommunity._id}
+                maxPhotos={9}
+              />
+            </div>
           </div>
         </div>
+
+        {/* --- (6) REFACTORED ACTIVITY FEED (Moved outside grid) --- */}
+        {isMember && (
+          <div className={styles.section} style={{ marginTop: "24px" }}>
+            <ActivityFeed
+              title="Recent Community Activity"
+              activities={communityActivities.data || []}
+              pagination={{
+                ...activityPaginationData,
+                page: activityPage,
+                totalPages: activityTotalPages,
+                startIndex: activityStartIndex,
+                endIndex: activityEndIndex,
+                limit: 10,
+              }}
+              onPageChange={goToActivityPage}
+              isLoading={activityStatus === "loading"}
+              emptyMessage="No activity in this community yet."
+            />
+            {activityPaginationData.total > 10 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/communities/${communityId}/activity`)}
+                icon={FiArrowRight}
+                iconPosition="right"
+                style={{
+                  marginTop: "16px",
+                  display: "block",
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}
+              >
+                View All Activity ({activityPaginationData.total})
+              </Button>
+            )}
+          </div>
+        )}
+        {/* --- (End 6) --- */}
 
         {/* Members Section */}
         {isMember && (

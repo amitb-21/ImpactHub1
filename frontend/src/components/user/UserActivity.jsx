@@ -12,210 +12,67 @@ import {
   FiImage,
 } from "react-icons/fi";
 import { timeAgo, truncate } from "../../config/helpers";
+import { usePagination } from "../../hooks/usePagination"; // Import usePagination
+import ActivityFeed from "../activity/ActivityFeed"; // Import ActivityFeed
+import { Button } from "../common/Button"; // Import Button
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
-const UserActivity = ({ userId, limit = 10 }) => {
+const UserActivity = ({ userId, limit = 5 }) => {
+  // Default limit to 5 as in Dashboard
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // Hook for navigation
   const { activity, isLoading } = useSelector((state) => state.user);
+
+  const paginationData = activity?.pagination || { total: 0 };
+
+  // Note: We are fetching page 1 with the specified limit.
+  // Full pagination is deferred to the main activity page.
+  const { page, goToPage } = usePagination(paginationData.total, 1, limit);
 
   useEffect(() => {
     if (userId) {
-      dispatch(fetchUserActivity({ userId, page: 1 }));
+      dispatch(fetchUserActivity({ userId, page: 1, limit }));
     }
-  }, [userId, dispatch]);
-
-  if (isLoading) {
-    return (
-      <Card padding="lg" style={styles.card}>
-        <div style={styles.loadingContainer}>
-          <Loader size="sm" text="Loading activities..." />
-        </div>
-      </Card>
-    );
-  }
-
-  if (!activity.data || activity.data.length === 0) {
-    return (
-      <Card padding="lg" style={styles.card}>
-        <div style={styles.emptyState}>
-          <div style={styles.emptyIcon}>📭</div>
-          <p style={styles.emptyStateTitle}>No Activity Yet</p>
-          <p style={styles.emptyStateText}>
-            Your activities will appear here as you engage with ImpactHub
-          </p>
-        </div>
-      </Card>
-    );
-  }
-
-  const displayedActivities = activity.data.slice(0, limit);
+  }, [userId, dispatch, limit]); // Only fetch once for this component
 
   return (
-    <Card padding="lg" shadow="md" style={styles.card}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>Recent Activity</h3>
-        <span style={styles.subtitle}>Your recent actions</span>
-      </div>
-
-      <div style={styles.activityList}>
-        {displayedActivities.map((item, index) => (
-          <ActivityItemRow key={item._id || index} activity={item} />
-        ))}
-      </div>
-
-      {activity.pagination && activity.pagination.totalPages > 1 && (
-        <div style={styles.viewMore}>
-          <a href="#" style={styles.viewMoreLink}>
-            View all activities
-            <FiArrowRight size={16} style={{ marginLeft: "6px" }} />
-          </a>
+    <ActivityFeed
+      title="Recent Activity"
+      activities={activity.data || []}
+      // Pass a simplified pagination object or null
+      pagination={null}
+      onPageChange={null} // No pagination controls in this view
+      isLoading={isLoading && !activity.data?.length}
+      emptyMessage="Your activities will appear here as you engage."
+    >
+      {/* Child prop for 'View All' button */}
+      {activity.pagination && activity.pagination.total > limit && (
+        <div
+          style={{
+            marginTop: "16px",
+            paddingTop: "16px",
+            borderTop: "1px solid #e0e0e0",
+            textAlign: "center",
+          }}
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            icon={FiArrowRight}
+            iconPosition="right"
+            onClick={() => navigate("/activity")} // Link to global activity
+          >
+            View All Activity
+          </Button>
         </div>
       )}
-    </Card>
+    </ActivityFeed>
   );
 };
 
-// Activity Item Row Component
-const ActivityItemRow = ({ activity }) => {
-  const { icon, color, label, description } = getActivityInfo(activity.type);
+// Activity Item Row Component (No longer needed here, logic is in ActivityItem.jsx)
 
-  return (
-    <div style={styles.activityItem}>
-      {/* Icon */}
-      <div
-        style={{ ...styles.activityIcon, backgroundColor: `${color}20`, color }}
-      >
-        {icon}
-      </div>
-
-      {/* Content */}
-      <div style={styles.activityContent}>
-        <div style={styles.activityLabel}>{label}</div>
-        <p style={styles.activityDescription}>{description}</p>
-        <span style={styles.activityTime}>{timeAgo(activity.createdAt)}</span>
-      </div>
-
-      {/* Badge if applicable */}
-      {activity.points && (
-        <Badge
-          label={`+${activity.points} pts`}
-          variant="primary"
-          size="sm"
-          style={{ marginLeft: "auto" }}
-        />
-      )}
-    </div>
-  );
-};
-
-// Helper function to get activity info
-const getActivityInfo = (type) => {
-  const activityMap = {
-    event_joined: {
-      icon: "🎫",
-      color: "#00796B",
-      label: "Event Joined",
-      description: "You joined an event",
-    },
-    event_created: {
-      icon: "✏️",
-      color: "#3b82f6",
-      label: "Event Created",
-      description: "You created a new event",
-    },
-    event_attended: {
-      icon: "✅",
-      color: "#10b981",
-      label: "Event Attended",
-      description: "Your attendance was verified",
-    },
-    event_saved: {
-      icon: "💾",
-      color: "#f59e0b",
-      label: "Event Saved",
-      description: "You saved an event to your wishlist",
-    },
-    event_photo_uploaded: {
-      icon: "📸",
-      color: "#8b5cf6",
-      label: "Photo Uploaded",
-      description: "You uploaded a photo to an event",
-    },
-    community_joined: {
-      icon: "👥",
-      color: "#00796B",
-      label: "Community Joined",
-      description: "You joined a community",
-    },
-    community_created: {
-      icon: "🏗️",
-      color: "#3b82f6",
-      label: "Community Created",
-      description: "You created a new community",
-    },
-    community_deactivated: {
-      icon: "🔴",
-      color: "#ef4444",
-      label: "Community Deactivated",
-      description: "A community you joined was deactivated",
-    },
-    badge_earned: {
-      icon: "🏆",
-      color: "#FFB300",
-      label: "Badge Earned",
-      description: "You earned a new badge",
-    },
-    points_earned: {
-      icon: "⭐",
-      color: "#FFB300",
-      label: "Points Earned",
-      description: "You earned points",
-    },
-    rating_created: {
-      icon: "⭐",
-      color: "#FFB300",
-      label: "Rating Submitted",
-      description: "You submitted a rating",
-    },
-    verification_requested: {
-      icon: "🔍",
-      color: "#f59e0b",
-      label: "Verification Requested",
-      description: "You requested community verification",
-    },
-    community_verification_verified: {
-      icon: "✅",
-      color: "#10b981",
-      label: "Community Verified",
-      description: "Your community was verified",
-    },
-    community_verification_rejected: {
-      icon: "❌",
-      color: "#ef4444",
-      label: "Verification Rejected",
-      description: "Your community verification was rejected",
-    },
-    user_deactivated: {
-      icon: "🚫",
-      color: "#ef4444",
-      label: "Account Deactivated",
-      description: "Your account was deactivated",
-    },
-    resource_created: {
-      icon: "📚",
-      color: "#8b5cf6",
-      label: "Resource Created",
-      description: "You created a new resource",
-    },
-    default: {
-      icon: "📝",
-      color: "#999",
-      label: "Activity",
-      description: "Something happened",
-    },
-  };
-
-  return activityMap[type] || activityMap.default;
-};
+// Helper function to get activity info (No longer needed here, logic is in ActivityItem.jsx)
 
 const styles = {
   card: {

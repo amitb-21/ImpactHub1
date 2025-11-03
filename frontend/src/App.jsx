@@ -8,8 +8,7 @@ import {
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "leaflet/dist/leaflet.css"; // <-- ADD THIS IMPORT FOR LEAFLET
-
+import "leaflet/dist/leaflet.css"; 
 import store from "./store/store";
 import { useAuth } from "./hooks/useAuth";
 import { API_URL } from "./config/constants";
@@ -27,6 +26,8 @@ import UserProfile from "./pages/UserProfile";
 // Pages - Communities
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
+// --- (1) IMPORT NEW COMMUNITY ACTIVITY PAGE ---
+import CommunityActivity from "./pages/CommunityActivity";
 
 // Pages - Community Manager
 import BecomeCommunityManager from "./pages/BecomeCommunityManager";
@@ -35,17 +36,20 @@ import BecomeCommunityManager from "./pages/BecomeCommunityManager";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 
-// --- NEWLY ADDED PAGES (Phase 8) ---
+// Pages - Location
 import NearbyEvents from "./pages/NearbyEvents";
 import NearbyCommunities from "./pages/NearbyCommunities";
 import EventsByCity from "./pages/EventsByCity";
 import TodayEvents from "./pages/TodayEvents";
 
-// --- NEWLY ADDED PAGES (Phase 10) ---
+// Pages - Impact
 import Impact from "./pages/Impact";
 import Leaderboard from "./pages/Leaderboard";
 import ImpactSummary from "./pages/ImpactSummary";
-// --- END ---
+
+// --- (2) IMPORT NEW GLOBAL ACTIVITY PAGE ---
+import GlobalActivityFeed from "./pages/ActivityFeed";
+// --- (End 2) ---
 
 // Error Pages
 const NotFound = () => (
@@ -154,16 +158,16 @@ const AppContent = () => {
           }
         />
 
-        {/* Community Activity Feed */}
+        {/* --- (3) ADDED COMMUNITY ACTIVITY ROUTE --- */}
         <Route
           path="/communities/:communityId/activity"
           element={
             <ProtectedRoute>
-              {/* <CommunityActivityFeed /> - To be created on Day 29 */}
-              <div>Community Activity (Coming Soon)</div>
+              <CommunityActivity />
             </ProtectedRoute>
           }
         />
+        {/* --- (End 3) --- */}
 
         {/* --- MODIFIED (Phase 8) --- */}
         <Route
@@ -179,7 +183,6 @@ const AppContent = () => {
           COMMUNITY MANAGER (Day 7/8)
           ===================== */}
 
-        {/* Apply to be Community Manager */}
         <Route
           path="/apply-community-manager"
           element={
@@ -281,16 +284,16 @@ const AppContent = () => {
           ACTIVITY & FEED
           ===================== */}
 
-        {/* Global Activity Feed */}
+        {/* --- (4) UPDATED GLOBAL ACTIVITY ROUTE --- */}
         <Route
           path="/activity"
           element={
             <ProtectedRoute>
-              {/* <ActivityFeed /> - To be created on Day 29 */}
-              <div>Activity Feed (Coming Soon)</div>
+              <GlobalActivityFeed />
             </ProtectedRoute>
           }
         />
+        {/* --- (End 4) --- */}
 
         {/* =====================
           RESOURCES
