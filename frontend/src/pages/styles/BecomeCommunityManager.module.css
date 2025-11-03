@@ -1,129 +1,82 @@
+/* ===========================
+   CONTAINER & LAYOUT
+   =========================== */
+
 .container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-}
-
-.header {
-  margin-bottom: 32px;
-}
-
-.header button {
-  margin-bottom: 12px;
-}
-
-.title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #212121;
-  margin: 0 0 8px 0;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: #666;
-  margin: 0;
-}
-
-/* Messages */
-.successMessage {
-  background-color: #d1fae5;
-  border: 1px solid #6ee7b7;
-  margin-bottom: 20px;
-}
-
-.errorMessage {
-  background-color: #fee2e2;
-  border: 1px solid #fca5a5;
-  margin-bottom: 20px;
-}
-
-.messageContent {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.successMessage .messageContent {
-  color: #065f46;
-}
-
-.errorMessage .messageContent {
-  color: #991b1b;
-}
-
-.messageIcon {
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-/* Info Card */
-.infoCard {
-  margin-bottom: 32px;
-}
-
-.infoTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: #212121;
-  margin: 0 0 20px 0;
-}
-
-.infoBenefits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.infoBenefits > div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  transition: all 0.2s ease;
-}
-
-.infoBenefits > div:hover {
-  background-color: #f0f0f0;
-  border-color: #00796b;
-}
-
-.infoBenefits > div span:first-child {
-  font-size: 24px;
-}
-
-.infoBenefits > div span:nth-child(2) {
-  font-size: 14px;
-  font-weight: 600;
-  color: #212121;
-}
-
-.infoBenefits > div span:nth-child(3) {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-}
-
-/* Content Sections */
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.formSection,
-.statusSection,
-.historySection {
-  animation: fadeIn 0.3s ease;
+  padding: 0 80px 80px;
+  background: #f5f7fa;
+  min-height: 100vh;
+  animation: fadeIn 0.6s ease-out;
 }
 
 @keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===========================
+   HEADER SECTION
+   =========================== */
+
+.header {
+  padding: 60px 0 40px;
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header > div:first-child {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 48px;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1a1a1a 0%, #00796B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* ===========================
+   MESSAGES
+   =========================== */
+
+.successMessage,
+.errorMessage {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -134,92 +87,309 @@
   }
 }
 
+.successMessage {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #86efac;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.15);
+}
+
+.errorMessage {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #fecaca;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+}
+
+.messageContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.successMessage .messageContent {
+  color: #166534;
+}
+
+.errorMessage .messageContent {
+  color: #991b1b;
+}
+
+.messageIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+/* ===========================
+   INFO CARD
+   =========================== */
+
+.infoCard {
+  background: linear-gradient(135deg, #00796B 0%, #00897b 50%, #00acc1 100%);
+  border-radius: 24px;
+  border: none;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 121, 107, 0.2);
+  animation: slideUp 0.6s ease-out 0.1s both;
+}
+
+.infoCard::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulseGlow 8s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.infoTitle {
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 32px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.infoBenefits {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Benefit Item Styles (global for component) */
+:global(.benefit-item) {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+:global(.benefit-item:hover) {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:global(.benefit-icon) {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+:global(.benefit-title) {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 8px;
+  letter-spacing: 0.2px;
+}
+
+:global(.benefit-description) {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ===========================
+   CONTENT SECTION
+   =========================== */
+
+.content {
+  margin-bottom: 32px;
+}
+
+/* ===========================
+   FORM SECTION
+   =========================== */
+
+.formSection {
+  margin-bottom: 32px;
+  animation: slideUp 0.6s ease-out 0.2s both;
+}
+
+.formSection > div {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(0, 121, 107, 0.12);
+}
+
 .formHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .formTitle {
-  font-size: 22px;
-  font-weight: 700;
-  color: #212121;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1a1a;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .closeFormButton {
-  background: none;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 32px;
-  height: 32px;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
 }
 
 .closeFormButton:hover {
-  background-color: #f0f0f0;
-  color: #212121;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+  transform: rotate(90deg);
 }
 
-/* CTA Card */
+/* ===========================
+   STATUS SECTION
+   =========================== */
+
+.statusSection {
+  margin-bottom: 32px;
+  animation: slideUp 0.6s ease-out 0.2s both;
+}
+
+/* ===========================
+   CTA CARD
+   =========================== */
+
 .ctaCard {
-  background: linear-gradient(135deg, #00796b 0%, #004d40 100%);
-  color: #fafafa;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+  border-radius: 24px;
+  border: 3px dashed #00796B;
+  margin-bottom: 32px;
+  box-shadow: 0 12px 32px rgba(0, 121, 107, 0.1);
+  animation: slideUp 0.6s ease-out 0.2s both;
 }
 
 .ctaContent {
   text-align: center;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  padding: 48px 32px;
 }
 
 .ctaIcon {
-  font-size: 48px;
+  font-size: 80px;
+  margin-bottom: 24px;
+  display: inline-block;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 .ctaTitle {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-  color: #fafafa;
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
 }
 
 .ctaText {
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 400px;
-  color: rgba(250, 250, 250, 0.9);
+  font-size: 17px;
+  color: #64748b;
+  margin: 0 0 32px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
 }
 
-.ctaCard button {
-  align-self: center;
-  min-width: 200px;
+/* ===========================
+   HISTORY SECTION
+   =========================== */
+
+.historySection {
+  animation: slideUp 0.6s ease-out 0.3s both;
 }
 
-/* Requirements Card */
+/* ===========================
+   REQUIREMENTS CARD
+   =========================== */
+
 .requirementsCard {
+  background: white;
+  border-radius: 24px;
+  border: 2px solid #e2e8f0;
   margin-bottom: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  animation: slideUp 0.6s ease-out 0.4s both;
+  transition: all 0.3s ease;
+}
+
+.requirementsCard:hover {
+  box-shadow: 0 12px 32px rgba(0, 121, 107, 0.12);
+  border-color: #00796B;
 }
 
 .requirementsTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: #212121;
-  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 24px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.requirementsTitle::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #00796B 0%, #00acc1 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(0, 121, 107, 0.2);
 }
 
 .requirementsList {
@@ -228,120 +398,345 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .requirementsList li {
-  font-size: 14px;
-  color: #212121;
-  padding-left: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
   position: relative;
-  line-height: 1.6;
+  padding-left: 56px;
 }
 
-.requirementsList li:before {
+.requirementsList li::before {
   content: '✓';
   position: absolute;
-  left: 0;
-  color: #10b981;
-  font-weight: 700;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: #00796B;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
+  font-weight: 900;
 }
 
-/* FAQ Card */
+.requirementsList li:hover {
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+  transform: translateX(8px);
+  border-color: #00796B;
+}
+
+/* ===========================
+   FAQ CARD
+   =========================== */
+
 .faqCard {
+  background: white;
+  border-radius: 24px;
+  border: 2px solid #e2e8f0;
   margin-bottom: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  animation: slideUp 0.6s ease-out 0.5s both;
+  transition: all 0.3s ease;
+}
+
+.faqCard:hover {
+  box-shadow: 0 12px 32px rgba(0, 121, 107, 0.12);
+  border-color: #00796B;
 }
 
 .faqTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: #212121;
-  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 28px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.faqTitle::before {
+  content: '?';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #FFC107 0%, #ffb300 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
 }
 
 .faqList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
-.faqList > div {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+/* FAQ Item Styles (global for component) */
+:global(.faq-item) {
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.faqList button {
+:global(.faq-item:hover) {
+  border-color: #00796B;
+  box-shadow: 0 4px 16px rgba(0, 121, 107, 0.1);
+}
+
+:global(.faq-item.open) {
+  border-color: #00796B;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+}
+
+:global(.faq-question) {
   width: 100%;
-  padding: 16px;
-  background-color: #f9fafb;
-  border: none;
-  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: #212121;
-  transition: all 0.2s ease;
-}
-
-.faqList button:hover {
-  background-color: #f0f0f0;
-  color: #00796b;
-}
-
-.faqList .open button {
-  background-color: #f0f0f0;
-  border-bottom: 2px solid #00796b;
-}
-
-.faqList p {
-  padding: 16px;
-  margin: 0;
-  font-size: 13px;
-  color: #666;
-  background-color: #fafafa;
-  line-height: 1.6;
-}
-
-.faqIcon {
+  padding: 20px 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 17px;
   font-weight: 700;
-  font-size: 16px;
+  color: #1a1a1a;
+  text-align: left;
+  transition: all 0.3s ease;
 }
 
-/* Responsive */
+:global(.faq-question:hover) {
+  color: #00796B;
+}
+
+:global(.faq-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #e2e8f0;
+  color: #64748b;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+:global(.faq-item.open .faq-icon) {
+  background: #00796B;
+  color: white;
+  transform: rotate(180deg);
+}
+
+:global(.faq-answer) {
+  padding: 0 24px 24px;
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.7;
+  margin: 0;
+  animation: expandDown 0.3s ease-out;
+}
+
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 0 50px 60px;
+  }
+
+  .infoBenefits {
+    gap: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
+    padding: 0 24px 40px;
+  }
+
+  .header {
+    padding: 40px 0 32px;
   }
 
   .title {
-    font-size: 24px;
+    font-size: 36px;
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .infoBenefits {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .ctaContent {
-    padding: 12px;
+  .infoTitle {
+    font-size: 24px;
+  }
+
+  :global(.benefit-icon) {
+    font-size: 40px;
+  }
+
+  :global(.benefit-title) {
+    font-size: 18px;
+  }
+
+  .formTitle {
+    font-size: 24px;
+  }
+
+  .ctaIcon {
+    font-size: 64px;
   }
 
   .ctaTitle {
-    font-size: 20px;
+    font-size: 28px;
   }
 
   .ctaText {
-    font-size: 13px;
+    font-size: 16px;
   }
 
-  .ctaCard button {
-    width: 100%;
+  .ctaContent {
+    padding: 40px 24px;
+  }
+
+  .requirementsTitle,
+  .faqTitle {
+    font-size: 20px;
+  }
+
+  .requirementsList li {
+    font-size: 15px;
+    padding: 14px 16px 14px 52px;
+  }
+
+  :global(.faq-question) {
+    font-size: 16px;
+    padding: 18px 20px;
+  }
+
+  :global(.faq-answer) {
+    font-size: 14px;
+    padding: 0 20px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px 32px;
+  }
+
+  .header {
+    padding: 32px 0 24px;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+  }
+
+  .infoTitle {
+    font-size: 22px;
+  }
+
+  :global(.benefit-item) {
+    padding: 20px;
+  }
+
+  .ctaIcon {
+    font-size: 56px;
+  }
+
+  .ctaTitle {
+    font-size: 24px;
+  }
+
+  .requirementsTitle::before,
+  .faqTitle::before {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+
+  .requirementsList li {
+    font-size: 14px;
+    padding-left: 48px;
+  }
+
+  .requirementsList li::before {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    left: 16px;
+  }
+}
+
+/* ===========================
+   FOCUS STATES & ACCESSIBILITY
+   =========================== */
+
+.closeFormButton:focus-visible,
+:global(.faq-question:focus-visible) {
+  outline: 3px solid #00796B;
+  outline-offset: 4px;
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+
+@media print {
+  .container {
+    background: white;
+  }
+
+  .infoCard::before,
+  .closeFormButton {
+    display: none;
+  }
+
+  .ctaCard,
+  .formSection {
+    page-break-inside: avoid;
   }
 }
