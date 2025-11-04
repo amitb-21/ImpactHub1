@@ -6,6 +6,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .label {
@@ -26,8 +27,114 @@
   font-family: inherit;
   outline: none;
   cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.select:hover {
+  border-color: #d0d0d0;
 }
 
 .select:focus {
   border-color: #00796B;
+  box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1);
+}
+
+.select:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===== CUSTOM DATE RANGE ===== */
+.customDateRange {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.dateInput {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dateInput label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #212121;
+}
+
+.dateInput input {
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: inherit;
+  background-color: white;
+  color: #212121;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.dateInput input:hover {
+  border-color: #d0d0d0;
+}
+
+.dateInput input:focus {
+  border-color: #00796B;
+  box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1);
+}
+
+.dateInput input:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .select {
+    max-width: 100%;
+  }
+
+  .customDateRange {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dateInput {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .filterGroup {
+    margin-bottom: 12px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+
+  .select {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .customDateRange {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .dateInput input {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
 }
