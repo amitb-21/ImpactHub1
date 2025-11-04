@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Email validation
 export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\n]+@[^\n]+\\.[^\n]+$/;
   return emailRegex.test(email);
 };
 
@@ -67,4 +67,31 @@ export const ratingSchema = z.object({
   // rating is handled by component state (stars)
   rating: z.number().min(0).max(5).optional(), // Not strictly required by form, but by submit logic
   review: z.string().max(500, "Review must be 500 characters or less").optional()
+});
+
+// --- NEW RESOURCE SCHEMA --- 
+export const resourceSchema = z.object({
+  title: z.string()
+    .min(5, "Title must be at least 5 characters")
+    .max(200, "Title must be 200 characters or less"),
+  description: z.string()
+    .min(20, "Description must be at least 20 characters")
+    .max(500, "Description must be 500 characters or less"),
+  content: z.string()
+    .min(50, "Content must be at least 50 characters"),
+  category: z.string()
+    .min(1, "Category is required"),
+  type: z.enum(['article', 'video', 'pdf', 'template', 'infographic'], { required_error: "Type is required" }),
+  difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced'], { required_error: "Difficulty is required" }),
+  tags: z.string().optional(), // Comma-separated string
+  estimatedReadTime: z.preprocess(
+    (val) => (val === "" ? undefined : Number(val)),
+    z.number()
+      .min(1, "Must be at least 1 minute")
+      .max(120, "Must be 120 minutes or less")
+      .optional()
+  ),
+  videoUrl: z.string().url("Must be a valid URL").optional().or(z.literal(''))
+  ,
+  downloadUrl: z.string().url("Must be a valid URL").optional().or(z.literal(''))
 });

@@ -1,0 +1,132 @@
+.card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #212121;
+    margin: 0 0 8px 0;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 24px 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.errorAlert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #212121;
+}
+
+.input,
+.textarea,
+select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #FAFAFA;
+    color: #212121;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    outline: none;
+}
+
+.input:focus,
+.textarea:focus,
+select:focus {
+    border-color: #00796B;
+    background-color: #fff;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+    color: #999;
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.inputError {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+}
+
+.errorMessage {
+    font-size: 12px;
+    color: #ef4444;
+    font-weight: 500;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #00796B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 12px 0;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.gridTwoColumns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+    .gridTwoColumns {
+        grid-template-columns: 1fr;
+    }
+    .buttonGroup {
+        flex-direction: column-reverse;
+    }
+    .buttonGroup button {
+        width: 100%;
+    }
+}

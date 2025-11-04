@@ -27,7 +27,6 @@ import UserProfile from "./pages/UserProfile";
 // Pages - Communities
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
-// --- (1) IMPORT NEW COMMUNITY ACTIVITY PAGE ---
 import CommunityActivity from "./pages/CommunityActivity";
 
 // Pages - Community Manager
@@ -48,9 +47,14 @@ import Impact from "./pages/Impact";
 import Leaderboard from "./pages/Leaderboard";
 import ImpactSummary from "./pages/ImpactSummary";
 
-// --- (2) IMPORT NEW GLOBAL ACTIVITY PAGE ---
+// Pages - Activity
 import GlobalActivityFeed from "./pages/ActivityFeed";
-// --- (End 2) ---
+
+// --- (1) IMPORT NEW RESOURCE PAGES ---
+import Resources from "./pages/Resources";
+import CreateResource from "./pages/CreateResource";
+import ResourceDetail from "./pages/ResourceDetail";
+// --- (End 1) ---
 
 // Error Pages
 const NotFound = () => (
@@ -159,7 +163,6 @@ const AppContent = () => {
           }
         />
 
-        {/* --- (3) ADDED COMMUNITY ACTIVITY ROUTE --- */}
         <Route
           path="/communities/:communityId/activity"
           element={
@@ -168,9 +171,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        {/* --- (End 3) --- */}
 
-        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/nearby-communities"
           element={
@@ -217,7 +218,6 @@ const AppContent = () => {
           }
         />
 
-        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/nearby-events"
           element={
@@ -227,7 +227,6 @@ const AppContent = () => {
           }
         />
 
-        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/events/city/:cityName"
           element={
@@ -237,7 +236,6 @@ const AppContent = () => {
           }
         />
 
-        {/* --- MODIFIED (Phase 8) --- */}
         <Route
           path="/events/today"
           element={
@@ -285,7 +283,6 @@ const AppContent = () => {
           ACTIVITY & FEED
           ===================== */}
 
-        {/* --- (4) UPDATED GLOBAL ACTIVITY ROUTE --- */}
         <Route
           path="/activity"
           element={
@@ -294,10 +291,9 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        {/* --- (End 4) --- */}
 
         {/* =====================
-          RESOURCES
+          RESOURCES (PHASE 12)
           ===================== */}
 
         {/* Resources Browse Page */}
@@ -305,8 +301,27 @@ const AppContent = () => {
           path="/resources"
           element={
             <ProtectedRoute>
-              {/* <Resources /> - To be created on Day 31 */}
-              <div>Resources (Coming Soon)</div>
+              <Resources />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Resource Page */}
+        <Route
+          path="/create-resource"
+          element={
+            <ProtectedRoute>
+              <CreateResource />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Resource Detail Page */}
+        <Route
+          path="/resources/:resourceId"
+          element={
+            <ProtectedRoute>
+              <ResourceDetail />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,132 @@
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px; /* Added padding */
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #212121;
+    margin: 0 0 8px 0;
+}
+
+.subtitle {
+    font-size: 15px;
+    color: #666;
+    margin: 0;
+}
+
+.filterCard {
+    margin-bottom: 32px;
+}
+
+.searchWrapper {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00796B;
+    font-size: 20px;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 14px 20px 14px 50px;
+    font-size: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #FAFAFA;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    border-color: #00796B;
+    box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1);
+}
+
+.filterGroup {
+    margin-bottom: 20px;
+}
+
+.filterGroup:last-child {
+    margin-bottom: 0;
+}
+
+.filterTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #212121;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filterChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    padding: 8px 16px;
+    background: #f0f8f7;
+    color: #00796B;
+    border: 1.5px solid #b2dfdb;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chip:hover {
+    background: #e0f2f1;
+    border-color: #80cbc4;
+}
+
+.chipActive {
+    background: #00796B;
+    color: #FAFAFA;
+    border-color: #00796B;
+}
+
+.chipActive:hover {
+    background: #004D40;
+    border-color: #004D40;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .header button {
+        width: 100%;
+    }
+    .title {
+        font-size: 28px;
+    }
+    .chip {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}

@@ -1,0 +1,56 @@
+.container {
+    width: 100%;
+    margin-bottom: 32px;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #212121;
+    margin: 0 0 20px 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+/* Optional: Horizontal scroll for carousel-like feel on small screens */
+@media (max-width: 768px) {
+    .grid {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 16px;
+        gap: 16px;
+        /* Remove grid-template-columns */
+        grid-template-columns: none;
+    }
+    
+    .grid > * { /* Target ResourceCard */
+        flex-shrink: 0;
+        width: 300px;
+    }
+
+    /* Hide scrollbar */
+    .grid {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .grid::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+}
+
+@media (max-width: 480px) {
+     .grid > * { /* Target ResourceCard */
+        width: 280px;
+    }
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
