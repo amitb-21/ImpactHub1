@@ -1,3 +1,4 @@
+/* frontend/src/App.jsx */
 import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -55,6 +56,13 @@ import Resources from "./pages/Resources";
 import CreateResource from "./pages/CreateResource";
 import ResourceDetail from "./pages/ResourceDetail";
 // --- (End 1) ---
+
+// --- (2) IMPORT ADMIN PAGES ---
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import CommunityManagement from "./pages/admin/CommunityManagement";
+// --- (End 2) ---
 
 // Error Pages
 const NotFound = () => (
@@ -330,16 +338,26 @@ const AppContent = () => {
           ADMIN ROUTES
           ===================== */}
 
-        {/* Admin Dashboard */}
+        {/* --- (3) UPDATED ADMIN ROUTES --- */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute requiredRole="admin">
-              {/* <Admin /> - To be created on Day 33 */}
-              <div>Admin Dashboard (Coming Soon)</div>
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="communities" element={<CommunityManagement />} />
+          {/* Add other admin routes here in future phases */}
+          {/* <Route path="verification" element={<VerificationQueue />} />
+          <Route path="resources" element={<AdminResourceManagement />} />
+          <Route path="audit-log" element={<AdminAuditLog />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          */}
+        </Route>
+        {/* --- (End 3) --- */}
 
         {/* =====================
           NOTIFICATIONS

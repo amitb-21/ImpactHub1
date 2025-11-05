@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../../api/client'; // Assuming apiClient is in api/client.js
+import { approveResource, rejectResource, toggleFeaturedResource } from './resourceAdminSlice';
 import { toast } from 'react-toastify';
 
 // Async Thunks
