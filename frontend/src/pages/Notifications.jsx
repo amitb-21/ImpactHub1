@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   clearAllNotifications,
   markAllAsRead,
-} from "../../store/slices/notificationSlice";
+} from "../store/slices/notificationSlice";
 import Layout from "../components/common/Layout";
 import { Card } from "../components/common/Card";
 import { Button } from "../components/common/Button";
