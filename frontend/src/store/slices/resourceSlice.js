@@ -119,7 +119,7 @@ const initialState = {
         pagination: null,
     },
     featured: [],
-    currentResource: null,
+    currentResource: null, // Will include all fields: rejectionReason, adminNotes, isFeatured, status, etc.
     status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
     error: null,
 };
@@ -265,6 +265,28 @@ const resourceSlice = createSlice({
             .addCase(unlikeResource.fulfilled, (state, action) => {
                 const { resourceId, likes, userId } = action.payload;
                 updateLikesInState(state, resourceId, likes, userId, false);
+            })
+            
+            // ADMIN ACTIONS from adminSlice
+            .addCase(approveResource.fulfilled, (state, action) => {
+                if (state.currentResource?._id === action.payload._id) {
+                    state.currentResource = action.payload;
+                }
+            })
+            .addCase(rejectResource.fulfilled, (state, action) => {
+                if (state.currentResource?._id === action.payload._id) {
+                    state.currentResource = action.payload;
+                }
+            })
+            .addCase(toggleFeaturedResource.fulfilled, (state, action) => {
+                 const { resourceId, isFeatured } = action.payload;
+                 const index = state.resources.data.findIndex(r => r._id === resourceId);
+                 if(index !== -1) {
+                    state.resources.data[index].isFeatured = isFeatured;
+                 }
+                 if (state.currentResource?._id === resourceId) {
+                    state.currentResource.isFeatured = isFeatured;
+                 }
             });
     },
 });
