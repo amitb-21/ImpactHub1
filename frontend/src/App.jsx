@@ -71,20 +71,11 @@ import AdminEventDetail from "./pages/admin/AdminEventDetail";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 // --- (End 1) ---
 
-// Error Pages
-const NotFound = () => (
-  <div style={{ textAlign: "center", padding: "60px 20px" }}>
-    <h1>404 - Page Not Found</h1>
-    <p>The page you're looking for doesn't exist.</p>
-  </div>
-);
-
-const Unauthorized = () => (
-  <div style={{ textAlign: "center", padding: "60px 20px" }}>
-    <h1>403 - Access Denied</h1>
-    <p>You don't have permission to access this page.</p>
-  </div>
-);
+// --- (NEW) IMPORT ERROR & NOTIFICATION PAGES ---
+import Notifications from "./pages/Notifications";
+import NotFound from "./pages/NotFound";
+import Unauthorized from "./pages/Unauthorized";
+// --- (END NEW) ---
 
 // App Component
 const AppContent = () => {
@@ -329,17 +320,17 @@ const AppContent = () => {
         </Route>
         {/* --- (End 2) --- */}
 
-        {/* Notifications */}
+        {/* --- (UPDATED) NOTIFICATIONS ROUTE --- */}
         <Route
           path="/notifications"
           element={
             <ProtectedRoute>
-              <div>Notifications (Coming Soon)</div>
+              <Notifications />
             </ProtectedRoute>
           }
         />
 
-        {/* Error Routes */}
+        {/* --- (UPDATED) ERROR ROUTES --- */}
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

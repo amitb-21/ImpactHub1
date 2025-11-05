@@ -9,11 +9,13 @@ import {
   FiLogOut,
   FiUser,
   FiSearch,
-  FiBriefcase, // <-- IMPORT
+  FiBriefcase,
 } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import Modal from "./Modal";
 import UserSearch from "../user/UserSearch";
+// --- (1) IMPORT NEW NOTIFICATION CENTER ---
+import NotificationCenter from "../notifications/NotificationCenter";
 
 const Navbar = ({ onMenuClick }) => {
   const { user, isAuthenticated, isModerator, isAdmin, logout } = useAuth();
@@ -21,16 +23,17 @@ const Navbar = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
+  // --- (2) ADD STATE FOR NOTIFICATION DROPDOWN ---
+  const [showNotifications, setShowNotifications] = useState(false);
+
   const unreadCount = useSelector((state) => state.notification.unreadCount);
 
   // Handle logout
   const handleLogout = async () => {
     try {
-      // useAuth provides a logout function that dispatches the logout thunk
       await (typeof logout === "function" ? logout() : Promise.resolve());
     } catch (err) {
       console.error("Logout failed:", err);
-      // still proceed to clear local token as fallback
       localStorage.removeItem("token");
     } finally {
       navigate("/");
@@ -50,7 +53,6 @@ const Navbar = ({ onMenuClick }) => {
     }
   }, [isAdmin, joinAdmin]);
 
-  // <-- CHECK IF USER IS *ONLY* A USER -->
   const isRegularUser = isAuthenticated && user?.role === "user";
 
   return (
@@ -99,17 +101,26 @@ const Navbar = ({ onMenuClick }) => {
                 <FiSearch size={20} color="#FAFAFA" />
               </button>
 
-              {/* Notifications Bell */}
-              <button
-                style={styles.notificationBtn}
-                onClick={() => navigate("/notifications")}
-                title="Notifications"
-              >
-                <FiBell size={20} color="#FAFAFA" />
-                {unreadCount > 0 && (
-                  <span style={styles.badge}>{unreadCount}</span>
+              {/* --- (3) NOTIFICATIONS BELL (UPDATED) --- */}
+              <div style={styles.notificationContainer}>
+                <button
+                  style={styles.notificationBtn}
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  title="Notifications"
+                >
+                  <FiBell size={20} color="#FAFAFA" />
+                  {unreadCount > 0 && (
+                    <span style={styles.badge}>{unreadCount}</span>
+                  )}
+                </button>
+                {/* --- (4) RENDER NOTIFICATION CENTER --- */}
+                {showNotifications && (
+                  <NotificationCenter
+                    onClose={() => setShowNotifications(false)}
+                  />
                 )}
-              </button>
+              </div>
+              {/* --- (End 4) --- */}
 
               {/* User Menu */}
               <div style={styles.userMenuContainer}>
@@ -139,7 +150,6 @@ const Navbar = ({ onMenuClick }) => {
                       <span>Profile</span>
                     </Link>
 
-                    {/* <-- ADDED APPLY BUTTON --> */}
                     {isRegularUser && (
                       <Link
                         to="/apply-community-manager"
@@ -199,14 +209,13 @@ const Navbar = ({ onMenuClick }) => {
         title="Search Users"
         size="lg"
       >
-        {/* Pass excludeUserId so the current user won't appear in results */}
         <UserSearch onUserSelect={handleUserSelect} excludeUserId={user?._id} />
       </Modal>
     </>
   );
 };
 
-// Styles (no changes, only added comment for clarity)
+// Styles
 const styles = {
   navbar: {
     display: "flex",
@@ -226,9 +235,6 @@ const styles = {
     border: "none",
     cursor: "pointer",
     padding: "8px",
-    "@media (maxWidth: 768px)": {
-      display: "block",
-    },
   },
   logo: {
     textDecoration: "none",
@@ -252,9 +258,6 @@ const styles = {
     fontWeight: "500",
     transition: "color 0.3s ease",
     cursor: "pointer",
-    ":hover": {
-      color: "#FFB300",
-    },
   },
   rightSection: {
     display: "flex",
@@ -270,6 +273,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     transition: "opacity 0.3s ease",
+  },
+  notificationContainer: {
+    position: "relative",
   },
   notificationBtn: {
     background: "none",
@@ -347,9 +353,6 @@ const styles = {
     border: "none",
     width: "100%",
     textAlign: "left",
-    ":hover": {
-      backgroundColor: "#f5f5f5",
-    },
   },
   authLink: {
     color: "#FAFAFA",
@@ -370,6 +373,14 @@ const styles = {
     borderRadius: "6px",
     cursor: "pointer",
     transition: "background 0.3s ease",
+  },
+  "@media (maxWidth: 768px)": {
+    menuToggle: {
+      display: "block",
+    },
+    navLinks: {
+      display: "none",
+    },
   },
 };
 
