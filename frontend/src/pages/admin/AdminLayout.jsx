@@ -10,6 +10,7 @@ import {
   FiActivity,
   FiLogOut,
   FiBarChart2,
+  FiCalendar, // <-- ADDED
 } from "react-icons/fi";
 
 // Basic inline styles for layout
@@ -114,6 +115,11 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink to="/admin/verification" style={getNavLinkStyle}>
             <FiCheckSquare size={18} /> Verification
+          </NavLink>
+          <NavLink to="/admin/events" style={getNavLinkStyle}>
+            {" "}
+            {/* <-- ADDED */}
+            <FiCalendar size={18} /> Events
           </NavLink>
           <NavLink to="/admin/resources" style={getNavLinkStyle}>
             <FiBookOpen size={18} /> Resources

@@ -80,7 +80,6 @@ const styles = {
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
-  // Use 'getDashboard' thunk from the slice
   const { dashboard, isLoading } = useSelector((state) => state.admin);
   const stats = dashboard?.stats || {};
 

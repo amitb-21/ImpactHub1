@@ -9,7 +9,7 @@ import {
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "leaflet/dist/leaflet.css"; // <-- ADD THIS IMPORT FOR LEAFLET
+import "leaflet/dist/leaflet.css";
 
 import store from "./store/store";
 import { useAuth } from "./hooks/useAuth";
@@ -51,18 +51,25 @@ import ImpactSummary from "./pages/ImpactSummary";
 // Pages - Activity
 import GlobalActivityFeed from "./pages/ActivityFeed";
 
-// --- (1) IMPORT NEW RESOURCE PAGES ---
+// Pages - Resources
 import Resources from "./pages/Resources";
 import CreateResource from "./pages/CreateResource";
 import ResourceDetail from "./pages/ResourceDetail";
-// --- (End 1) ---
 
-// --- (2) IMPORT ADMIN PAGES ---
+// --- (1) IMPORT NEW ADMIN PAGES ---
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import CommunityManagement from "./pages/admin/CommunityManagement";
-// --- (End 2) ---
+import VerificationQueue from "./pages/admin/VerificationQueue";
+import AdminCMApplicationReview from "./pages/admin/AdminCMApplicationReview";
+import AdminResourceList from "./pages/admin/AdminResourceList";
+import AdminResourceReview from "./pages/admin/AdminResourceReview";
+import AdminFeaturedResources from "./pages/admin/AdminFeaturedResources";
+import AdminEventManagement from "./pages/admin/AdminEventManagement";
+import AdminEventDetail from "./pages/admin/AdminEventDetail";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
+// --- (End 1) ---
 
 // Error Pages
 const NotFound = () => (
@@ -90,7 +97,7 @@ const AppContent = () => {
 
   return (
     <>
-      {/* Dev-time check: alert if VITE_API_URL is not provided (helps diagnose OAuth failures) */}
+      {/* Dev-time check */}
       {!import.meta.env.VITE_API_URL && (
         <div
           style={{
@@ -115,19 +122,13 @@ const AppContent = () => {
         {/* =====================
           PUBLIC ROUTES
           ===================== */}
-
-        {/* Home/Landing Page */}
         <Route path="/" element={<Home />} />
-
-        {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* =====================
           PROTECTED ROUTES
           ===================== */}
-
-        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -136,8 +137,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* User Profile */}
         <Route
           path="/profile/:userId"
           element={
@@ -147,11 +146,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          COMMUNITIES (Day 16)
-          ===================== */}
-
-        {/* Communities List Page */}
+        {/* Communities */}
         <Route
           path="/communities"
           element={
@@ -160,8 +155,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Community Detail Page */}
         <Route
           path="/communities/:communityId"
           element={
@@ -170,7 +163,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/communities/:communityId/activity"
           element={
@@ -179,7 +171,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/nearby-communities"
           element={
@@ -189,10 +180,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          COMMUNITY MANAGER (Day 7/8)
-          ===================== */}
-
+        {/* Community Manager */}
         <Route
           path="/apply-community-manager"
           element={
@@ -202,11 +190,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          EVENTS
-          ===================== */}
-
-        {/* Events List Page */}
+        {/* Events */}
         <Route
           path="/events"
           element={
@@ -215,8 +199,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Event Detail Page */}
         <Route
           path="/events/:eventId"
           element={
@@ -225,7 +207,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/nearby-events"
           element={
@@ -234,7 +215,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/events/city/:cityName"
           element={
@@ -243,7 +223,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/events/today"
           element={
@@ -253,11 +232,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          IMPACT & GAMIFICATION
-          ===================== */}
-
-        {/* User Impact Dashboard */}
+        {/* Impact */}
         <Route
           path="/impact"
           element={
@@ -266,8 +241,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Impact Summary */}
         <Route
           path="/impact/summary"
           element={
@@ -276,8 +249,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Leaderboard */}
         <Route
           path="/leaderboard"
           element={
@@ -287,10 +258,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          ACTIVITY & FEED
-          ===================== */}
-
+        {/* Activity */}
         <Route
           path="/activity"
           element={
@@ -300,11 +268,7 @@ const AppContent = () => {
           }
         />
 
-        {/* =====================
-          RESOURCES (PHASE 12)
-          ===================== */}
-
-        {/* Resources Browse Page */}
+        {/* Resources */}
         <Route
           path="/resources"
           element={
@@ -313,8 +277,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Create Resource Page */}
         <Route
           path="/create-resource"
           element={
@@ -323,8 +285,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* Resource Detail Page */}
         <Route
           path="/resources/:resourceId"
           element={
@@ -337,8 +297,7 @@ const AppContent = () => {
         {/* =====================
           ADMIN ROUTES
           ===================== */}
-
-        {/* --- (3) UPDATED ADMIN ROUTES --- */}
+        {/* --- (2) ADDED NEW ADMIN ROUTES --- */}
         <Route
           path="/admin"
           element={
@@ -350,45 +309,45 @@ const AppContent = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="communities" element={<CommunityManagement />} />
-          {/* Add other admin routes here in future phases */}
-          {/* <Route path="verification" element={<VerificationQueue />} />
-          <Route path="resources" element={<AdminResourceManagement />} />
+          <Route path="verification" element={<VerificationQueue />} />
+          <Route
+            path="cm-applications/:appId"
+            element={<AdminCMApplicationReview />}
+          />
+          <Route path="resources" element={<AdminResourceList />} />
+          <Route
+            path="resources/featured"
+            element={<AdminFeaturedResources />}
+          />
+          <Route
+            path="resources/:resourceId"
+            element={<AdminResourceReview />}
+          />
+          <Route path="events" element={<AdminEventManagement />} />
+          <Route path="events/:eventId" element={<AdminEventDetail />} />
           <Route path="audit-log" element={<AdminAuditLog />} />
-          <Route path="analytics" element={<AdminAnalytics />} />
-          */}
         </Route>
-        {/* --- (End 3) --- */}
+        {/* --- (End 2) --- */}
 
-        {/* =====================
-          NOTIFICATIONS
-          ===================== */}
-
-        {/* Notifications Center */}
+        {/* Notifications */}
         <Route
           path="/notifications"
           element={
             <ProtectedRoute>
-              {/* <NotificationCenter /> - To be created on Day 34 */}
               <div>Notifications (Coming Soon)</div>
             </ProtectedRoute>
           }
         />
 
-        {/* =====================
-          ERROR ROUTES
-          ===================== */}
-
-        {/* Unauthorized Access */}
+        {/* Error Routes */}
         <Route path="/unauthorized" element={<Unauthorized />} />
-
-        {/* 404 - Not Found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
 };
 
-// Main App Component with Router
+// Main App Component
 function App() {
   return (
     <Provider store={store}>
