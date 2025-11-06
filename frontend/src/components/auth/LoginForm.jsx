@@ -8,6 +8,7 @@ import { loginSchema } from "../../config/validators";
 import Button from "../common/Button";
 import { API_URL } from "../../config/constants";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
+import googleIcon from '../../assets/google.png';
 
 const LoginForm = () => {
   const dispatch = useDispatch();
@@ -132,18 +133,28 @@ const LoginForm = () => {
         </div>
 
         {/* Google OAuth Button */}
-        <Button
-          type="button"
-          variant="outline"
-          size="md"
-          fullWidth
-          onClick={() => {
-            // Redirect to Google OAuth on backend
-            window.location.href = `${API_URL}/auth/google`;
-          }}
-        >
-          <span style={styles.googleIcon}>🔐</span> Google
-        </Button>
+       <Button
+  type="button"
+  variant="outline"
+  size="md"
+  fullWidth
+  onClick={() => {
+    // Redirect to Google OAuth on backend
+    window.location.href = `${API_URL}/auth/google`;
+  }}
+>
+  <span style={styles.googleIcon}>
+<img
+  src={googleIcon}
+  alt="Google Icon"
+  height="24"
+  width="34"
+  style={{ marginRight: '8px' }}
+/>
+  </span>
+  Continue with Google
+</Button>
+
 
         {/* Footer Links */}
         <div style={styles.footer}>
