@@ -255,7 +255,7 @@ const Home = () => {
         </section>
 
         {/* CTA Section */}
-        <section className={styles.ctaSection}>
+        {/* <section className={styles.ctaSection}>
           <div className={styles.ctaContent}>
             <h2 className={styles.ctaTitle}>Ready to Make a Difference?</h2>
             <p className={styles.ctaSubtitle}>
@@ -290,7 +290,7 @@ const Home = () => {
               </div>
             )}
           </div>
-        </section>
+        </section> */}
 
         {/* Features Section */}
         <section className={styles.featuresSection}>

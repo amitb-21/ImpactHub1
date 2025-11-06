@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Card } from "../common/Card";
 import { fetchAllActivities } from "../../store/slices/activitySlice";
 import styles from "./styles/ActivityFilter.module.css";
+import PropTypes from 'prop-types';
 
 const ActivityFilter = ({
   onFilterChange,
@@ -178,7 +179,7 @@ const ActivityFilter = ({
 };
 
 // PropTypes
-import PropTypes from "prop-types";
+//import PropTypes from "prop-types";
 
 ActivityFilter.propTypes = {
   onFilterChange: PropTypes.func.isRequired,
