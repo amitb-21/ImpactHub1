@@ -18,6 +18,10 @@ yarn-error.log*
 .vscode/
 .idea/
 *.swp
+
+# Scripts
+**/script/
+/script/
 *.swo
 *.sublime-workspace
 

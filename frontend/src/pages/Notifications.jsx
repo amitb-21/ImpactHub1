@@ -16,7 +16,7 @@ const Notifications = () => {
   const { notifications, unreadCount } = useSelector(
     (state) => state.notification
   );
-  const [filter, setFilter] = useState("all"); // 'all' | 'unread'
+  const [filter, setFilter] = useState("all");
 
   const filteredNotifications = useMemo(() => {
     if (filter === "unread") {
