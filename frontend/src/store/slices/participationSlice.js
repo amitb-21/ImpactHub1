@@ -119,7 +119,6 @@ export const getParticipationDetails = createAsyncThunk(
 
 // Initial state
 const initialState = {
-  // Organizer views
   pendingParticipants: {
     data: [],
     pagination: null,
@@ -130,21 +129,15 @@ const initialState = {
     pagination: null,
     currentEvent: null
   },
-  
-  // Participant views
   wishlist: {
     data: [],
     pagination: null,
     total: 0
   },
   participationDetail: null,
-  
-  // State
   isLoading: false,
   isUpdating: false,
   error: null,
-  
-  // Summary for current event
   participationSummary: {
     totalRegistered: 0,
     totalAttended: 0,
@@ -198,25 +191,6 @@ const participationSlice = createSlice({
       })
       .addCase(markAttendance.fulfilled, (state, action) => {
         state.isUpdating = false;
-        const updatedParticipant = action.payload;
-        
-        // Move from pending to verified
-        const pendingIndex = state.pendingParticipants.data.findIndex(
-          p => p._id === updatedParticipant._id
-        );
-        if (pendingIndex !== -1) {
-          state.pendingParticipants.data.splice(pendingIndex, 1);
-        }
-        
-        // Add to verified
-        state.verifiedParticipants.data.unshift(updatedParticipant);
-        
-        // Update summary
-        state.participationSummary.totalAttended += 1;
-        state.participationSummary.totalRegistered = Math.max(
-          0,
-          state.participationSummary.totalRegistered - 1
-        );
       })
       .addCase(markAttendance.rejected, (state, action) => {
         state.isUpdating = false;
@@ -230,21 +204,6 @@ const participationSlice = createSlice({
       })
       .addCase(rejectParticipant.fulfilled, (state, action) => {
         state.isUpdating = false;
-        
-        // Remove from pending
-        const index = state.pendingParticipants.data.findIndex(
-          p => p._id === action.payload._id
-        );
-        if (index !== -1) {
-          state.pendingParticipants.data.splice(index, 1);
-        }
-        
-        // Update summary
-        state.participationSummary.totalRejected += 1;
-        state.participationSummary.totalRegistered = Math.max(
-          0,
-          state.participationSummary.totalRegistered - 1
-        );
       })
       .addCase(rejectParticipant.rejected, (state, action) => {
         state.isUpdating = false;
@@ -258,13 +217,15 @@ const participationSlice = createSlice({
       })
       .addCase(getPendingParticipants.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.pendingParticipants.data = action.payload.data;
-        state.pendingParticipants.pagination = action.payload.pagination;
+        state.pendingParticipants.data = action.payload.data || [];
+        state.pendingParticipants.pagination = action.payload.pagination || null;
         state.pendingParticipants.currentEvent = action.payload.eventId;
       })
       .addCase(getPendingParticipants.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.pendingParticipants.data = [];
+        state.pendingParticipants.pagination = null;
       })
 
       // Get verified participants
@@ -274,61 +235,26 @@ const participationSlice = createSlice({
       })
       .addCase(getVerifiedParticipants.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.verifiedParticipants.data = action.payload.data;
-        state.verifiedParticipants.pagination = action.payload.pagination;
+        state.verifiedParticipants.data = action.payload.data || [];
+        state.verifiedParticipants.pagination = action.payload.pagination || null;
         state.verifiedParticipants.currentEvent = action.payload.eventId;
       })
       .addCase(getVerifiedParticipants.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.verifiedParticipants.data = [];
+        state.verifiedParticipants.pagination = null;
       })
 
-      // Save to wishlist
-      .addCase(saveEventToWishlist.fulfilled, (state, action) => {
-        // Add to wishlist if not already there
-        if (!state.wishlist.data.find(w => w._id === action.payload._id)) {
-          state.wishlist.data.unshift(action.payload);
-          state.wishlist.total += 1;
-        }
-      })
-
-      // Remove from wishlist
-      .addCase(removeFromWishlist.fulfilled, (state, action) => {
-        state.wishlist.data = state.wishlist.data.filter(
-          w => w.event._id !== action.payload
-        );
-        state.wishlist.total = Math.max(0, state.wishlist.total - 1);
-      })
-
-      // Get user wishlist
-      .addCase(getUserWishlist.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(getUserWishlist.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.wishlist.data = action.payload.data;
-        state.wishlist.pagination = action.payload.pagination;
-        state.wishlist.total = action.payload.pagination?.total || 0;
-      })
-      .addCase(getUserWishlist.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-
-      // Get participation details
-      .addCase(getParticipationDetails.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(getParticipationDetails.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.participationDetail = action.payload;
-      })
-      .addCase(getParticipationDetails.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      });
+      // Wishlist and details
+      .addCase(saveEventToWishlist.fulfilled, (state, action) => {})
+      .addCase(removeFromWishlist.fulfilled, (state, action) => {})
+      .addCase(getUserWishlist.pending, (state) => {})
+      .addCase(getUserWishlist.fulfilled, (state, action) => {})
+      .addCase(getUserWishlist.rejected, (state, action) => {})
+      .addCase(getParticipationDetails.pending, (state) => {})
+      .addCase(getParticipationDetails.fulfilled, (state, action) => {})
+      .addCase(getParticipationDetails.rejected, (state, action) => {});
   }
 });
 
