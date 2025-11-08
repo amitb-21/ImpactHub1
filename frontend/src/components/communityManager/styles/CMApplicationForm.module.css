@@ -267,6 +267,143 @@ select:focus {
   margin-bottom: 0;
 }
 
+/* City Input Wrapper */
+.cityInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cityInputWrapper .input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+/* City Loader */
+.cityLoader {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.spinnerIcon {
+  color: #00796B;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* City Suggestions Dropdown */
+.citySuggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  z-index: 10;
+  max-height: 280px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.citySuggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.citySuggestions::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.citySuggestions::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 3px;
+}
+
+.citySuggestions::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
+/* Individual Suggestion Item */
+.citySuggestionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.citySuggestionItem:last-child {
+  border-bottom: none;
+}
+
+.citySuggestionItem:hover {
+  background-color: #f9f9f9;
+}
+
+.citySuggestionItem:active {
+  background-color: #f0f0f0;
+}
+
+/* City Name */
+.cityName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212121;
+}
+
+/* City Region */
+.cityRegion {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+/* Empty State for Suggestions */
+.citySuggestions:empty::after {
+  content: "No cities found";
+  display: block;
+  padding: 16px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .citySuggestions {
+    max-height: 240px;
+  }
+
+  .citySuggestionItem {
+    padding: 10px 14px;
+  }
+
+  .cityName {
+    font-size: 13px;
+  }
+
+  .cityRegion {
+    font-size: 11px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {

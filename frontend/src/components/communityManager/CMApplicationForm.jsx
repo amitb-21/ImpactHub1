@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,8 +10,10 @@ import {
   FiArrowLeft,
   FiCheck,
   FiAlertCircle,
+  FiLoader,
 } from "react-icons/fi";
 import { z } from "zod";
+import debounce from "lodash/debounce";
 import styles from "./styles/CMApplicationForm.module.css";
 
 // Validation schema
@@ -65,6 +67,10 @@ const CMApplicationForm = ({ onSuccess }) => {
     (state) => state.communityManager
   );
   const [currentStep, setCurrentStep] = useState(1);
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef(null);
 
   const {
     register,
@@ -72,12 +78,83 @@ const CMApplicationForm = ({ onSuccess }) => {
     formState: { errors },
     watch,
     trigger,
+    setValue,
   } = useForm({
     resolver: zodResolver(cmApplicationSchema),
     mode: "onBlur",
   });
 
   const formData = watch();
+
+  // Fetch cities from GeoDb API
+  const fetchCities = useCallback(
+    debounce(async (searchTerm) => {
+      if (!searchTerm || searchTerm.length < 2) {
+        setCitySuggestions([]);
+        setCityLoading(false);
+        return;
+      }
+
+      setCityLoading(true);
+      try {
+        const response = await fetch(
+          `https://wft-geo-db.p.rapidapi.com/v1/geo/cities?namePrefix=${encodeURIComponent(
+            searchTerm
+          )}&limit=10&sort=-population`,
+          {
+            method: "GET",
+            headers: {
+              "X-RapidAPI-Key": process.env.REACT_APP_GEODB_API_KEY,
+              "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch cities");
+        }
+
+        const data = await response.json();
+        const cities = data.data || [];
+        setCitySuggestions(cities);
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+        setCitySuggestions([]);
+      } finally {
+        setCityLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    setValue("city", value);
+    setShowSuggestions(true);
+    fetchCities(value);
+  };
+
+  const handleCitySelect = (city) => {
+    const cityName = `${city.city}, ${city.region}`;
+    setValue("city", cityName);
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  // Close suggestions when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Validate current step
   const validateStep = async () => {
@@ -176,12 +253,55 @@ const CMApplicationForm = ({ onSuccess }) => {
               options={COMMUNITY_CATEGORIES}
             />
 
-            <FormField
-              label="Primary City"
-              error={errors.city}
-              register={register("city")}
-              placeholder="Where is your community based?"
-            />
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Primary City</label>
+              <div className={styles.cityInputWrapper}>
+                <input
+                  {...register("city")}
+                  onChange={handleCityChange}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Start typing a city name..."
+                  className={`${styles.input} ${
+                    errors.city ? styles.inputError : ""
+                  }`}
+                  autoComplete="off"
+                />
+                {cityLoading && (
+                  <div className={styles.cityLoader}>
+                    <FiLoader size={16} className={styles.spinnerIcon} />
+                  </div>
+                )}
+              </div>
+
+              {showSuggestions && citySuggestions.length > 0 && (
+                <ul
+                  className={styles.citySuggestions}
+                  ref={suggestionsRef}
+                  role="listbox"
+                >
+                  {citySuggestions.map((city) => (
+                    <li
+                      key={city.id}
+                      onClick={() => handleCitySelect(city)}
+                      className={styles.citySuggestionItem}
+                      role="option"
+                    >
+                      <span className={styles.cityName}>{city.city}</span>
+                      <span className={styles.cityRegion}>
+                        {city.region && `${city.region}, `}
+                        {city.countryCode}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {errors.city && (
+                <span className={styles.errorMessage}>
+                  {errors.city.message}
+                </span>
+              )}
+            </div>
           </Card>
         )}
 
