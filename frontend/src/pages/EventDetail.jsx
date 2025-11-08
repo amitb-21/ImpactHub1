@@ -78,7 +78,8 @@ const EventDetail = () => {
     if (eventId) {
       dispatch(fetchEventById(eventId));
       // --- (3) FETCH RATINGS ---
-      dispatch(fetchEntityRatings({ entityType: "Event", entityId }));
+      // ✅✅✅ FIX: Changed `entityId` to `entityId: eventId` ✅✅✅
+      dispatch(fetchEntityRatings({ entityType: "Event", entityId: eventId }));
       // --- (End 3) ---
     }
   }, [eventId, dispatch]);

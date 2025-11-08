@@ -109,8 +109,7 @@ export const getEvents = async (req, res) => {
     let events = await Event.find(query)
       .populate('createdBy', 'name profileImage')
       .populate('community', 'name verificationStatus')
-      .sort(getSortOrder(sortBy))
-      .lean();
+      .sort(getSortOrder(sortBy));
 
     if (hasAvailability === 'true') {
       events = events.filter((event) => {
@@ -128,19 +127,15 @@ export const getEvents = async (req, res) => {
 
     const formattedEvents = paginatedEvents.map((event) => {
       const eventWithCapacity = {
-        ...event,
+        ...event.toObject(), // <-- Use .toObject() here
         capacity: {
           total: event.maxParticipants,
           registered: event.participants.length,
           available: event.maxParticipants
             ? Math.max(0, event.maxParticipants - event.participants.length)
             : null,
-          isFull: event.maxParticipants
-            ? event.participants.length >= event.maxParticipants
-            : false,
-          capacityPercentage: event.maxParticipants
-            ? Math.round((event.participants.length / event.maxParticipants) * 100)
-            : 0,
+          isFull: event.isFull(), // <-- This method now exists
+          capacityPercentage: event.getCapacityPercentage(), // <-- This method now exists
         },
       };
       return eventWithCapacity;
