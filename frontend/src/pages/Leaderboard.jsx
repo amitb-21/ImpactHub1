@@ -1,147 +1,133 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Card } from "../common/Card";
-import { Loader } from "../common/Loader";
-import { Button } from "../common/Button";
-import { formatPoints } from "../../config/formatters";
-import { calculateRank } from "../../config/helpers";
+// frontend/src/pages/Leaderboard.jsx
+
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../hooks/useAuth";
+import { fetchVolunteerLeaderboard } from "../store/slices/impactSlice";
+import Layout from "../components/common/Layout";
+import { Card } from "../components/common/Card";
+import { Button } from "../components/common/Button";
+import { Loader } from "../components/common/Loader";
+import LeaderboardComponent from "../components/impact/Leaderboard";
+import { FiAward, FiTrendingUp, FiClock } from "react-icons/fi";
 import styles from "./styles/Leaderboard.module.css";
 
-const Leaderboard = ({
-  data = [],
-  currentUserId,
-  metric = "points",
-  onPageChange,
-  isLoading = false,
-  pagination,
-}) => {
-  const navigate = useNavigate();
+const Leaderboard = () => {
+  const dispatch = useDispatch();
+  const { user } = useAuth();
+  const [metric, setMetric] = useState("points");
+  const [page, setPage] = useState(1);
 
-  if (isLoading) {
-    return <Loader size="md" text="Loading leaderboard..." />;
-  }
+  // Get data from Redux store
+  const { volunteerLeaderboard, isLoading } = useSelector(
+    (state) => state.impact
+  );
+  const { data = [], pagination = {} } = volunteerLeaderboard || {};
 
-  if (data.length === 0) {
-    return (
-      <Card padding="lg" shadow="md">
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>🏆</div>
-          <h3 className={styles.emptyTitle}>No Rankings Yet</h3>
-          <p className={styles.emptyText}>
-            {metric === "points"
-              ? "Be the first to earn points and claim your spot!"
-              : metric === "hours"
-              ? "Start volunteering to appear on the leaderboard!"
-              : "Complete activities to level up and rank here!"}
-          </p>
-        </div>
-      </Card>
-    );
-  }
+  // Fetch leaderboard data on mount and when page changes
+  useEffect(() => {
+    dispatch(fetchVolunteerLeaderboard(page));
+  }, [dispatch, page]);
 
-  const getMetricValue = (user) => {
-    switch (metric) {
-      case "level":
-        return `Lvl ${user.level || 1}`;
-      case "hours":
-        return `${user.metrics?.hoursVolunteered || 0}h`;
-      case "points":
-      default:
-        return formatPoints(user.totalPoints || 0);
-    }
+  // Handle page changes
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle metric changes (Note: API currently only supports points)
+  const handleMetricChange = (newMetric) => {
+    setMetric(newMetric);
+    setPage(1);
+    // TODO: Update fetchVolunteerLeaderboard thunk to support metric parameter
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.list}>
-        {data.map((user, index) => {
-          const rank = calculateRank(user.totalPoints || 0);
-          const isCurrentUser = user._id === currentUserId;
-          const rankNumber =
-            (pagination.page - 1) * pagination.limit + index + 1;
-
-          return (
-            <div
-              key={user._id}
-              className={`${styles.row} ${
-                isCurrentUser ? styles.currentUser : ""
-              }`}
-              onClick={() => {
-                if (user._id) {
-                  navigate(`/profile/${user._id}`);
-                }
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <div className={styles.rank}>{rankNumber}</div>
-
-              {/* User Info Section */}
-              <div className={styles.user}>
-                {/* Avatar */}
-                {user.profileImage ? (
-                  <img
-                    src={user.profileImage}
-                    alt={user.name}
-                    className={styles.avatar}
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/48?text=User";
-                    }}
-                  />
-                ) : (
-                  <div className={styles.avatarPlaceholder}>
-                    {user.name?.charAt(0).toUpperCase() || "U"}
-                  </div>
-                )}
-
-                {/* Name & Rank Badge */}
-                <div className={styles.userInfo}>
-                  <span className={styles.name}>
-                    {user.name || "Unknown User"}
-                  </span>
-                  {rank && (
-                    <span
-                      className={styles.rankName}
-                      style={{ color: rank.color }}
-                    >
-                      {rank.icon || "🏆"} {rank.name}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Metric Value */}
-              <div className={styles.metric} style={{ color: rank?.color }}>
-                {getMetricValue(user)}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {pagination && pagination.totalPages > 1 && (
-        <div className={styles.pagination}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onPageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-          >
-            Previous
-          </Button>
-          <span>
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onPageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages}
-          >
-            Next
-          </Button>
+    <Layout>
+      <div className={styles.container}>
+        {/* Header */}
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}>Global Leaderboard</h1>
+            <p className={styles.subtitle}>
+              See who's making the biggest impact in the community
+            </p>
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* Metric Filter Buttons */}
+        <Card padding="lg" shadow="md" style={{ marginBottom: "20px" }}>
+          <div className={styles.filters}>
+            <Button
+              variant={metric === "points" ? "primary" : "outline"}
+              onClick={() => handleMetricChange("points")}
+              icon={FiTrendingUp}
+              size="md"
+            >
+              By Points
+            </Button>
+            <Button
+              variant={metric === "level" ? "primary" : "outline"}
+              onClick={() => handleMetricChange("level")}
+              icon={FiAward}
+              size="md"
+              disabled
+              title="Coming soon"
+            >
+              By Level
+            </Button>
+            <Button
+              variant={metric === "hours" ? "primary" : "outline"}
+              onClick={() => handleMetricChange("hours")}
+              icon={FiClock}
+              size="md"
+              disabled
+              title="Coming soon"
+            >
+              By Hours
+            </Button>
+          </div>
+        </Card>
+
+        {/* Loading State */}
+        {isLoading && data.length === 0 ? (
+          <Card padding="lg" shadow="md">
+            <div style={{ padding: "40px", textAlign: "center" }}>
+              <Loader size="md" text="Loading leaderboard..." />
+            </div>
+          </Card>
+        ) : (
+          <>
+            {/* Leaderboard Component */}
+            <LeaderboardComponent
+              data={data}
+              currentUserId={user?._id}
+              metric={metric}
+              onPageChange={handlePageChange}
+              isLoading={isLoading}
+              pagination={{
+                page: pagination?.page || 1,
+                totalPages: pagination?.totalPages || 1,
+                limit: pagination?.limit || 20,
+                total: pagination?.total || 0,
+              }}
+            />
+
+            {/* Current User Rank Info */}
+            {user && (
+              <Card
+                padding="lg"
+                shadow="md"
+                style={{ marginTop: "20px", textAlign: "center" }}
+              >
+                <p style={{ margin: "0", color: "#666", fontSize: "14px" }}>
+                  Your current rank will be calculated based on your performance
+                </p>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    </Layout>
   );
 };
 

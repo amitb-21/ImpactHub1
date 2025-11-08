@@ -8,9 +8,15 @@ import { Button } from "../common/Button";
 import { FiStar, FiAlertCircle } from "react-icons/fi";
 import styles from "./styles/RatingForm.module.css";
 
-const RatingForm = ({ entityType, entityId, myRating = null }) => {
+// === FIX 2: Add onRatingSubmitted callback prop ===
+const RatingForm = ({
+  entityType,
+  entityId,
+  myRating = null,
+  onRatingSubmitted = null, // NEW PROP
+}) => {
   const dispatch = useDispatch();
-  const { isCreating, isUpdating, error }= useSelector(
+  const { isCreating, isUpdating, error } = useSelector(
     (state) => state.rating
   );
   const [rating, setRating] = useState(myRating?.rating || 0);
@@ -28,7 +34,7 @@ const RatingForm = ({ entityType, entityId, myRating = null }) => {
     },
   });
 
-  // Reset form when myRating prop changes (e.g., after submission)
+  // Reset form when myRating prop changes
   useEffect(() => {
     if (myRating) {
       setRating(myRating.rating);
@@ -39,6 +45,7 @@ const RatingForm = ({ entityType, entityId, myRating = null }) => {
     }
   }, [myRating, reset]);
 
+  // === FIX 2: Updated onSubmit to call callback after successful submission ===
   const onSubmit = (data) => {
     if (rating === 0) {
       alert("Please select a star rating.");
@@ -54,10 +61,22 @@ const RatingForm = ({ entityType, entityId, myRating = null }) => {
 
     if (myRating) {
       // Update existing rating
-      dispatch(updateRating({ ratingId: myRating._id, data: ratingData }));
+      dispatch(updateRating({ ratingId: myRating._id, data: ratingData })).then(
+        (result) => {
+          if (result.payload) {
+            // Call callback after successful update
+            onRatingSubmitted?.();
+          }
+        }
+      );
     } else {
       // Create new rating
-      dispatch(createRating(ratingData));
+      dispatch(createRating(ratingData)).then((result) => {
+        if (result.payload) {
+          // Call callback after successful creation
+          onRatingSubmitted?.();
+        }
+      });
     }
   };
 
@@ -81,10 +100,8 @@ const RatingForm = ({ entityType, entityId, myRating = null }) => {
               size={28}
               className={styles.star}
               style={{
-                color:
-                  (hoverRating || rating) >= star ? "#FFB300" : "#e0e0e0",
-                fill:
-                  (hoverRating || rating) >= star ? "#FFB300" : "none",
+                color: (hoverRating || rating) >= star ? "#FFB300" : "#e0e0e0",
+                fill: (hoverRating || rating) >= star ? "#FFB300" : "none",
               }}
               onClick={() => setRating(star)}
               onMouseEnter={() => setHoverRating(star)}
@@ -107,9 +124,7 @@ const RatingForm = ({ entityType, entityId, myRating = null }) => {
             rows={4}
           />
           {errors.review && (
-            <span className={styles.errorMessage}>
-              {errors.review.message}
-            </span>
+            <span className={styles.errorMessage}>{errors.review.message}</span>
           )}
         </div>
 

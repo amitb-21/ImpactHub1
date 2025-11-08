@@ -1,7 +1,12 @@
+// frontend/src/store/slices/impactSlice.js
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { impactAPI, pointsAPI } from '../../api/services';
 
-// Async thunks
+// ============================================================
+// ASYNC THUNKS
+// ============================================================
+
 export const fetchUserMetrics = createAsyncThunk(
   'impact/fetchMetrics',
   async (userId, { rejectWithValue }) => {
@@ -75,7 +80,7 @@ export const fetchImpactSummary = createAsyncThunk(
 );
 
 // ============================================================
-// SECTION 3: Initial state (ensure all fields have defaults)
+// INITIAL STATE
 // ============================================================
 
 const initialState = {
@@ -87,7 +92,12 @@ const initialState = {
   },
   volunteerLeaderboard: {
     data: [],
-    pagination: null,
+    pagination: {
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+    },
   },
   userRank: null,
   summary: null,
@@ -98,40 +108,47 @@ const initialState = {
   error: null,
 };
 
-// Slice
+// ============================================================
+// SLICE
+// ============================================================
+
 const impactSlice = createSlice({
   name: 'impact',
   initialState,
 
-  // ============================================================
-  // SECTION 2: Add defensive reducers for socket events
-  // ============================================================
-
   reducers: {
+    // Clear error message
     clearError: (state) => {
       state.error = null;
     },
+
+    // Real-time points update from Socket.io
     pointsEarned: (state, action) => {
-      // Real-time points update from Socket.io
       if (state.metrics) {
         state.metrics.totalPoints =
-          (state.metrics.totalPoints || 0) + (action.payload.points || 0);
+          (state.metrics.totalPoints || 0) + (action.payload?.points || 0);
       }
     },
+
+    // Real-time level up from Socket.io
     levelUp: (state, action) => {
-      // Real-time level up from Socket.io
       if (state.progress) {
         state.progress.currentLevel =
-          action.payload.level || state.progress.currentLevel;
+          action.payload?.level || state.progress.currentLevel;
+        if (action.payload?.currentPoints !== undefined) {
+          state.progress.currentPoints = action.payload.currentPoints;
+        }
+        if (action.payload?.progress) {
+          state.progress.progress = action.payload.progress;
+        }
       }
     },
+
+    // Real-time leaderboard update
     leaderboardUpdated: (state, action) => {
-      // Real-time leaderboard update
       const { userId, totalPoints, rank } = action.payload || {};
       if (userId && Array.isArray(state.leaderboard.data)) {
-        const index = state.leaderboard.data.findIndex(
-          (u) => u._id === userId
-        );
+        const index = state.leaderboard.data.findIndex((u) => u._id === userId);
         if (index !== -1) {
           state.leaderboard.data[index] = {
             ...state.leaderboard.data[index],
@@ -140,74 +157,116 @@ const impactSlice = createSlice({
           };
         }
       }
-    },
-    streakUpdated: (state, action) => {
-      if (state.metrics) {
-        state.metrics.impactStreak = action.payload || 0;
+
+      // Also update volunteer leaderboard if applicable
+      if (userId && Array.isArray(state.volunteerLeaderboard.data)) {
+        const volunteerIndex = state.volunteerLeaderboard.data.findIndex(
+          (u) => u._id === userId
+        );
+        if (volunteerIndex !== -1) {
+          state.volunteerLeaderboard.data[volunteerIndex] = {
+            ...state.volunteerLeaderboard.data[volunteerIndex],
+            totalPoints,
+            rank,
+          };
+        }
       }
     },
+
+    // Real-time streak update
+    streakUpdated: (state, action) => {
+      if (state.metrics) {
+        state.metrics.impactStreak = action.payload?.streak || 0;
+        if (action.payload?.bestStreak !== undefined) {
+          state.metrics.bestStreak = action.payload.bestStreak;
+        }
+      }
+    },
+
+    // Achievement unlocked
     achievementUnlocked: (state, action) => {
-      if (!state.achievements) state.achievements = [];
+      if (!Array.isArray(state.achievements)) {
+        state.achievements = [];
+      }
       if (action.payload) {
         state.achievements.push(action.payload);
       }
     },
+
+    // Badge earned
     badgeEarned: (state, action) => {
-      if (!state.badges) state.badges = [];
+      if (!Array.isArray(state.badges)) {
+        state.badges = [];
+      }
       if (action.payload) {
         state.badges.push(action.payload);
       }
     },
   },
 
-  // ============================================================
-  // SECTION 1: Update the extraReducers
-  // ============================================================
-
   extraReducers: (builder) => {
     builder
-      // Fetch metrics
+      // ===== FETCH USER METRICS =====
       .addCase(fetchUserMetrics.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchUserMetrics.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.metrics = action.payload;
+        state.metrics = action.payload || {
+          totalPoints: 0,
+          eventsAttended: 0,
+          communitiesJoined: 0,
+          hoursVolunteered: 0,
+          badgesEarned: 0,
+          impactStreak: 0,
+          bestStreak: 0,
+          pointsBreakdown: {},
+        };
         state.error = null;
       })
       .addCase(fetchUserMetrics.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        // FIXED: Don't crash - just set error state
         state.metrics = null;
       })
 
-      // Fetch progress
+      // ===== FETCH USER PROGRESS =====
       .addCase(fetchUserProgress.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchUserProgress.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.progress = action.payload;
+        state.progress = action.payload || {
+          currentLevel: 1,
+          currentPoints: 0,
+          progress: {
+            pointsInLevel: 0,
+            required: 500,
+            percentage: 0,
+          },
+        };
         state.error = null;
       })
       .addCase(fetchUserProgress.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        // FIXED: Don't crash - just set error state
         state.progress = null;
       })
 
-      // Fetch leaderboard
+      // ===== FETCH LEADERBOARD =====
       .addCase(fetchLeaderboard.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchLeaderboard.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.leaderboard.data = action.payload.data || [];
-        state.leaderboard.pagination = action.payload.pagination;
+        state.leaderboard = {
+          data: Array.isArray(action.payload?.data) ? action.payload.data : [],
+          pagination: action.payload?.pagination || null,
+        };
+        state.error = null;
       })
       .addCase(fetchLeaderboard.rejected, (state, action) => {
         state.isLoading = false;
@@ -215,13 +274,15 @@ const impactSlice = createSlice({
         state.leaderboard.data = [];
       })
 
-      // Fetch user rank
+      // ===== FETCH USER RANK =====
       .addCase(fetchUserRank.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchUserRank.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.userRank = action.payload;
+        state.userRank = action.payload || null;
+        state.error = null;
       })
       .addCase(fetchUserRank.rejected, (state, action) => {
         state.isLoading = false;
@@ -229,28 +290,52 @@ const impactSlice = createSlice({
         state.userRank = null;
       })
 
-      // Fetch volunteer leaderboard
+      // ===== FETCH VOLUNTEER LEADERBOARD =====
       .addCase(fetchVolunteerLeaderboard.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchVolunteerLeaderboard.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.volunteerLeaderboard.data = action.payload.data || [];
-        state.volunteerLeaderboard.pagination = action.payload.pagination;
+        const data = Array.isArray(action.payload?.data)
+          ? action.payload.data
+          : [];
+        const pagination = action.payload?.pagination || {};
+
+        state.volunteerLeaderboard = {
+          data,
+          pagination: {
+            page: pagination?.page || 1,
+            limit: pagination?.limit || 20,
+            total: pagination?.total || 0,
+            totalPages: pagination?.totalPages || 0,
+          },
+        };
+        state.error = null;
       })
       .addCase(fetchVolunteerLeaderboard.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        state.volunteerLeaderboard.data = [];
+        state.volunteerLeaderboard = {
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+          },
+        };
       })
 
-      // Fetch impact summary
+      // ===== FETCH IMPACT SUMMARY =====
       .addCase(fetchImpactSummary.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchImpactSummary.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.summary = action.payload;
+        state.summary = action.payload || null;
+        state.error = null;
       })
       .addCase(fetchImpactSummary.rejected, (state, action) => {
         state.isLoading = false;
@@ -259,6 +344,10 @@ const impactSlice = createSlice({
       });
   },
 });
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 export const {
   clearError,

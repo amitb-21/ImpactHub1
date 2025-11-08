@@ -214,17 +214,26 @@ const eventSlice = createSlice({
         state.events.data = state.events.data.filter(e => e._id !== action.payload);
         state.currentEvent = null;
       })
-      // Join event
+      // Join event - FIXED to handle full event data
       .addCase(joinEvent.fulfilled, (state, action) => {
         if (state.currentEvent) {
-          state.currentEvent = action.payload.event;
+          // Ensure we update with full event data including updated participants
+          state.currentEvent = action.payload.event || action.payload;
+          
+          // Also update in events list if it exists
+          const index = state.events.data.findIndex(
+            e => e._id === state.currentEvent._id
+          );
+          if (index !== -1) {
+            state.events.data[index] = state.currentEvent;
+          }
         }
       })
       // Leave event
       .addCase(leaveEvent.fulfilled, (state, action) => {
         if (state.currentEvent?._id === action.payload) {
           // Update participants list
-          const userId = action.meta.arg; // Get userId from action
+          const userId = action.meta.arg;
           state.currentEvent.participants = state.currentEvent.participants.filter(
             p => p._id !== userId
           );
@@ -235,4 +244,3 @@ const eventSlice = createSlice({
 
 export const { clearError, setFilters, clearCurrentEvent, updateEventCapacity } = eventSlice.actions;
 export default eventSlice.reducer;
-  

@@ -93,7 +93,7 @@ export const markHelpful = createAsyncThunk(
   }
 );
 
-// Initial state
+// Initial state - UPDATED with avgRating and totalRatings
 const initialState = {
   allRatings: {
     data: [],
@@ -104,7 +104,9 @@ const initialState = {
     data: [],
     pagination: null,
     distribution: [], // Rating distribution (1-star, 2-star, etc.)
-    currentEntity: null // { entityType, entityId }
+    currentEntity: null, // { entityType, entityId }
+    avgRating: 0,        // NEW - Store average rating
+    totalRatings: 0      // NEW - Store total ratings count
   },
   isLoading: false,
   isCreating: false,
@@ -126,7 +128,9 @@ const ratingSlice = createSlice({
         data: [],
         pagination: null,
         distribution: [],
-        currentEntity: null
+        currentEntity: null,
+        avgRating: 0,
+        totalRatings: 0
       };
     },
     setFilters: (state, action) => {
@@ -168,21 +172,32 @@ const ratingSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch entity ratings
+      // Fetch entity ratings - UPDATED to capture avgRating and totalRatings
       .addCase(fetchEntityRatings.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchEntityRatings.fulfilled, (state, action) => {
         state.isLoading = false;
-        const { entityType, entityId, data, distribution, pagination } = action.payload;
-        state.entityRatings.data = data;
+        const { 
+          entityType, 
+          entityId, 
+          data, 
+          distribution, 
+          pagination,
+          avgRating,      // NEW - Extract from payload
+          totalRatings    // NEW - Extract from payload
+        } = action.payload;
+        
+        state.entityRatings.data = data || [];
         state.entityRatings.distribution = distribution || [];
         state.entityRatings.pagination = pagination;
         state.entityRatings.currentEntity = { entityType, entityId };
+        state.entityRatings.avgRating = avgRating || 0;        // NEW - Store average
+        state.entityRatings.totalRatings = totalRatings || 0; // NEW - Store count
         
         // Find user's rating if exists
-        state.myRating = data.find(r => r.isVerifiedParticipant) || null;
+        state.myRating = data?.find(r => r.isVerifiedParticipant) || null;
       })
       .addCase(fetchEntityRatings.rejected, (state, action) => {
         state.isLoading = false;

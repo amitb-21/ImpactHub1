@@ -1,232 +1,101 @@
-/* frontend/src/components/impact/styles/Leaderboard.module.css */
+/* frontend/src/pages/styles/Leaderboard.module.css */
 
 .container {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
   gap: 20px;
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  background: #FAFAFA;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
-  transition: all 0.3s ease;
-  background: #FAFAFA;
-}
-
-.row:last-child {
-  border-bottom: none;
-}
-
-.row:hover {
-  background-color: #f0f0f0;
-  transform: translateX(4px);
-}
-
-.row.currentUser {
-  background-color: #e0f2f1;
-  border-left: 4px solid #00796B;
-}
-
-.rank {
-  min-width: 50px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #212121;
-  text-align: center;
-}
-
-.user {
+.header > div {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
+  min-width: 250px;
 }
 
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #00796B;
-  flex-shrink: 0;
-}
-
-.avatarPlaceholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: #00796B;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 700;
-  color: #FAFAFA;
-  border: 2px solid #00796B;
-  flex-shrink: 0;
-}
-
-.userInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #212121;
-  word-break: break-word;
-}
-
-.rankName {
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.metric {
-  min-width: 100px;
-  text-align: right;
-  font-size: 16px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 20px;
-  background: #FAFAFA;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-}
-
-.pagination span {
-  font-size: 14px;
-  color: #666;
-  font-weight: 600;
-}
-
-.emptyState {
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.emptyIcon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  display: block;
-}
-
-.emptyTitle {
-  font-size: 18px;
+.title {
+  font-size: 32px;
   font-weight: 700;
   color: #212121;
   margin: 0 0 8px 0;
 }
 
-.emptyText {
+.subtitle {
   font-size: 14px;
-  color: #999;
+  color: #666;
   margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.filters button {
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .row {
-    padding: 12px 16px;
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
   }
 
-  .rank {
-    min-width: 40px;
-    font-size: 14px;
+  .title {
+    font-size: 24px;
   }
 
-  .avatar,
-  .avatarPlaceholder {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .user {
-    gap: 10px;
-  }
-
-  .name {
+  .subtitle {
     font-size: 13px;
   }
 
-  .rankName {
-    font-size: 11px;
-  }
-
-  .metric {
-    min-width: 80px;
-    font-size: 14px;
-  }
-
-  .pagination {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .pagination span {
+  .filters {
     width: 100%;
+    gap: 8px;
+  }
+
+  .filters button {
+    flex: 1;
+    min-width: 100px;
+    max-width: none;
   }
 }
 
 @media (max-width: 480px) {
-  .row {
-    padding: 10px 12px;
+  .header {
+    margin-bottom: 15px;
   }
 
-  .rank {
-    min-width: 35px;
+  .title {
+    font-size: 20px;
+  }
+
+  .subtitle {
     font-size: 12px;
   }
 
-  .avatar,
-  .avatarPlaceholder {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+  .filters {
+    flex-direction: column;
+    width: 100%;
   }
 
-  .user {
-    gap: 8px;
-  }
-
-  .name {
-    font-size: 12px;
-  }
-
-  .rankName {
-    font-size: 10px;
-  }
-
-  .metric {
-    min-width: 70px;
-    font-size: 13px;
+  .filters button {
+    width: 100%;
+    min-width: auto;
   }
 }

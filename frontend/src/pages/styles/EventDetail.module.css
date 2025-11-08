@@ -462,3 +462,54 @@
     font-size: 48px;
   }
 }
+
+/* Add this to the END of your EventDetail.module.css file */
+
+/* Discovery Buttons Section */
+.discoveryButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.discoveryButtons button {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.discoveryButtons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .discoveryButtons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .discoveryButtons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .discoveryButtons button {
+    font-size: 0.85rem;
+  }
+}
+
+/* Optional: If you want to add more visual styling to match your design */
+.discoveryButtons button[variant="outline"] {
+  background-color: transparent;
+  border: 2px solid #00796B;
+  color: #00796B;
+}
+
+.discoveryButtons button[variant="outline"]:hover {
+  background-color: rgba(0, 121, 107, 0.05);
+}

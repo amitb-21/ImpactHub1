@@ -122,6 +122,7 @@ export const createRating = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Now returns avgRating and totalRatings
 export const getRatings = async (req, res) => {
   try {
     const { entityType, entityId, page = 1, limit = 10, sortBy = 'recent' } = req.query;
@@ -158,6 +159,18 @@ export const getRatings = async (req, res) => {
       'ratedEntity.entityId': entityId,
     });
 
+    // ✅ NEW: Calculate average rating from all ratings
+    const allRatings = await Rating.find({
+      'ratedEntity.entityType': entityType,
+      'ratedEntity.entityId': entityId,
+    });
+
+    const avgRating = allRatings.length > 0
+      ? parseFloat((allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length).toFixed(1))
+      : 0;
+
+    const totalRatings = allRatings.length;
+
     // Calculate rating distribution
     const distribution = await Rating.aggregate([
       {
@@ -173,7 +186,7 @@ export const getRatings = async (req, res) => {
         },
       },
       {
-        $sort: { _id: 1 },
+        $sort: { _id: -1 },
       },
     ]);
 
@@ -181,6 +194,8 @@ export const getRatings = async (req, res) => {
       success: true,
       data: ratings,
       distribution,
+      avgRating,        // ✅ NEW
+      totalRatings,     // ✅ NEW
       pagination: {
         total,
         page: parseInt(page),

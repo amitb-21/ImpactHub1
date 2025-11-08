@@ -1,8 +1,10 @@
+import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import Community from '../models/Community.js';
 import User from '../models/User.js';
 import Participation from '../models/Participation.js';
 import Activity from '../models/Activity.js';
+import Rating from '../models/Rating.js';  // ✅ ADD THIS LINE
 import { awardEventCreation, awardEventParticipation } from '../services/impactService.js';
 import { formatCoordinates, buildLocationObject } from '../services/geocodingService.js';
 import { logger } from '../utils/logger.js';
@@ -268,10 +270,17 @@ export const getEventById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event ID format',
+      });
+    }
+
     const event = await Event.findById(id)
       .populate('createdBy', 'name profileImage')
       .populate('community', 'name verificationStatus avgRating');
-      // ✅ CORRECTED: Don't populate participants for regular users
 
     if (!event) {
       return res.status(404).json({
@@ -280,15 +289,68 @@ export const getEventById = async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      event: formatEventWithCapacity(event),
-    });
+    // ✅ Calculate rating stats from ratings collection
+    try {
+      const ratings = await Rating.find({
+        'ratedEntity.entityType': 'Event',
+        'ratedEntity.entityId': new mongoose.Types.ObjectId(id),
+      });
+
+      const avgRating = ratings.length > 0
+        ? parseFloat((ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1))
+        : 0;
+
+      const totalRatings = ratings.length;
+
+      // Add rating stats to response
+      const eventData = event.toObject ? event.toObject() : event;
+      const eventWithRatings = {
+        ...eventData,
+        avgRating,
+        totalRatings,
+        capacity: {
+          total: event.maxParticipants,
+          registered: event.participants.length,
+          available: event.maxParticipants
+            ? Math.max(0, event.maxParticipants - event.participants.length)
+            : null,
+          isFull: event.isFull(),
+          capacityPercentage: event.getCapacityPercentage(),
+        },
+      };
+
+      res.json({
+        success: true,
+        event: eventWithRatings,
+      });
+    } catch (ratingError) {
+      logger.error('Error calculating ratings for event', ratingError);
+      
+      // Return event without ratings if calculation fails
+      res.json({
+        success: true,
+        event: {
+          ...event.toObject ? event.toObject() : event,
+          avgRating: 0,
+          totalRatings: 0,
+          capacity: {
+            total: event.maxParticipants,
+            registered: event.participants.length,
+            available: event.maxParticipants
+              ? Math.max(0, event.maxParticipants - event.participants.length)
+              : null,
+            isFull: event.isFull(),
+            capacityPercentage: event.getCapacityPercentage(),
+          },
+        },
+      });
+    }
   } catch (error) {
     logger.error('Error fetching event', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
     });
   }
 };
