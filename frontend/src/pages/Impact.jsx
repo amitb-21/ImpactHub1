@@ -16,7 +16,7 @@ import RankBadge from "../components/impact/RankBadge";
 import StreakCounter from "../components/impact/StreakCounter";
 import UserStats from "../components/user/UserStats";
 import UserActivity from "../components/user/UserActivity";
-import { FiTrendingUp, FiAward } from "react-icons/fi";
+import { FiTrendingUp, FiAward, FiAlertCircle } from "react-icons/fi";
 import styles from "./styles/Impact.module.css";
 
 const Impact = () => {
@@ -33,21 +33,17 @@ const Impact = () => {
       dispatch(fetchUserMetrics(user._id)).then((result) => {
         if (result.error) {
           console.error("Error fetching metrics:", result.error);
-        } else {
-          console.log("Metrics fetched successfully");
         }
       });
       dispatch(fetchUserProgress(user._id)).then((result) => {
         if (result.error) {
           console.error("Error fetching progress:", result.error);
-        } else {
-          console.log("Progress fetched successfully");
         }
       });
     }
   }, [user?._id, dispatch]);
 
-  // Only show loading on initial load
+  // Only show loading on initial load if nothing is loaded yet
   if (isLoading && !metrics && !progress) {
     return (
       <Layout>
@@ -58,15 +54,23 @@ const Impact = () => {
     );
   }
 
-  if (error) {
+  // Show error but don't crash
+  if (error && !metrics && !progress) {
     return (
       <Layout>
-        <div className={styles.errorContainer}>
+        <div className={styles.container}>
           <Card padding="lg" shadow="md">
-            <div className={styles.errorContent}>
-              <FiAlertCircle size={48} className={styles.errorIcon} />
-              <h2>Oops! Something went wrong</h2>
-              <p>{error}</p>
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <FiAlertCircle
+                size={48}
+                style={{ color: "#ef4444", marginBottom: "16px" }}
+              />
+              <h2 style={{ margin: "0 0 12px 0", color: "#212121" }}>
+                Oops! Something went wrong
+              </h2>
+              <p style={{ margin: "0 0 24px 0", color: "#666" }}>
+                {error || "Unable to load impact data"}
+              </p>
               <Button
                 variant="primary"
                 onClick={() => {
@@ -83,6 +87,78 @@ const Impact = () => {
     );
   }
 
+  // FIXED: Handle new user with no data - show welcome message instead of crashing
+  if (!metrics && !progress && !isLoading) {
+    return (
+      <Layout>
+        <div className={styles.container}>
+          <div className={styles.header}>
+            <div>
+              <h1 className={styles.title}>Your Impact Dashboard</h1>
+              <p className={styles.subtitle}>
+                Start volunteering to see your impact grow!
+              </p>
+            </div>
+            <Button
+              size="md"
+              variant="primary"
+              icon={FiAward}
+              onClick={() => navigate("/leaderboard")}
+            >
+              View Leaderboard
+            </Button>
+          </div>
+
+          {/* Welcome Card for New Users */}
+          <Card
+            padding="lg"
+            shadow="md"
+            style={{ marginBottom: "24px", textAlign: "center" }}
+          >
+            <div style={{ padding: "40px 20px" }}>
+              <div style={{ fontSize: "64px", marginBottom: "16px" }}>🚀</div>
+              <h2 style={{ margin: "0 0 12px 0", color: "#212121" }}>
+                Welcome to ImpactHub!
+              </h2>
+              <p
+                style={{
+                  color: "#666",
+                  margin: "0 0 24px 0",
+                  lineHeight: "1.6",
+                }}
+              >
+                You're all set! Start joining events and communities to earn
+                points, level up, and track your impact on the platform.
+              </p>
+              <Button
+                size="md"
+                variant="primary"
+                onClick={() => navigate("/events")}
+              >
+                Explore Events
+              </Button>
+            </div>
+          </Card>
+
+          {/* Show your activity even as a new user */}
+          <div className={styles.section}>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                marginBottom: "16px",
+              }}
+            >
+              Your Activity
+            </h3>
+            {user?._id && <UserActivity userId={user._id} limit={10} />}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Normal view with data available
   return (
     <Layout>
       <div className={styles.container}>
@@ -106,27 +182,44 @@ const Impact = () => {
 
         <div className={styles.gridContainer}>
           <div className={styles.mainColumn}>
-            <div className={styles.section}>
-              <LevelProgress userId={user._id} />
-            </div>
-            <div className={styles.section}>
-              <PointsBreakdown userId={user._id} />
-            </div>
+            {/* Only show if progress data exists */}
+            {progress && (
+              <div className={styles.section}>
+                <LevelProgress userId={user._id} />
+              </div>
+            )}
+
+            {/* Only show if metrics data exists */}
+            {metrics && (
+              <div className={styles.section}>
+                <PointsBreakdown userId={user._id} />
+              </div>
+            )}
           </div>
+
           <div className={styles.sidebarColumn}>
-            <div className={styles.section}>
-              <RankBadge userId={user._id} size="large" />
-            </div>
-            <div className={styles.section}>
-              <StreakCounter userId={user._id} />
-            </div>
+            {/* Only show rank and streak if metrics exist */}
+            {metrics && (
+              <>
+                <div className={styles.section}>
+                  <RankBadge userId={user._id} size="large" />
+                </div>
+                <div className={styles.section}>
+                  <StreakCounter userId={user._id} />
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className={styles.section}>
-          <UserStats userId={user._id} />
-        </div>
+        {/* User Stats - only if metrics exist */}
+        {metrics && (
+          <div className={styles.section}>
+            <UserStats userId={user._id} />
+          </div>
+        )}
 
+        {/* Activity Feed - always show */}
         <div className={styles.section}>
           <UserActivity userId={user._id} limit={10} />
         </div>

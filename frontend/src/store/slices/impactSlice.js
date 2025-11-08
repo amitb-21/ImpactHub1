@@ -62,7 +62,6 @@ export const fetchVolunteerLeaderboard = createAsyncThunk(
   }
 );
 
-// --- NEW THUNK ---
 export const fetchImpactSummary = createAsyncThunk(
   'impact/fetchSummary',
   async (_, { rejectWithValue }) => {
@@ -74,19 +73,21 @@ export const fetchImpactSummary = createAsyncThunk(
     }
   }
 );
-// --- END NEW THUNK ---
 
-// Initial state
+// ============================================================
+// SECTION 3: Initial state (ensure all fields have defaults)
+// ============================================================
+
 const initialState = {
   metrics: null,
   progress: null,
   leaderboard: {
     data: [],
-    pagination: null
+    pagination: null,
   },
   volunteerLeaderboard: {
     data: [],
-    pagination: null
+    pagination: null,
   },
   userRank: null,
   summary: null,
@@ -94,82 +95,18 @@ const initialState = {
   achievements: [],
   badges: [],
   isLoading: false,
-  error: null
+  error: null,
 };
 
 // Slice
 const impactSlice = createSlice({
   name: 'impact',
   initialState,
-  reducers: {
-    // Socket event handlers
-    pointsEarned: (state, action) => {
-      if (state.metrics) {
-        state.metrics.totalPoints += action.payload.points;
-        if (state.metrics.pointsBreakdown) {
-          const category = action.payload.category || 'other';
-          state.metrics.pointsBreakdown[category] = 
-            (state.metrics.pointsBreakdown[category] || 0) + action.payload.points;
-        }
-      }
-    },
-    levelUp: (state, action) => {
-      if (state.progress) {
-        state.progress.currentLevel = action.payload.newLevel;
-        state.progress.progress = action.payload.progress;
-      }
-    },
-    streakUpdated: (state, action) => {
-      if (state.metrics) {
-        state.metrics.streak = action.payload.streak;
-        state.metrics.bestStreak = Math.max(
-          state.metrics.bestStreak || 0,
-          action.payload.streak
-        );
-      }
-    },
-    achievementUnlocked: (state, action) => {
-      if (!state.achievements) state.achievements = [];
-      state.achievements.push(action.payload);
-    },
-    badgeEarned: (state, action) => {
-      if (!state.badges) state.badges = [];
-      state.badges.push(action.payload);
-    },
-  },
-  reducers: {
-    // Socket event handlers
-    pointsEarned: (state, action) => {
-      if (state.metrics) {
-        state.metrics.totalPoints += action.payload.points;
-      }
-      if (state.progress) {
-        state.progress.currentPoints += action.payload.points;
-        state.progress.progress.pointsInLevel += action.payload.points;
-        // Recalculate percentage
-        state.progress.progress.percentage = 
-          (state.progress.progress.pointsInLevel / state.progress.progress.required) * 100;
-      }
-    },
-    levelUp: (state, action) => {
-      if (state.progress) {
-        state.progress.currentLevel = action.payload.newLevel;
-        state.progress.progress.pointsInLevel = action.payload.pointsInLevel;
-        state.progress.progress.required = action.payload.requiredPoints;
-        state.progress.progress.percentage = 
-          (action.payload.pointsInLevel / action.payload.requiredPoints) * 100;
-      }
-    },
-    streakUpdated: (state, action) => {
-      state.streak = action.payload;
-    },
-    achievementUnlocked: (state, action) => {
-      state.achievements.push(action.payload);
-    },
-    badgeEarned: (state, action) => {
-      state.badges.push(action.payload);
-    },
-  },
+
+  // ============================================================
+  // SECTION 2: Add defensive reducers for socket events
+  // ============================================================
+
   reducers: {
     clearError: (state) => {
       state.error = null;
@@ -177,24 +114,56 @@ const impactSlice = createSlice({
     pointsEarned: (state, action) => {
       // Real-time points update from Socket.io
       if (state.metrics) {
-        state.metrics.totalPoints += action.payload.points;
+        state.metrics.totalPoints =
+          (state.metrics.totalPoints || 0) + (action.payload.points || 0);
       }
     },
     levelUp: (state, action) => {
       // Real-time level up from Socket.io
       if (state.progress) {
-        state.progress.currentLevel = action.payload.level;
+        state.progress.currentLevel =
+          action.payload.level || state.progress.currentLevel;
       }
     },
     leaderboardUpdated: (state, action) => {
       // Real-time leaderboard update
-      const { userId, totalPoints, rank } = action.payload;
-      const index = state.leaderboard.data.findIndex(u => u.userId === userId);
-      if (index !== -1) {
-        state.leaderboard.data[index] = { ...state.leaderboard.data[index], totalPoints, rank };
+      const { userId, totalPoints, rank } = action.payload || {};
+      if (userId && Array.isArray(state.leaderboard.data)) {
+        const index = state.leaderboard.data.findIndex(
+          (u) => u._id === userId
+        );
+        if (index !== -1) {
+          state.leaderboard.data[index] = {
+            ...state.leaderboard.data[index],
+            totalPoints,
+            rank,
+          };
+        }
       }
-    }
+    },
+    streakUpdated: (state, action) => {
+      if (state.metrics) {
+        state.metrics.impactStreak = action.payload || 0;
+      }
+    },
+    achievementUnlocked: (state, action) => {
+      if (!state.achievements) state.achievements = [];
+      if (action.payload) {
+        state.achievements.push(action.payload);
+      }
+    },
+    badgeEarned: (state, action) => {
+      if (!state.badges) state.badges = [];
+      if (action.payload) {
+        state.badges.push(action.payload);
+      }
+    },
   },
+
+  // ============================================================
+  // SECTION 1: Update the extraReducers
+  // ============================================================
+
   extraReducers: (builder) => {
     builder
       // Fetch metrics
@@ -210,7 +179,10 @@ const impactSlice = createSlice({
       .addCase(fetchUserMetrics.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        // FIXED: Don't crash - just set error state
+        state.metrics = null;
       })
+
       // Fetch progress
       .addCase(fetchUserProgress.pending, (state) => {
         state.isLoading = true;
@@ -224,22 +196,55 @@ const impactSlice = createSlice({
       .addCase(fetchUserProgress.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        // FIXED: Don't crash - just set error state
+        state.progress = null;
       })
+
       // Fetch leaderboard
+      .addCase(fetchLeaderboard.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchLeaderboard.fulfilled, (state, action) => {
-        state.leaderboard.data = action.payload.data;
+        state.isLoading = false;
+        state.leaderboard.data = action.payload.data || [];
         state.leaderboard.pagination = action.payload.pagination;
       })
+      .addCase(fetchLeaderboard.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.leaderboard.data = [];
+      })
+
       // Fetch user rank
+      .addCase(fetchUserRank.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchUserRank.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.userRank = action.payload;
       })
+      .addCase(fetchUserRank.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.userRank = null;
+      })
+
       // Fetch volunteer leaderboard
+      .addCase(fetchVolunteerLeaderboard.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchVolunteerLeaderboard.fulfilled, (state, action) => {
-        state.volunteerLeaderboard.data = action.payload.data;
+        state.isLoading = false;
+        state.volunteerLeaderboard.data = action.payload.data || [];
         state.volunteerLeaderboard.pagination = action.payload.pagination;
       })
-      // --- ADDED FOR SUMMARY ---
+      .addCase(fetchVolunteerLeaderboard.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.volunteerLeaderboard.data = [];
+      })
+
+      // Fetch impact summary
       .addCase(fetchImpactSummary.pending, (state) => {
         state.isLoading = true;
       })
@@ -250,9 +255,9 @@ const impactSlice = createSlice({
       .addCase(fetchImpactSummary.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.summary = null;
       });
-      // --- END ADDED ---
-  }
+  },
 });
 
 export const {
@@ -262,7 +267,7 @@ export const {
   leaderboardUpdated,
   streakUpdated,
   achievementUnlocked,
-  badgeEarned
+  badgeEarned,
 } = impactSlice.actions;
 
 export default impactSlice.reducer;

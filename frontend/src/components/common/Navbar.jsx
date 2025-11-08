@@ -1,3 +1,4 @@
+// frontend/src/components/common/Navbar.jsx
 import React, { useState } from "react";
 import { useAuth } from "../../hooks";
 import { useSocket } from "../../hooks";
@@ -7,14 +8,13 @@ import {
   FiX,
   FiBell,
   FiLogOut,
-  FiUser,
+  FiHome,
   FiSearch,
   FiBriefcase,
 } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import Modal from "./Modal";
 import UserSearch from "../user/UserSearch";
-// --- (1) IMPORT NEW NOTIFICATION CENTER ---
 import NotificationCenter from "../notifications/NotificationCenter";
 
 const Navbar = ({ onMenuClick }) => {
@@ -23,12 +23,10 @@ const Navbar = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
-  // --- (2) ADD STATE FOR NOTIFICATION DROPDOWN ---
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = useSelector((state) => state.notification.unreadCount);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await (typeof logout === "function" ? logout() : Promise.resolve());
@@ -40,13 +38,11 @@ const Navbar = ({ onMenuClick }) => {
     }
   };
 
-  // Handle user selection from search
   const handleUserSelect = (selectedUser) => {
     setShowUserSearch(false);
     navigate(`/profile/${selectedUser._id}`);
   };
 
-  // Join admin room if admin
   React.useEffect(() => {
     if (isAdmin?.()) {
       joinAdmin?.();
@@ -101,7 +97,7 @@ const Navbar = ({ onMenuClick }) => {
                 <FiSearch size={20} color="#FAFAFA" />
               </button>
 
-              {/* --- (3) NOTIFICATIONS BELL (UPDATED) --- */}
+              {/* Notifications Bell */}
               <div style={styles.notificationContainer}>
                 <button
                   style={styles.notificationBtn}
@@ -113,14 +109,12 @@ const Navbar = ({ onMenuClick }) => {
                     <span style={styles.badge}>{unreadCount}</span>
                   )}
                 </button>
-                {/* --- (4) RENDER NOTIFICATION CENTER --- */}
                 {showNotifications && (
                   <NotificationCenter
                     onClose={() => setShowNotifications(false)}
                   />
                 )}
               </div>
-              {/* --- (End 4) --- */}
 
               {/* User Menu */}
               <div style={styles.userMenuContainer}>
@@ -141,14 +135,17 @@ const Navbar = ({ onMenuClick }) => {
                 {/* Dropdown Menu */}
                 {showUserMenu && (
                   <div style={styles.dropdown}>
+                    {/* FIXED: Dashboard Link Added */}
                     <Link
-                      to={`/profile/${user?._id}`}
+                      to="/dashboard"
                       style={styles.dropdownItem}
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <FiUser size={16} />
-                      <span>Profile</span>
+                      <FiHome size={16} />
+                      <span>Dashboard</span>
                     </Link>
+
+                    {/* REMOVED: Profile Link that was here */}
 
                     {isRegularUser && (
                       <Link
@@ -215,7 +212,6 @@ const Navbar = ({ onMenuClick }) => {
   );
 };
 
-// Styles
 const styles = {
   navbar: {
     display: "flex",
@@ -373,14 +369,6 @@ const styles = {
     borderRadius: "6px",
     cursor: "pointer",
     transition: "background 0.3s ease",
-  },
-  "@media (maxWidth: 768px)": {
-    menuToggle: {
-      display: "block",
-    },
-    navLinks: {
-      display: "none",
-    },
   },
 };
 

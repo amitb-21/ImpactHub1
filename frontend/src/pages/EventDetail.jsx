@@ -1,4 +1,3 @@
-/* frontend/src/pages/EventDetail.jsx */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,14 +8,12 @@ import {
   joinEvent,
   leaveEvent,
 } from "../store/slices/eventSlice";
-import { fetchCommunityGallery } from "../store/slices/photoSlice"; // <-- IMPORTED
-// --- (1) IMPORTS ADDED ---
+import { fetchCommunityGallery } from "../store/slices/photoSlice"; 
 import { fetchEntityRatings } from "../store/slices/ratingSlice";
-import { getParticipationDetails } from "../store/slices/participationSlice"; // <-- Corrected import
+import { getParticipationDetails } from "../store/slices/participationSlice";
 import RatingStats from "../components/rating/RatingStats";
 import RatingList from "../components/rating/RatingList";
 import RatingForm from "../components/rating/RatingForm";
-// --- (End 1) ---
 import Layout from "../components/common/Layout";
 import ParticipantList from "../components/event/ParticipantList";
 import AttendanceModal from "../components/event/AttendanceModal";
@@ -227,11 +224,20 @@ const EventDetail = () => {
   const isClosed =
     currentEvent.status === "Cancelled" || currentEvent.status === "Completed";
 
-  // Moderator/Admin who is *not* the organizer
-  const isPrivilegedUser = isModerator() && !isOrganizer;
+  // --- (FIX SECTION 1) ---
+  // FIXED: Check if moderator manages the community this event belongs to
+  const isManagedCommunity =
+    isModerator?.() &&
+    currentEvent.community &&
+    currentEvent.community.createdBy?._id === currentUser._id;
+
+  // Moderator/Admin who is *not* the organizer but manages the community
+  const isPrivilegedUser =
+    (isModerator?.() || isManagedCommunity) && !isOrganizer;
 
   // Restrict event management features to community managers
   const isCommunityManager = currentUser?.role === "community_manager";
+  // --- (END FIX SECTION 1) ---
 
   // --- (5) RATING FORM VISIBILITY LOGIC ---
   const hasAttended =
@@ -312,8 +318,9 @@ const EventDetail = () => {
                 <h1 className={styles.title}>{currentEvent.title}</h1>
                 <p className={styles.subtitle}>{currentEvent.description}</p>
               </div>
+              {/* --- (FIX SECTION 5) --- */}
               <div className={styles.actions}>
-                {isOrganizer && (
+                {(isOrganizer || isManagedCommunity) && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -324,7 +331,7 @@ const EventDetail = () => {
                   </Button>
                 )}
                 {/* --- ADDED UPLOAD BUTTON (Only for event organizer) --- */}
-                {isOrganizer && (
+                {(isOrganizer || isManagedCommunity) && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -346,6 +353,7 @@ const EventDetail = () => {
                   Share
                 </Button>
               </div>
+              {/* --- (END FIX SECTION 5) --- */}
             </div>
 
             {/* Meta Information */}
@@ -715,7 +723,7 @@ const EventDetail = () => {
                   </p>
                 </div>
                 {/* Note: This button is a placeholder. 
-                  A real implementation would open a map modal.
+                    A real implementation would open a map modal.
                 */}
                 <Button
                   size="sm"
