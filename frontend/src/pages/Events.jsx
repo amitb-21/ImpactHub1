@@ -21,7 +21,7 @@ import styles from "./styles/Events.module.css";
 const Events = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Redux selectors
   const { events, isLoading, error } = useSelector((state) => state.event);
@@ -83,7 +83,9 @@ const Events = () => {
               Find and join meaningful volunteer opportunities in your area
             </p>
           </div>
-          {isAuthenticated && (
+
+          {/* Conditional Rendering for Community Manager */}
+          {isAuthenticated && user?.role === "community_manager" && (
             <Button
               size="md"
               variant="primary"
@@ -91,6 +93,17 @@ const Events = () => {
               onClick={() => setShowCreateForm(true)}
             >
               Create Event
+            </Button>
+          )}
+
+          {/* Application Link for Regular Users */}
+          {isAuthenticated && user?.role === "user" && (
+            <Button
+              size="md"
+              variant="outline"
+              onClick={() => navigate("/become-community-manager")}
+            >
+              Apply to Become a Community Manager
             </Button>
           )}
         </div>

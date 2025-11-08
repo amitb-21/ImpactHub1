@@ -19,7 +19,7 @@ import styles from "./styles/Communities.module.css";
 const Communities = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Redux selectors
   const { communities, isLoading, error } = useSelector(
@@ -98,7 +98,9 @@ const Communities = () => {
               Join communities and collaborate with like-minded volunteers
             </p>
           </div>
-          {isAuthenticated && (
+
+          {/* Conditional Rendering for Community Manager */}
+          {isAuthenticated && user?.role === "community_manager" && (
             <Button
               size="md"
               variant="primary"
@@ -106,6 +108,17 @@ const Communities = () => {
               onClick={() => setShowCreateForm(true)}
             >
               Create Community
+            </Button>
+          )}
+
+          {/* Application Link for Regular Users */}
+          {isAuthenticated && user?.role === "user" && (
+            <Button
+              size="md"
+              variant="outline"
+              onClick={() => navigate("/become-community-manager")}
+            >
+              Apply to Become a Community Manager
             </Button>
           )}
         </div>

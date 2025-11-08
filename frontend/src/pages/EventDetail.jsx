@@ -229,6 +229,9 @@ const EventDetail = () => {
   // Moderator/Admin who is *not* the organizer
   const isPrivilegedUser = isModerator() && !isOrganizer;
 
+  // Restrict event management features to community managers
+  const isCommunityManager = currentUser?.role === "community_manager";
+
   // --- (5) RATING FORM VISIBILITY LOGIC ---
   const hasAttended =
     participationDetail &&
@@ -749,6 +752,18 @@ const EventDetail = () => {
               manage attendance.
             </p>
           </Card>
+        )}
+
+        {/* Conditional Rendering for Event Management */}
+        {isCommunityManager && (
+          <Button
+            size="md"
+            variant="primary"
+            icon={FiEdit}
+            onClick={() => navigate(`/events/${eventId}/edit`)}
+          >
+            Manage Event
+          </Button>
         )}
       </div>
     </Layout>

@@ -214,6 +214,9 @@ const CommunityDetail = () => {
   const showLoginMessage = !isAuthenticated;
   // --- (End 5) ---
 
+  // Restrict community management features to community managers
+  const isCommunityManager = currentUser?.role === "community_manager";
+
   return (
     <Layout>
       <div className={styles.container}>
@@ -612,6 +615,18 @@ const CommunityDetail = () => {
               compact={false}
             />
           </div>
+        )}
+
+        {/* Conditional Rendering for Community Management */}
+        {isCommunityManager && (
+          <Button
+            size="md"
+            variant="primary"
+            icon={FiEdit}
+            onClick={() => navigate(`/communities/${communityId}/edit`)}
+          >
+            Manage Community
+          </Button>
         )}
       </div>
     </Layout>
