@@ -214,29 +214,56 @@ const eventSlice = createSlice({
         state.events.data = state.events.data.filter(e => e._id !== action.payload);
         state.currentEvent = null;
       })
-      // Join event - FIXED to handle full event data
+      // ✅ FIXED: Join event - update both currentEvent and events list
       .addCase(joinEvent.fulfilled, (state, action) => {
-        if (state.currentEvent) {
-          // Ensure we update with full event data including updated participants
-          state.currentEvent = action.payload.event || action.payload;
-          
-          // Also update in events list if it exists
-          const index = state.events.data.findIndex(
-            e => e._id === state.currentEvent._id
-          );
-          if (index !== -1) {
-            state.events.data[index] = state.currentEvent;
-          }
+        const updatedEvent = action.payload.event || action.payload;
+        
+        // Update current event
+        if (state.currentEvent?._id === updatedEvent._id) {
+          state.currentEvent = updatedEvent;
+        }
+        
+        // ✅ NEW: Update in events list - ensure we use updated data
+        const index = state.events.data.findIndex(
+          e => e._id === updatedEvent._id
+        );
+        if (index !== -1) {
+          state.events.data[index] = {
+            ...state.events.data[index],
+            ...updatedEvent,
+            registeredCount: updatedEvent.participants?.length || updatedEvent.registeredCount,
+            participants: updatedEvent.participants
+          };
         }
       })
-      // Leave event
+      // ✅ FIXED: Leave event - update both currentEvent and events list
       .addCase(leaveEvent.fulfilled, (state, action) => {
-        if (state.currentEvent?._id === action.payload) {
-          // Update participants list
-          const userId = action.meta.arg;
-          state.currentEvent.participants = state.currentEvent.participants.filter(
-            p => p._id !== userId
-          );
+        const eventId = action.payload;
+        
+        // Update current event
+        if (state.currentEvent?._id === eventId) {
+          // Remove from participants
+          state.currentEvent.participants = 
+            state.currentEvent.participants?.filter(p => 
+              typeof p === 'string' ? p !== eventId : p._id !== eventId
+            ) || [];
+          state.currentEvent.registeredCount = 
+            Math.max(0, (state.currentEvent.registeredCount || 1) - 1);
+        }
+        
+        // ✅ NEW: Update in events list
+        const eventIndex = state.events.data.findIndex(e => e._id === eventId);
+        if (eventIndex !== -1) {
+          const currentRegistered = state.events.data[eventIndex].registeredCount || 
+                                   state.events.data[eventIndex].participants?.length || 0;
+          state.events.data[eventIndex] = {
+            ...state.events.data[eventIndex],
+            registeredCount: Math.max(0, currentRegistered - 1),
+            participants: 
+              state.events.data[eventIndex].participants?.filter(p => 
+                typeof p === 'string' ? p !== eventId : p._id !== eventId
+              ) || []
+          };
         }
       });
   }

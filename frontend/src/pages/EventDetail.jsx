@@ -8,6 +8,7 @@ import {
   fetchEventById,
   joinEvent,
   leaveEvent,
+  fetchEvents,
 } from "../store/slices/eventSlice";
 import { fetchCommunityGallery } from "../store/slices/photoSlice";
 import { fetchEntityRatings } from "../store/slices/ratingSlice";
@@ -134,12 +135,14 @@ const EventDetail = () => {
         joinEventSocket(eventId);
         toast.success("Successfully joined event!");
 
-        // Refetch data after small delay to ensure server is updated
+        // ✅ Refetch data after small delay to ensure server is updated
         setTimeout(() => {
           dispatch(fetchEventById(eventId));
           dispatch(
             fetchEntityRatings({ entityType: "Event", entityId: eventId })
           );
+          // ✅ NEW: Refresh events list in Redux
+          dispatch(fetchEvents({ page: 1, limit: 10 }));
         }, 300);
       } else {
         toast.error("Failed to join event");
@@ -167,9 +170,11 @@ const EventDetail = () => {
         setParticipationId(null);
         toast.success("Successfully left event!");
 
-        // Refetch data
+        // ✅ Refetch data
         setTimeout(() => {
           dispatch(fetchEventById(eventId));
+          // ✅ NEW: Refresh events list in Redux
+          dispatch(fetchEvents({ page: 1, limit: 10 }));
         }, 300);
       } else {
         toast.error("Failed to leave event");

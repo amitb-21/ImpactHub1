@@ -31,6 +31,7 @@ const Events = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewMode, setViewMode] = useState("grid"); // grid | list
+  const [appliedFilters, setAppliedFilters] = useState({}); // ✅ NEW: Track applied filters
 
   // Pagination hook
   const {
@@ -44,27 +45,33 @@ const Events = () => {
     canGoPrev,
   } = usePagination(events.pagination?.total || 0, 1, 10);
 
-  // ✅ FIXED: Fetch events on mount
+  // ✅ FIXED: Fetch events with filters included
   useEffect(() => {
     const filters = {
       page,
       limit,
       search: searchQuery || undefined,
+      ...appliedFilters, // ✅ Include applied filters
     };
     dispatch(fetchEvents(filters));
     dispatch(setFilters(filters));
-  }, [page, searchQuery, dispatch]);
+  }, [page, searchQuery, appliedFilters, dispatch]); // ✅ Add appliedFilters to deps
 
-  // ✅ NEW: Refresh events when page becomes visible (user comes back from EventDetail)
+  // ✅ FIXED: Refresh events when page becomes visible (user comes back from EventDetail)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Page is now visible - refetch events
+        // Page is now visible - refetch events with current filters
         const filters = {
           page,
           limit,
           search: searchQuery || undefined,
+          ...appliedFilters,
         };
+        console.log(
+          "Refetching events on visibility change with filters:",
+          filters
+        );
         dispatch(fetchEvents(filters));
       }
     };
@@ -73,12 +80,19 @@ const Events = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [page, limit, searchQuery, dispatch]);
+  }, [page, limit, searchQuery, appliedFilters, dispatch]);
 
   // Handle search
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
     goToPage(1);
+  };
+
+  // ✅ NEW: Handle filter changes
+  const handleFilterChange = (filters) => {
+    setAppliedFilters(filters); // ✅ Store filters in state
+    dispatch(setFilters(filters));
+    goToPage(1); // Reset to page 1 when filters change
   };
 
   // Handle event creation success
@@ -91,6 +105,7 @@ const Events = () => {
         page: 1,
         limit,
         search: searchQuery || undefined,
+        ...appliedFilters,
       };
       dispatch(fetchEvents(filters));
     }, 500);
@@ -202,10 +217,7 @@ const Events = () => {
           {showFilters && (
             <div className={styles.filtersPanel}>
               <EventFilter
-                onFilterChange={(filters) => {
-                  dispatch(setFilters(filters));
-                  goToPage(1);
-                }}
+                onFilterChange={handleFilterChange} // ✅ Use the new handler
                 compact={false}
                 showDefaultExpanded={true}
               />
@@ -242,6 +254,7 @@ const Events = () => {
                     page,
                     limit,
                     search: searchQuery || undefined,
+                    ...appliedFilters,
                   };
                   dispatch(fetchEvents(filters));
                 }}

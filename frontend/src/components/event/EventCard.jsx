@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useAuth } from "../../hooks/useAuth";
 import { Card } from "../common/Card";
 import { Badge } from "../common/Badge";
 import { Button } from "../common/Button";
@@ -16,6 +18,7 @@ import styles from "./styles/EventCard.module.css";
 
 const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   if (!event) {
     return (
@@ -26,6 +29,13 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
       </Card>
     );
   }
+
+  // ✅ FIXED: Check if current user is a participant in this event
+  const isParticipant = event.participants?.some((p) => {
+    const pId = typeof p === "object" ? p._id : p;
+    const userId = currentUser?._id;
+    return userId && (pId === userId || pId.toString() === userId.toString());
+  });
 
   const isEventFull = event.registeredCount >= event.maxParticipants;
   const isClosed = event.status === "Cancelled" || event.status === "Completed";
@@ -213,18 +223,34 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
         <div className={styles.actionContainer}>
           {!isClosed ? (
             <>
-              <Button
-                size="sm"
-                variant="primary"
-                fullWidth
-                disabled={isEventFull}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onJoin ? onJoin(event) : navigate(`/events/${event._id}`);
-                }}
-              >
-                {isEventFull ? "Event Full" : "Join Event"}
-              </Button>
+              {/* ✅ FIXED: Show Leave/Join button based on participant status */}
+              {isParticipant ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  fullWidth
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/events/${event._id}`);
+                  }}
+                  icon={FiCheckCircle}
+                >
+                  You Joined ✓
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  fullWidth
+                  disabled={isEventFull}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onJoin ? onJoin(event) : navigate(`/events/${event._id}`);
+                  }}
+                >
+                  {isEventFull ? "Event Full" : "Join Event"}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
