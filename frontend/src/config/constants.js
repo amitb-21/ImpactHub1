@@ -91,6 +91,7 @@ export const RESOURCE_DIFFICULTY = ['Beginner', 'Intermediate', 'Advanced'];
 // Activity Types (matches backend)
 export const ACTIVITY_TYPES = [
   'event_joined',
+  'event_left',
   'event_created',
   'event_attended',
   'event_saved',

@@ -57,11 +57,13 @@ export const updateCommunity = createAsyncThunk(
   }
 );
 
+// ✅ JOIN COMMUNITY - Updated
 export const joinCommunity = createAsyncThunk(
   'community/join',
   async (communityId, { rejectWithValue }) => {
     try {
       const response = await communityAPI.join(communityId);
+      console.log('✅ Join response:', response.data);
       toast.success('Joined community successfully!');
       return response.data;
     } catch (error) {
@@ -72,13 +74,14 @@ export const joinCommunity = createAsyncThunk(
   }
 );
 
+// ✅ LEAVE COMMUNITY - Updated
 export const leaveCommunity = createAsyncThunk(
   'community/leave',
   async (communityId, { rejectWithValue }) => {
     try {
       await communityAPI.leave(communityId);
       toast.success('Left community successfully!');
-      return communityId;
+      return communityId; // Return ID for comparison
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to leave community';
       toast.error(message);
@@ -98,6 +101,7 @@ const initialState = {
   isLoading: false,
   isCreating: false,
   isUpdating: false,
+  isJoining: false, // ✅ ADD THIS
   error: null
 };
 
@@ -132,18 +136,22 @@ const communitySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
+
       // Fetch community by ID
       .addCase(fetchCommunityById.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchCommunityById.fulfilled, (state, action) => {
         state.isLoading = false;
+        console.log('✅ Community fetched:', action.payload);
         state.currentCommunity = action.payload.community;
       })
       .addCase(fetchCommunityById.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
+
       // Create community
       .addCase(createCommunity.pending, (state) => {
         state.isCreating = true;
@@ -156,6 +164,7 @@ const communitySlice = createSlice({
         state.isCreating = false;
         state.error = action.payload;
       })
+
       // Update community
       .addCase(updateCommunity.pending, (state) => {
         state.isUpdating = true;
@@ -168,17 +177,40 @@ const communitySlice = createSlice({
         state.isUpdating = false;
         state.error = action.payload;
       })
-      // Join community
+
+      // ✅ JOIN COMMUNITY - FIX: Update currentCommunity with members
+      .addCase(joinCommunity.pending, (state) => {
+        state.isJoining = true;
+        state.error = null;
+      })
       .addCase(joinCommunity.fulfilled, (state, action) => {
-        if (state.currentCommunity) {
+        state.isJoining = false;
+        console.log('✅ Join fulfilled, updating state:', action.payload);
+        
+        // ✅ CRITICAL: Update currentCommunity with the new data from response
+        if (action.payload.community) {
           state.currentCommunity = action.payload.community;
+          console.log('✅ Current community updated with new members');
         }
       })
-      // Leave community
+      .addCase(joinCommunity.rejected, (state, action) => {
+        state.isJoining = false;
+        state.error = action.payload;
+      })
+
+      // ✅ LEAVE COMMUNITY - FIX: Refetch is done in component
+      .addCase(leaveCommunity.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(leaveCommunity.fulfilled, (state, action) => {
-        if (state.currentCommunity?._id === action.payload) {
-          state.currentCommunity = null;
-        }
+        state.isLoading = false;
+        console.log('✅ Leave successful');
+        // Component will refetch the community
+      })
+      .addCase(leaveCommunity.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       });
   }
 });

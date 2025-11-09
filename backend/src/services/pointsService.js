@@ -291,31 +291,37 @@ export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
 
     const points = 5; // Points per member joined
 
-    const communityRewards = await CommunityRewards.findOneAndUpdate(
-      { community: communityId },
-      {
-        $inc: {
-          totalPoints: points,
-          'pointsBreakdown.memberJoined': points,
-          totalMembers: 1,
-        },
-        $push: {
-          rewardsHistory: {
-            points: points,
-            type: 'member_joined',
-            description: `New member joined community`,
-            relatedUser: userId,
-            relatedEntity: {
-              entityType: 'User',
-              entityId: userId,
-            },
-            awardedAt: new Date(),
-          },
-        },
-        lastPointsUpdate: new Date(),
+    // Step 1: Get or create community rewards
+    let communityRewards = await CommunityRewards.findOne({ community: communityId });
+    
+    if (!communityRewards) {
+      communityRewards = await CommunityRewards.create({
+        community: communityId,
+      });
+    }
+
+    // Step 2: Update points manually
+    communityRewards.totalPoints = (communityRewards.totalPoints || 0) + points;
+    communityRewards.pointsBreakdown.memberJoined = 
+      (communityRewards.pointsBreakdown.memberJoined || 0) + points;
+    communityRewards.totalMembers = (communityRewards.totalMembers || 0) + 1;
+    communityRewards.lastPointsUpdate = new Date();
+
+    // Step 3: Push single reward object
+    communityRewards.rewardsHistory.push({
+      points: points,
+      type: 'member_joined',
+      description: 'New member joined community',
+      relatedUser: userId,
+      relatedEntity: {
+        entityType: 'User',
+        entityId: userId,
       },
-      { upsert: true, new: true }
-    );
+      awardedAt: new Date(),
+    });
+
+    // Step 4: Save once
+    await communityRewards.save();
 
     logger.success(`Community ${communityId} awarded ${points} points for new member`);
 

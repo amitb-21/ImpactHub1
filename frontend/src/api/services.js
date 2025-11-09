@@ -63,7 +63,11 @@ export const eventAPI = {
   delete: (id) => API.delete(`/events/${id}`),
   join: (id) => API.post(`/events/${id}/join`),
   leave: (id) => API.post(`/events/${id}/leave`),
-  getParticipants: (id, page = 1) => API.get(`/events/${id}/participants?page=${page}&limit=20`)
+  getParticipants: (id, page = 1) => API.get(`/events/${id}/participants?page=${page}&limit=20`),
+  getMyCreatedEvents: (page = 1, filters = {}) =>
+    API.get(`/events/my-events?page=${page}&limit=10`, { params: filters }),
+  getEventsByUser: (userId, page = 1) =>
+    API.get(`/events?createdBy=${userId}&page=${page}&limit=10`),
 };
 
 // ===== PARTICIPATION =====

@@ -36,6 +36,7 @@ import BecomeCommunityManager from "./pages/BecomeCommunityManager";
 // Pages - Events
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
+import MyCommunityEvents from "./pages/MyCommunityEvents"; // ✅ NEW
 
 // Pages - Location
 import NearbyEvents from "./pages/NearbyEvents";
@@ -56,7 +57,7 @@ import Resources from "./pages/Resources";
 import CreateResource from "./pages/CreateResource";
 import ResourceDetail from "./pages/ResourceDetail";
 
-// --- (1) IMPORT NEW ADMIN PAGES ---
+// Pages - Admin
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -69,13 +70,11 @@ import AdminFeaturedResources from "./pages/admin/AdminFeaturedResources";
 import AdminEventManagement from "./pages/admin/AdminEventManagement";
 import AdminEventDetail from "./pages/admin/AdminEventDetail";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
-// --- (End 1) ---
 
-// --- (NEW) IMPORT ERROR & NOTIFICATION PAGES ---
+// Pages - Error & Notifications
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
-// --- (END NEW) ---
 
 // App Component
 const AppContent = () => {
@@ -128,6 +127,17 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* ✅ NEW: My Community Events (Community Manager Only) */}
+        <Route
+          path="/my-events"
+          element={
+            <ProtectedRoute requiredRole="moderator">
+              <MyCommunityEvents />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/profile/:userId"
           element={
@@ -288,7 +298,6 @@ const AppContent = () => {
         {/* =====================
           ADMIN ROUTES
           ===================== */}
-        {/* --- (2) ADDED NEW ADMIN ROUTES --- */}
         <Route
           path="/admin"
           element={
@@ -318,9 +327,10 @@ const AppContent = () => {
           <Route path="events/:eventId" element={<AdminEventDetail />} />
           <Route path="audit-log" element={<AdminAuditLog />} />
         </Route>
-        {/* --- (End 2) --- */}
 
-        {/* --- (UPDATED) NOTIFICATIONS ROUTE --- */}
+        {/* =====================
+          ERROR & NOTIFICATION ROUTES
+          ===================== */}
         <Route
           path="/notifications"
           element={
@@ -329,8 +339,6 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-
-        {/* --- (UPDATED) ERROR ROUTES --- */}
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

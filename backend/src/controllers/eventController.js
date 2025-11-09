@@ -170,21 +170,33 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// ✅ CORRECTED: Only moderators can create events
 export const createEvent = async (req, res) => {
   try {
     const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
       req.body;
     const userId = req.userId;
 
-    // ✅ Check if user is moderator or admin
+    console.log('📅 Create Event Request:', { 
+      title, 
+      community, 
+      createdBy: userId,
+      userRole: req.userRole 
+    });
+
+    // ✅ SECURITY CHECK #1: User must be moderator or admin
     if (!['moderator', 'admin'].includes(req.userRole)) {
       return res.status(403).json({
         success: false,
-        message: 'Only moderators can create events',
+        message: 'Only community managers can create events. Please apply to become a community manager.',
+        requiredRole: 'moderator',
+        currentRole: req.userRole,
+        actionLink: '/apply-community-manager',
       });
     }
 
+    console.log('✅ User is moderator or admin');
+
+    // ✅ SECURITY CHECK #2: Community must exist
     const communityExists = await Community.findById(community);
     if (!communityExists) {
       return res.status(404).json({
@@ -193,25 +205,36 @@ export const createEvent = async (req, res) => {
       });
     }
 
-    // ✅ Check if community is verified
+    console.log('✅ Community exists:', communityExists.name);
+
+    // ✅ SECURITY CHECK #3: Community must be verified
     if (communityExists.verificationStatus !== 'verified') {
       return res.status(400).json({
         success: false,
         message: 'Community must be verified before creating events',
         status: communityExists.verificationStatus,
+        hint: 'This community is pending verification. Please wait for admin approval.',
       });
     }
 
-    // ✅ Check if user is community manager (or admin)
+    console.log('✅ Community is verified');
+
+    // ✅ SECURITY CHECK #4: User must be the community manager (creator) or admin
     if (!communityExists.createdBy.equals(userId) && req.userRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Only the community manager can create events in this community',
+        communityManager: communityExists.createdBy,
+        currentUser: userId,
       });
     }
 
+    console.log('✅ User is community manager or admin');
+
+    // ✅ Build location object
     const locationData = buildLocationObject(location);
 
+    // ✅ Create event
     const event = await Event.create({
       title,
       description,
@@ -223,19 +246,36 @@ export const createEvent = async (req, res) => {
       category: category || 'Other',
       image,
       maxParticipants,
-      participants: [userId],
+      participants: [userId], // Creator is auto-participant
       status: 'Upcoming',
     });
 
-    await awardEventCreation(userId);
-    await pointsService.awardVolunteerEventCreationPoints(userId, event._id);
-    await pointsService.awardCommunityEventCreatedPoints(community);
+    console.log('✅ Event created:', event._id);
+
+    // ✅ Award points to event creator
+    try {
+      await awardEventCreation(userId);
+      await pointsService.awardVolunteerEventCreationPoints(userId, event._id);
+      await pointsService.awardCommunityEventCreatedPoints(community);
+      console.log('✅ Points awarded for event creation');
+    } catch (pointsError) {
+      logger.warn('⚠️ Could not award points:', pointsError.message);
+      // Don't fail the request if points fail
+    }
+
+    // ✅ Update community event count
     await Community.findByIdAndUpdate(community, { $inc: { totalEvents: 1 } });
 
+    console.log('✅ Community event count updated');
+
+    // ✅ Add event to user's events
     await User.findByIdAndUpdate(userId, {
       $addToSet: { eventsParticipated: event._id },
     });
 
+    console.log('✅ Event added to user events');
+
+    // ✅ Create activity record
     await Activity.create({
       user: userId,
       type: 'event_created',
@@ -243,14 +283,20 @@ export const createEvent = async (req, res) => {
       relatedEntity: {
         entityType: 'Event',
         entityId: event._id,
+        title: title,
       },
     });
 
-    logger.success(`Event created: ${event._id}`);
+    console.log('✅ Activity record created');
 
+    // ✅ Populate and format response
     const populatedEvent = await event
       .populate('createdBy', 'name profileImage')
       .populate('community', 'name');
+
+    console.log('✅ Event populated with relations');
+
+    logger.success(`Event created by ${userId}: ${event._id}`);
 
     res.status(201).json({
       success: true,
@@ -258,10 +304,12 @@ export const createEvent = async (req, res) => {
       event: formatEventWithCapacity(populatedEvent),
     });
   } catch (error) {
+    console.error('❌ Error creating event:', error);
     logger.error('Error creating event', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
     });
   }
 };
@@ -563,6 +611,39 @@ export const leaveEvent = async (req, res) => {
 
     console.log('✅ Participation record deleted:', result ? 'Found and deleted' : 'Not found');
 
+    // ✅ FIX #2: CREATE ACTIVITY RECORD FOR LEAVING EVENT
+    try {
+      await Activity.create({
+        user: userId,
+        type: 'event_left',  // ✅ NEW TYPE
+        description: `Left the event "${event.title}"`,
+        relatedEntity: {
+          entityType: 'Event',
+          entityId: event._id,
+          title: event.title,
+        },
+        metadata: {
+          eventTitle: event.title,
+          leftAt: new Date(),
+        },
+      });
+      console.log('✅ Activity record created for event leave');
+    } catch (activityError) {
+      logger.warn('⚠️ Could not create activity record for leave:', activityError.message);
+      // Don't fail the entire request if activity creation fails
+    }
+
+    // ✅ Notify participants of capacity update
+    socketService.updateEventCapacity(event._id, {
+      registered: event.participants.length,
+      available: event.maxParticipants
+        ? event.maxParticipants - event.participants.length
+        : null,
+      isFull: event.maxParticipants
+        ? event.participants.length >= event.maxParticipants
+        : false,
+    });
+
     logger.success(`User ${userId} left event ${id}`);
 
     res.json({
@@ -727,6 +808,91 @@ export const getEventParticipants = async (req, res) => {
   }
 };
 
+export const getMyCreatedEvents = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { page = 1, limit = 10, status = null, sortBy = 'recent' } = req.query;
+    
+    console.log('📅 Get My Created Events:', { userId, page, limit, status });
+
+    // ✅ Validate pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // ✅ Build query - only show events created by this user
+    let query = { createdBy: userId };
+
+    // ✅ Filter by status if provided
+    if (status && ['Upcoming', 'Ongoing', 'Completed', 'Cancelled'].includes(status)) {
+      query.status = status;
+    }
+
+    console.log('📋 Query:', query);
+
+    // ✅ Fetch events with proper sorting
+    const sortOrder = sortBy === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
+
+    const events = await Event.find(query)
+      .populate('community', 'name image _id verificationStatus')
+      .populate('createdBy', 'name profileImage email')
+      .sort(sortOrder)
+      .skip(skip)
+      .limit(limitNum);
+
+    console.log('✅ Found events:', events.length);
+
+    // ✅ Get total count for pagination
+    const total = await Event.countDocuments(query);
+
+    console.log('✅ Total events:', total);
+
+    // ✅ Format events with capacity information
+    const formattedEvents = events.map((event) => {
+      const eventObj = event.toObject ? event.toObject() : event;
+      return {
+        ...eventObj,
+        capacity: {
+          total: event.maxParticipants || null,
+          registered: event.participants ? event.participants.length : 0,
+          available: event.maxParticipants
+            ? Math.max(0, event.maxParticipants - (event.participants?.length || 0))
+            : null,
+          isFull: event.isFull && event.isFull(),
+          capacityPercentage: event.getCapacityPercentage && event.getCapacityPercentage(),
+        },
+      };
+    });
+
+    console.log('✅ Events formatted with capacity');
+
+    logger.success(`Retrieved ${events.length} events for user ${userId}`);
+
+    res.json({
+      success: true,
+      data: formattedEvents,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+      filters: {
+        status: status || 'All',
+        sortBy: sortBy || 'recent',
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error fetching user created events:', error);
+    logger.error('Error fetching user created events', error);
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
 export default {
   createEvent,
   getEvents,
@@ -736,4 +902,5 @@ export default {
   updateEvent,
   deleteEvent,
   getEventParticipants,
+  getMyCreatedEvents,
 };

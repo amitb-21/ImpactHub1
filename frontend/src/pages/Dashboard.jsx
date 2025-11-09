@@ -65,8 +65,6 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className={styles.container}>
-        {/* --- HEADER BLOCK REMOVED --- */}
-
         {/* Edit Profile Modal */}
         <Modal
           isOpen={showEditForm}
@@ -87,7 +85,6 @@ const Dashboard = () => {
           <div className={styles.leftColumn}>
             {/* Profile Card */}
             <div className={styles.section}>
-              {/* --- MODIFIED: Added onEdit prop to make the button work --- */}
               <ProfileCard
                 key={refreshKey}
                 user={user}
@@ -130,6 +127,15 @@ const Dashboard = () => {
                     description="Browse resources"
                     onClick={() => navigate("/resources")}
                   />
+
+                  {user?.role === "moderator" && (
+                    <QuickActionButton
+                      icon={FiCalendar}
+                      label="My Events"
+                      description="Manage created events"
+                      onClick={() => navigate("/my-events")}
+                    />
+                  )}
                 </div>
               </Card>
             </div>

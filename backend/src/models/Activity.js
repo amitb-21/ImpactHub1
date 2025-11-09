@@ -11,6 +11,7 @@ const activitySchema = new mongoose.Schema(
       type: String,
       enum: [
         'event_joined',
+        'event_left', 
         'event_created',
         'event_attended',
         'event_saved',
@@ -36,11 +37,12 @@ const activitySchema = new mongoose.Schema(
       required: true,
     },
     relatedEntity: {
-  entityType: {
-    type: String,
-    enum: ['Event', 'Community', 'Badge', 'User', 'CommunityManagerApplication'], // ✅ ADD THIS
-  },
-  entityId: mongoose.Schema.Types.ObjectId,
+      entityType: {
+        type: String,
+        enum: ['Event', 'Community', 'Badge', 'User', 'CommunityManagerApplication'], // ✅ ADD THIS
+      },
+      entityId: mongoose.Schema.Types.ObjectId,
+      title: String, 
 },
     metadata: {
       pointsEarned: {

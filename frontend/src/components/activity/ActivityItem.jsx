@@ -109,6 +109,11 @@ const getActivityInfo = (type) => {
       color: "#3b82f6",
       defaultDesc: "Joined an event",
     },
+    event_left: {
+      icon: "🚪",
+      color: "#f59e0b",
+      defaultDesc: "Left an event",
+    },
     event_attended: {
       icon: "✅",
       color: "#10b981",

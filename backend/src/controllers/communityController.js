@@ -135,7 +135,6 @@ export const joinCommunity = async (req, res) => {
       });
     }
 
-    // ✅ CORRECTED: Only verified communities can be joined
     if (community.verificationStatus !== 'verified') {
       return res.status(400).json({
         success: false,
@@ -160,7 +159,6 @@ export const joinCommunity = async (req, res) => {
       $addToSet: { communitiesJoined: id },
     });
 
-    // Award points for joining
     await pointsService.awardCommunityMemberJoinedPoints(id, userId);
 
     await Activity.create({
@@ -181,10 +179,17 @@ export const joinCommunity = async (req, res) => {
       profileImage: user.profileImage,
     });
 
+    // ✅ FIXED: Return updated community with populated members
+    const updatedCommunity = await Community.findById(id)
+      .populate('createdBy', 'name profileImage')
+      .populate('members', 'name profileImage email');
+
     res.json({
       success: true,
       message: 'Joined community successfully',
-      community,
+      community: updatedCommunity,
+      isMember: true,
+      userId: userId,
     });
   } catch (error) {
     logger.error('Error joining community', error);

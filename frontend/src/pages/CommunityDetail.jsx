@@ -1,4 +1,4 @@
-/* frontend/src/pages/CommunityDetail.jsx */
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,7 +12,7 @@ import {
 import { fetchCommunityActivities } from "../store/slices/activitySlice";
 // --- (1) IMPORTS ADDED ---
 import { fetchEntityRatings } from "../store/slices/ratingSlice";
-import { getParticipationDetails } from "../store/slices/participationSlice"; // <-- Corrected import
+import { getParticipationDetails } from "../store/slices/participationSlice";
 import RatingStats from "../components/rating/RatingStats";
 import RatingList from "../components/rating/RatingList";
 import RatingForm from "../components/rating/RatingForm";
@@ -37,33 +37,28 @@ import {
   FiMapPin,
   FiCalendar,
   FiShare2,
-  FiArrowRight, // <-- IMPORTED
+  FiArrowRight,
 } from "react-icons/fi";
 import styles from "./styles/CommunityDetail.module.css";
-import { usePagination } from "../hooks/usePagination"; // <-- (2) IMPORT PAGINATION
+import { usePagination } from "../hooks/usePagination";
 
 const CommunityDetail = () => {
   const { communityId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user: currentUser, isAuthenticated } = useAuth(); // <-- Get isAuthenticated
+  const { user: currentUser, isAuthenticated } = useAuth();
   const { joinCommunity: joinCommunitySocket } = useSocket();
 
   // Redux selectors
   const { currentCommunity, isLoading, error } = useSelector(
     (state) => state.community
   );
-  // --- (2) RATING AND PARTICIPATION STATE ---
   const { entityRatings, myRating } = useSelector((state) => state.rating);
-  // We need to know the user's participation status for this event
   const { participationDetail } = useSelector((state) => state.participation);
-  // --- (End 2) ---
-  // --- (3) GET ACTIVITY STATE ---
   const { activities: communityActivities, status: activityStatus } =
     useSelector((state) => state.activities);
-  // --- (End 3) ---
 
-  // Local state
+  // ✅ LOCAL STATE - KEY FIX
   const [showEditForm, setShowEditForm] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -81,14 +76,14 @@ const CommunityDetail = () => {
     goToPage: goToActivityPage,
     startIndex: activityStartIndex,
     endIndex: activityEndIndex,
-  } = usePagination(activityPaginationData.total, 1, 10); // 10 per page
+  } = usePagination(activityPaginationData.total, 1, 10);
   // --- (End 4) ---
 
-  // Fetch community data on mount
+  // ✅ EFFECT 1: Fetch community data on mount
   useEffect(() => {
     if (communityId) {
+      console.log("📍 Fetching community:", communityId);
       dispatch(fetchCommunityById(communityId));
-      // --- (5) ADD activityPage dependency ---
       dispatch(
         fetchCommunityActivities({
           communityId,
@@ -100,56 +95,107 @@ const CommunityDetail = () => {
         fetchEntityRatings({ entityType: "Community", entityId: communityId })
       );
     }
-  }, [communityId, dispatch, activityPage]); // <-- (5) ADD activityPage dependency
+  }, [communityId, dispatch, activityPage]);
 
-  // Check if current user is member or owner
+  // ✅ EFFECT 2: Check if current user is member or owner - THIS IS THE KEY FIX
   useEffect(() => {
     if (currentCommunity && currentUser) {
-      const memberIds = currentCommunity.members?.map((m) => m._id) || [];
-      setIsMember(memberIds.includes(currentUser._id));
-      setIsOwner(currentCommunity.createdBy?._id === currentUser._id);
+      console.log("👤 Checking membership status...", {
+        communityId: currentCommunity._id,
+        userId: currentUser._id,
+        members: currentCommunity.members?.map((m) => m._id || m),
+      });
+
+      // Convert member IDs to strings for comparison
+      const memberIds =
+        currentCommunity.members?.map((m) => {
+          // Handle both ObjectId and populated objects
+          return m._id ? m._id.toString() : m.toString();
+        }) || [];
+
+      const isMemberNow = memberIds.includes(currentUser._id);
+      console.log("✅ Is member:", isMemberNow);
+      setIsMember(isMemberNow);
+
+      // Check if user is owner
+      const isOwnerNow =
+        currentCommunity.createdBy?._id === currentUser._id ||
+        currentCommunity.createdBy?.toString() === currentUser._id;
+      console.log("✅ Is owner:", isOwnerNow);
+      setIsOwner(isOwnerNow);
     }
   }, [currentCommunity, currentUser]);
 
   // Join Socket.io community room
   useEffect(() => {
     if (communityId && isMember) {
+      console.log("🔌 Joining socket room:", communityId);
       joinCommunitySocket(communityId);
     }
   }, [communityId, isMember, joinCommunitySocket]);
 
-  // --- (4) FETCH PARTICIPATION STATUS (Note: This logic seems copied from EventDetail and might be incorrect here) ---
-  // We need to know if the user attended to show the rating form
   useEffect(() => {
-    // This logic is likely flawed as participationId is not being correctly set for communities
     if (currentUser && isMember && participationId) {
-      // Fetch the detailed participation record to check 'status'
       dispatch(getParticipationDetails(participationId));
     }
   }, [currentUser, isMember, participationId, dispatch]);
-  // --- (End 4) ---
 
-  // Handle join community
+  // ✅ HANDLE JOIN COMMUNITY - IMPROVED WITH LOCAL STATE UPDATE
   const handleJoinCommunity = async () => {
+    console.log("🔄 Joining community...");
     setIsJoining(true);
-    const result = await dispatch(joinCommunity(communityId));
-    setIsJoining(false);
-    if (result.payload) {
-      setIsMember(true);
-      joinCommunitySocket(communityId);
-      // Refetch community data to get updated member list
-      dispatch(fetchCommunityById(communityId));
+    try {
+      const result = await dispatch(joinCommunity(communityId));
+
+      console.log("📦 Join result:", result);
+
+      if (result.payload) {
+        console.log("✅ Join successful! Updating local state...");
+
+        // ✅ CRITICAL: Update local state immediately for instant UI feedback
+        setIsMember(true);
+
+        // Refetch community data to ensure sync with backend
+        console.log("🔄 Refetching community data...");
+        dispatch(fetchCommunityById(communityId));
+
+        // Join socket room
+        joinCommunitySocket(communityId);
+
+        console.log('✅ Button should now show "Leave Community"');
+      } else {
+        console.error("❌ Join failed:", result.error);
+      }
+    } catch (err) {
+      console.error("❌ Error joining community:", err);
+    } finally {
+      setIsJoining(false);
     }
   };
 
-  // Handle leave community
+  // ✅ HANDLE LEAVE COMMUNITY - IMPROVED WITH LOCAL STATE UPDATE
   const handleLeaveCommunity = async () => {
     if (window.confirm("Are you sure you want to leave this community?")) {
-      const result = await dispatch(leaveCommunity(communityId));
-      if (result.payload === communityId) {
-        setIsMember(false);
-        // Refetch community data to get updated member list
-        dispatch(fetchCommunityById(communityId));
+      console.log("🔄 Leaving community...");
+      try {
+        const result = await dispatch(leaveCommunity(communityId));
+
+        console.log("📦 Leave result:", result);
+
+        if (result.payload === communityId) {
+          console.log("✅ Leave successful! Updating local state...");
+
+          // ✅ CRITICAL: Update local state immediately for instant UI feedback
+          setIsMember(false);
+
+          // Refetch community data to ensure sync with backend
+          console.log("🔄 Refetching community data...");
+          dispatch(fetchCommunityById(communityId));
+
+          console.log('✅ Button should now show "Join Community"');
+        }
+      } catch (err) {
+        console.error("❌ Error leaving community:", err);
       }
     }
   };
@@ -206,8 +252,6 @@ const CommunityDetail = () => {
   const isVerified = currentCommunity.verificationStatus === "verified";
 
   // --- (5) RATING FORM VISIBILITY LOGIC ---
-  // Backend `createRating` for Community checks if user is member OR has attended an event.
-  // We can just check `isMember` on the frontend as a simple proxy.
   const showRatingForm = isAuthenticated && isMember && !myRating;
   const showUpdateForm = isAuthenticated && isMember && myRating;
   const showJoinMessage = isAuthenticated && !isMember;
@@ -319,7 +363,7 @@ const CommunityDetail = () => {
               )}
             </div>
 
-            {/* Join Button */}
+            {/* ✅ JOIN/LEAVE BUTTON GROUP - THIS IS THE FIX */}
             <div className={styles.buttonGroup}>
               {!isMember ? (
                 <Button
@@ -408,8 +452,6 @@ const CommunityDetail = () => {
               {showJoinMessage && (
                 <Card padding="lg" shadow="md">
                   <p className={styles.participantNote}>
-                    {" "}
-                    {/* Using shared style */}
                     You must join this community to leave a review.
                   </p>
                 </Card>
@@ -419,8 +461,6 @@ const CommunityDetail = () => {
               {showLoginMessage && (
                 <Card padding="lg" shadow="md">
                   <p className={styles.participantNote}>
-                    {" "}
-                    {/* Using shared style */}
                     Please{" "}
                     <a
                       href="/login"
