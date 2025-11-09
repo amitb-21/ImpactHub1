@@ -116,7 +116,8 @@ const Communities = () => {
             <Button
               size="md"
               variant="outline"
-              onClick={() => navigate("/become-community-manager")}
+              // ✅ FIX: Corrected navigation link
+              onClick={() => navigate("/apply-community-manager")}
             >
               Apply to Become a Community Manager
             </Button>

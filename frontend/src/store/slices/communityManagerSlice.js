@@ -8,7 +8,39 @@ export const applyAsCommunityManager = createAsyncThunk(
   'communityManager/apply',
   async (data, { rejectWithValue }) => {
     try {
-      const response = await communityManagerAPI.apply(data);
+      // ✅ FIX: Restructure flat form data 'data' into the nested
+      // structure the backend API expects.
+      const structuredData = {
+        communityDetails: {
+          name: data.communityName,
+          description: data.description,
+          category: data.category,
+          location: {
+            city: data.city,
+            // Add other location fields if you collect them
+          },
+          contactEmail: data.contactEmail,
+        },
+        organizationDetails: {
+          registrationNumber: data.registrationNumber,
+          foundedYear: data.foundedYear,
+          totalMembers: data.memberCount, // Renamed from memberCount
+          activeMembers: data.activeMembers,
+          pastEventsOrganized: data.pastEventsCount, // Renamed from pastEventsCount
+          organizationType: data.organizationType,
+        },
+        managerExperience: {
+          yearsOfExperience: data.yearsExperience,
+          previousRoles: data.previousRoles,
+          motivation: data.motivation,
+          goals: data.goals,
+        },
+        documents: [], // Document upload can be added later
+        communicationPreference: { email: true, inApp: true },
+      };
+
+      // Send the correctly structured data
+      const response = await communityManagerAPI.apply(structuredData);
       toast.success('Application submitted! Awaiting admin review (3-5 business days).');
       return response.data.application || response.data;
     } catch (error) {

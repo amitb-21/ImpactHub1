@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react"; // Added useEffect
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { applyAsCommunityManager } from "../../store/slices/communityManagerSlice";
-import { refreshPendingCMApplications } from "../../store/slices/adminSlice";
+// ✅ FIX 4: Removed incorrect admin slice import
+// import { refreshPendingCMApplications } from "../../store/slices/adminSlice"; 
 import { Card } from "../common/Card";
 import { Button } from "../common/Button";
 import {
@@ -16,34 +17,61 @@ import {
 import { z } from "zod";
 import debounce from "lodash/debounce";
 import styles from "./styles/CMApplicationForm.module.css";
+import { API_KEYS } from "../../config/api"; // ✅ FIX 3: Import API_KEYS
 
-// Validation schema
+// ✅ FIX 2: Updated validation schema to match backend controller
 const cmApplicationSchema = z.object({
-  communityName: z.string().min(3, "Community name required"),
-  description: z.string().min(20, "Description min 20 chars"),
-  category: z.string().min(1, "Category required"),
-  city: z.string().min(2, "City required"),
-  registrationNumber: z.string().min(1, "Registration number required"),
-  foundedYear: z.number().min(1900).max(new Date().getFullYear()),
-  memberCount: z.number().min(1),
-  pastEventsCount: z.number().min(0),
-  yearsExperience: z.number().min(0),
-  previousRoles: z.string().optional(),
-  motivation: z.string().min(20, "Motivation min 20 chars"),
-  goals: z.string().min(20, "Goals min 20 chars"),
+  // Step 1
+  communityName: z.string().min(3, "Community name is required"),
+  description: z.string().min(20, "Description must be at least 20 characters"),
+  category: z.string().min(1, "Category is required"),
+  city: z.string().min(2, "City is required"),
+  contactEmail: z.string().email("A valid contact email is required"),
+
+  // Step 2
+  organizationType: z.string().min(1, "Organization type is required"),
+  registrationNumber: z.string().min(1, "Registration number is required"),
+  foundedYear: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1900, "Invalid year").max(new Date().getFullYear(), "Year cannot be in the future")
+  ),
+  memberCount: z.preprocess( // Renamed from totalMembers in backend
+    (val) => Number(val),
+    z.number().min(1, "Must have at least 1 member")
+  ),
+  activeMembers: z.preprocess( // Added
+    (val) => Number(val),
+    z.number().min(1, "Must have at least 1 active member")
+  ),
+  pastEventsCount: z.preprocess( // Renamed from pastEventsOrganized
+    (val) => Number(val),
+    z.number().min(0, "Cannot be negative")
+  ),
+
+  // Step 3
+  yearsExperience: z.preprocess(
+    (val) => Number(val),
+    z.number().min(0, "Cannot be negative")
+  ),
+  previousRoles: z.string().min(30, "Please describe your roles in at least 30 characters"),
+  motivation: z.string().min(50, "Motivation must be at least 50 characters"),
+  goals: z.string().min(50, "Goals must be at least 50 characters"),
 });
+
 
 const STEPS = [
   {
     title: "Community Details",
-    fields: ["communityName", "description", "category", "city"],
+    fields: ["communityName", "description", "category", "city", "contactEmail"], // Added contactEmail
   },
   {
     title: "Organization",
     fields: [
+      "organizationType", // Added
       "registrationNumber",
       "foundedYear",
       "memberCount",
+      "activeMembers", // Added
       "pastEventsCount",
     ],
   },
@@ -60,6 +88,15 @@ const COMMUNITY_CATEGORIES = [
   "Health",
   "Social",
   "Other",
+];
+
+// ✅ FIX 2: Added Organization Types
+const ORGANIZATION_TYPES = [
+  'NGO', 
+  'Social Group', 
+  'Community Initiative', 
+  'Non-Profit', 
+  'Other'
 ];
 
 const CMApplicationForm = ({ onSuccess }) => {
@@ -96,6 +133,13 @@ const CMApplicationForm = ({ onSuccess }) => {
         return;
       }
 
+      // ✅ FIX 3: Use API_KEYS.GEODB_API_KEY
+      if (!API_KEYS.GEODB_API_KEY) {
+        console.error("VITE_GEODB_API_KEY is not set. City search will not work.");
+        setCityLoading(false);
+        return;
+      }
+
       setCityLoading(true);
       try {
         const response = await fetch(
@@ -105,7 +149,8 @@ const CMApplicationForm = ({ onSuccess }) => {
           {
             method: "GET",
             headers: {
-              "X-RapidAPI-Key": process.env.REACT_APP_GEODB_API_KEY,
+              // ✅ FIX 3: Correct API key usage
+              "X-RapidAPI-Key": API_KEYS.GEODB_API_KEY,
               "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com",
             },
           }
@@ -143,7 +188,7 @@ const CMApplicationForm = ({ onSuccess }) => {
   };
 
   // Close suggestions when clicking outside
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         suggestionsRef.current &&
@@ -183,22 +228,16 @@ const CMApplicationForm = ({ onSuccess }) => {
     console.log("📝 Submitting application...", data);
 
     try {
+      // ✅ FIX 1: The `applyAsCommunityManager` thunk now handles restructuring
       const result = await dispatch(applyAsCommunityManager(data));
 
       console.log("✅ Application result:", result);
 
       if (result.payload) {
         console.log("✅ Application submitted successfully:", result.payload);
-
-        // ✅ REFRESH ADMIN'S PENDING APPLICATIONS
-        console.log("🔄 Refreshing pending CM applications for admin...");
-        try {
-          const refreshResult = await dispatch(refreshPendingCMApplications());
-          console.log("✅ Admin queue refreshed:", refreshResult.payload);
-        } catch (err) {
-          console.warn("⚠️ Could not refresh admin queue:", err);
-          // Don't fail - user app was still submitted
-        }
+        
+        // ✅ FIX 4: Removed the incorrect admin thunk call.
+        // The success callback is all that's needed.
 
         // Call success callback
         if (onSuccess) {
@@ -266,7 +305,7 @@ const CMApplicationForm = ({ onSuccess }) => {
               label="Description"
               error={errors.description}
               register={register("description")}
-              placeholder="What does your community do?"
+              placeholder="What does your community do? (Min 20 chars)"
               textarea
               rows={4}
             />
@@ -329,6 +368,15 @@ const CMApplicationForm = ({ onSuccess }) => {
                 </span>
               )}
             </div>
+
+            {/* ✅ FIX 2: Added Contact Email Field */}
+            <FormField
+              label="Public Contact Email"
+              error={errors.contactEmail}
+              register={register("contactEmail")}
+              placeholder="public.contact@myorg.com"
+              type="email"
+            />
           </Card>
         )}
 
@@ -339,6 +387,16 @@ const CMApplicationForm = ({ onSuccess }) => {
             <p className={styles.stepDescription}>
               Information about your organization
             </p>
+
+            {/* ✅ FIX 2: Added Organization Type Field */}
+            <FormField
+              label="Organization Type"
+              error={errors.organizationType}
+              register={register("organizationType")}
+              select
+              options={ORGANIZATION_TYPES}
+              placeholder="Select organization type"
+            />
 
             <FormField
               label="Registration Number"
@@ -351,27 +409,38 @@ const CMApplicationForm = ({ onSuccess }) => {
               <FormField
                 label="Founded Year"
                 error={errors.foundedYear}
-                register={register("foundedYear", { valueAsNumber: true })}
+                register={register("foundedYear")}
                 type="number"
                 placeholder="Year"
               />
 
               <FormField
-                label="Current Members"
-                error={errors.memberCount}
-                register={register("memberCount", { valueAsNumber: true })}
+                label="Past Events Organized"
+                error={errors.pastEventsCount}
+                register={register("pastEventsCount")}
                 type="number"
-                placeholder="Approx. count"
+                placeholder="How many events?"
               />
             </div>
-
-            <FormField
-              label="Past Events Organized"
-              error={errors.pastEventsCount}
-              register={register("pastEventsCount", { valueAsNumber: true })}
-              type="number"
-              placeholder="How many events?"
-            />
+            
+            <div className={styles.gridTwoColumns}>
+              <FormField
+                label="Total Members"
+                error={errors.memberCount}
+                register={register("memberCount")}
+                type="number"
+                placeholder="Approx. total members"
+              />
+              
+              {/* ✅ FIX 2: Added Active Members Field */}
+              <FormField
+                label="Active Members"
+                error={errors.activeMembers}
+                register={register("activeMembers")}
+                type="number"
+                placeholder="Approx. active members"
+              />
+            </div>
           </Card>
         )}
 
@@ -384,38 +453,38 @@ const CMApplicationForm = ({ onSuccess }) => {
             </p>
 
             <FormField
-              label="Years of Experience"
+              label="Years of Experience (Managing Communities)"
               error={errors.yearsExperience}
-              register={register("yearsExperience", { valueAsNumber: true })}
+              register={register("yearsExperience")}
               type="number"
               placeholder="Years"
             />
 
             <FormField
-              label="Previous Roles"
+              label="Previous Roles (Min 30 chars)"
               error={errors.previousRoles}
               register={register("previousRoles")}
               placeholder="Coordinator, Manager, Founder, etc."
               textarea
-              rows={2}
+              rows={3}
             />
 
             <FormField
-              label="Motivation"
+              label="Motivation (Min 50 chars)"
               error={errors.motivation}
               register={register("motivation")}
               placeholder="Why do you want to create this community?"
               textarea
-              rows={3}
+              rows={4}
             />
 
             <FormField
-              label="Community Goals"
+              label="Community Goals (Min 50 chars)"
               error={errors.goals}
               register={register("goals")}
               placeholder="What do you want to achieve?"
               textarea
-              rows={3}
+              rows={4}
             />
           </Card>
         )}
@@ -432,16 +501,19 @@ const CMApplicationForm = ({ onSuccess }) => {
               <ReviewRow label="Name" value={formData.communityName} />
               <ReviewRow label="Category" value={formData.category} />
               <ReviewRow label="City" value={formData.city} />
+              <ReviewRow label="Contact Email" value={formData.contactEmail} />
               <ReviewRow label="Description" value={formData.description} />
             </ReviewSection>
 
             <ReviewSection title="Organization">
+              <ReviewRow label="Type" value={formData.organizationType} />
               <ReviewRow
                 label="Reg. Number"
                 value={formData.registrationNumber}
               />
               <ReviewRow label="Founded" value={formData.foundedYear} />
-              <ReviewRow label="Members" value={formData.memberCount} />
+              <ReviewRow label="Total Members" value={formData.memberCount} />
+              <ReviewRow label="Active Members" value={formData.activeMembers} />
               <ReviewRow label="Past Events" value={formData.pastEventsCount} />
             </ReviewSection>
 

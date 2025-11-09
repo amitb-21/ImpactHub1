@@ -18,26 +18,36 @@ import styles from "./styles/BecomeCommunityManager.module.css";
 const BecomeCommunityManager = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { myApplication, successMessage, error } = useSelector(
+  const { myApplication, successMessage, error, isLoading } = useSelector(
     (state) => state.communityManager
   );
-  const [view, setView] = useState("status");
+  const [view, setView] = useState("loading"); // Start with loading state
   const [showForm, setShowForm] = useState(false);
   const formRef = useRef(null);
+  const hasInitialized = useRef(false);
 
-  // Fetch current application on mount
+  // Fetch current application on mount ONLY
   useEffect(() => {
-    dispatch(getMyApplication());
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      dispatch(getMyApplication());
+    }
   }, [dispatch]);
 
-  // Determine which view to show
+  // Determine which view to show based on myApplication - ONLY run once after data loads
   useEffect(() => {
-    if (!myApplication) {
-      setView("form");
-    } else {
-      setView("status");
+    if (isLoading) {
+      setView("loading");
+      return;
     }
-  }, [myApplication]);
+
+    // After loading is complete, determine view
+    if (myApplication) {
+      setView("status");
+    } else {
+      setView("form");
+    }
+  }, [isLoading, myApplication]); // Only depends on loading and application existence
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -53,6 +63,7 @@ const BecomeCommunityManager = () => {
   // Handle form submission success
   const handleFormSuccess = () => {
     setShowForm(false);
+    // Refetch application after successful submission
     dispatch(getMyApplication());
   };
 
@@ -157,8 +168,19 @@ const BecomeCommunityManager = () => {
 
         {/* Main Content Section */}
         <div className={styles.mainContent}>
+          {/* Loading State */}
+          {view === "loading" && (
+            <section className={styles.ctaSection}>
+              <Card padding="xl" shadow="md" className={styles.ctaCard}>
+                <div className={styles.ctaContent}>
+                  <p>Loading...</p>
+                </div>
+              </Card>
+            </section>
+          )}
+
           {/* Application Status or CTA */}
-          {!showForm && myApplication && (
+          {view === "status" && !showForm && myApplication && (
             <section className={styles.statusSection}>
               <CMApplicationStatus
                 onReapply={handleReapply}
@@ -167,7 +189,7 @@ const BecomeCommunityManager = () => {
             </section>
           )}
 
-          {!showForm && !myApplication && (
+          {view === "form" && !showForm && !myApplication && (
             <section className={styles.ctaSection}>
               <Card padding="xl" shadow="md" className={styles.ctaCard}>
                 <div className={styles.ctaContent}>
