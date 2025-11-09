@@ -36,6 +36,11 @@ const styles = {
     color: "#666",
     borderBottom: "3px solid transparent",
     marginBottom: "-2px",
+    background: "none",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   },
   tabActive: { color: "#00796B", borderBottomColor: "#00796B" },
   tableWrapper: { overflowX: "auto" },
@@ -57,6 +62,13 @@ const styles = {
   row: { cursor: "pointer", transition: "background-color 0.2s" },
   rowHover: { backgroundColor: "#f9f9f9" },
   emptyState: { textAlign: "center", padding: "40px", color: "#666" },
+  errorBox: {
+    padding: "12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    borderRadius: "6px",
+    marginBottom: "16px",
+  },
 };
 
 const VerificationQueue = () => {
@@ -65,9 +77,11 @@ const VerificationQueue = () => {
   const navigate = useNavigate();
 
   // CM Applications State
-  const { pendingCMApplications, isLoading: cmLoading } = useSelector(
-    (state) => state.admin
-  );
+  const {
+    pendingCMApplications,
+    isLoading: cmLoading,
+    error,
+  } = useSelector((state) => state.admin);
   const cmPaginationHook = usePagination(
     pendingCMApplications.pagination?.total || 0,
     1,
@@ -87,22 +101,32 @@ const VerificationQueue = () => {
   // Fetch CM Applications when tab or page changes
   useEffect(() => {
     if (activeTab === "cm") {
-      dispatch(getPendingCMApplications(cmPaginationHook.page));
+      dispatch(getPendingCMApplications(cmPaginationHook.page)).catch((err) => {
+        console.error("Error fetching CM applications:", err);
+      });
     }
   }, [dispatch, activeTab, cmPaginationHook.page]);
 
   // Fetch Resources when tab or page changes
   useEffect(() => {
     if (activeTab === "resources") {
-      dispatch(getPendingResources(resPaginationHook.page));
+      dispatch(getPendingResources(resPaginationHook.page)).catch((err) => {
+        console.error("Error fetching pending resources:", err);
+      });
     }
   }, [dispatch, activeTab, resPaginationHook.page]);
 
   const renderCMApplications = () => {
-    if (cmLoading && pendingCMApplications.data.length === 0) {
-      return <Loader text="Loading applications..." />;
+    const isLoading = cmLoading && pendingCMApplications.data?.length === 0;
+
+    if (isLoading) {
+      return <Loader text="Loading community manager applications..." />;
     }
-    if (pendingCMApplications.data.length === 0) {
+
+    if (
+      !pendingCMApplications.data ||
+      pendingCMApplications.data.length === 0
+    ) {
       return (
         <div style={styles.emptyState}>
           No pending community manager applications.
@@ -118,6 +142,7 @@ const VerificationQueue = () => {
               <tr>
                 <th style={styles.th}>Applicant</th>
                 <th style={styles.th}>Community Name</th>
+                <th style={styles.th}>Category</th>
                 <th style={styles.th}>Submitted</th>
                 <th style={styles.th}>Actions</th>
               </tr>
@@ -127,7 +152,6 @@ const VerificationQueue = () => {
                 <tr
                   key={app._id}
                   style={styles.row}
-                  onClick={() => navigate(`/admin/cm-applications/${app._id}`)}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor =
                       styles.rowHover.backgroundColor)
@@ -136,11 +160,22 @@ const VerificationQueue = () => {
                     (e.currentTarget.style.backgroundColor = "transparent")
                   }
                 >
-                  <td style={styles.td}>{app.applicant?.name}</td>
-                  <td style={styles.td}>{app.communityDetails?.name}</td>
+                  <td style={styles.td}>{app.applicant?.name || "Unknown"}</td>
+                  <td style={styles.td}>
+                    {app.communityDetails?.name || app.communityName || "N/A"}
+                  </td>
+                  <td style={styles.td}>
+                    {app.communityDetails?.category || app.category || "N/A"}
+                  </td>
                   <td style={styles.td}>{timeAgo(app.createdAt)}</td>
                   <td style={styles.td}>
-                    <Button size="sm" variant="primary">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() =>
+                        navigate(`/admin/cm-applications/${app._id}`)
+                      }
+                    >
                       Review
                     </Button>
                   </td>
@@ -154,7 +189,7 @@ const VerificationQueue = () => {
             page={cmPaginationHook.page}
             totalPages={cmPaginationHook.totalPages}
             onPageChange={cmPaginationHook.goToPage}
-            total={pendingCMApplications.pagination.total}
+            total={pendingCMApplications.pagination?.total || 0}
             startIndex={cmPaginationHook.startIndex}
             endIndex={cmPaginationHook.endIndex}
           />
@@ -164,10 +199,13 @@ const VerificationQueue = () => {
   };
 
   const renderResources = () => {
-    if (resLoading && pendingResources.data.length === 0) {
-      return <Loader text="Loading resources..." />;
+    const isLoading = resLoading && pendingResources.data?.length === 0;
+
+    if (isLoading) {
+      return <Loader text="Loading pending resources..." />;
     }
-    if (pendingResources.data.length === 0) {
+
+    if (!pendingResources.data || pendingResources.data.length === 0) {
       return (
         <div style={styles.emptyState}>No pending resources for approval.</div>
       );
@@ -191,7 +229,6 @@ const VerificationQueue = () => {
                 <tr
                   key={res._id}
                   style={styles.row}
-                  onClick={() => navigate(`/admin/resources/${res._id}`)}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor =
                       styles.rowHover.backgroundColor)
@@ -200,14 +237,18 @@ const VerificationQueue = () => {
                     (e.currentTarget.style.backgroundColor = "transparent")
                   }
                 >
-                  <td style={styles.td}>{res.title}</td>
-                  <td style={styles.td}>{res.author?.name}</td>
+                  <td style={styles.td}>{res.title || "N/A"}</td>
+                  <td style={styles.td}>{res.author?.name || "N/A"}</td>
                   <td style={styles.td}>
-                    <Badge label={res.type} variant="info" size="sm" />
+                    <Badge label={res.type || "N/A"} variant="info" size="sm" />
                   </td>
                   <td style={styles.td}>{timeAgo(res.createdAt)}</td>
                   <td style={styles.td}>
-                    <Button size="sm" variant="primary">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => navigate(`/admin/resources/${res._id}`)}
+                    >
                       Review
                     </Button>
                   </td>
@@ -221,7 +262,7 @@ const VerificationQueue = () => {
             page={resPaginationHook.page}
             totalPages={resPaginationHook.totalPages}
             onPageChange={resPaginationHook.goToPage}
-            total={pendingResources.pagination.total}
+            total={pendingResources.pagination?.total || 0}
             startIndex={resPaginationHook.startIndex}
             endIndex={resPaginationHook.endIndex}
           />
@@ -236,6 +277,12 @@ const VerificationQueue = () => {
         <h1 style={styles.title}>Verification Queue</h1>
       </div>
 
+      {error && (
+        <div style={styles.errorBox}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
       <div style={styles.tabs}>
         <button
           style={{
@@ -244,8 +291,8 @@ const VerificationQueue = () => {
           }}
           onClick={() => setActiveTab("cm")}
         >
-          <FiUsers /> Community Managers (
-          {pendingCMApplications.pagination?.total || 0})
+          <FiUsers size={18} />
+          Community Managers ({pendingCMApplications.pagination?.total || 0})
         </button>
         <button
           style={{
@@ -254,8 +301,8 @@ const VerificationQueue = () => {
           }}
           onClick={() => setActiveTab("resources")}
         >
-          <FiBookOpen /> Pending Resources (
-          {pendingResources.pagination?.total || 0})
+          <FiBookOpen size={18} />
+          Pending Resources ({pendingResources.pagination?.total || 0})
         </button>
       </div>
 

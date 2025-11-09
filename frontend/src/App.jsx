@@ -314,7 +314,7 @@ const AppContent = () => {
         />
 
         {/* =====================
-          ADMIN ROUTES
+          ADMIN ROUTES - ✅ VERIFIED COMPLETE
           ===================== */}
         <Route
           path="/admin"
@@ -324,14 +324,23 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         >
+          {/* Dashboard */}
           <Route index element={<AdminDashboard />} />
+
+          {/* User Management */}
           <Route path="users" element={<UserManagement />} />
+
+          {/* Community Management */}
           <Route path="communities" element={<CommunityManagement />} />
+
+          {/* Verification Queue (CM Applications + Resources) */}
           <Route path="verification" element={<VerificationQueue />} />
           <Route
             path="cm-applications/:appId"
             element={<AdminCMApplicationReview />}
           />
+
+          {/* Resource Management - ✅ COMPLETE */}
           <Route path="resources" element={<AdminResourceList />} />
           <Route
             path="resources/featured"
@@ -341,8 +350,12 @@ const AppContent = () => {
             path="resources/:resourceId"
             element={<AdminResourceReview />}
           />
+
+          {/* Event Management */}
           <Route path="events" element={<AdminEventManagement />} />
           <Route path="events/:eventId" element={<AdminEventDetail />} />
+
+          {/* Audit Log */}
           <Route path="audit-log" element={<AdminAuditLog />} />
         </Route>
 

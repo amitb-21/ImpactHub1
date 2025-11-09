@@ -82,11 +82,12 @@ const styles = {
     gap: "12px",
     marginTop: "16px",
   },
+  emptyState: { textAlign: "center", padding: "40px", color: "#666" },
 };
 
 const CommunityManagement = () => {
   const dispatch = useDispatch();
-  const { communities, pagination, isLoading } = useSelector(
+  const { communities, pagination, isLoading, isUpdating, error } = useSelector(
     (state) => state.admin
   );
 
@@ -98,6 +99,7 @@ const CommunityManagement = () => {
   const [selectedComm, setSelectedComm] = useState(null);
   const [modalAction, setModalAction] = useState(null); // 'deactivate', 'reactivate'
   const [searchTerm, setSearchTerm] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const { page, totalPages, goToPage, startIndex, endIndex } = usePagination(
     pagination?.total || 0,
@@ -129,6 +131,7 @@ const CommunityManagement = () => {
   };
 
   const openModal = (action, community) => {
+    setActionError("");
     setSelectedComm(community);
     setModalAction(action);
   };
@@ -136,22 +139,41 @@ const CommunityManagement = () => {
   const closeModal = () => {
     setSelectedComm(null);
     setModalAction(null);
+    setActionError("");
   };
 
   const handleConfirmAction = () => {
-    if (!selectedComm) return;
-
-    if (modalAction === "deactivate") {
-      dispatch(
-        deactivateCommunity({
-          communityId: selectedComm._id,
-          reason: "Admin action",
-        })
-      );
-    } else if (modalAction === "reactivate") {
-      dispatch(reactivateCommunity(selectedComm._id));
+    if (!selectedComm) {
+      setActionError("Community not found");
+      return;
     }
-    closeModal();
+
+    try {
+      if (modalAction === "deactivate") {
+        dispatch(
+          deactivateCommunity({
+            communityId: selectedComm._id,
+            reason: "Admin action",
+          })
+        ).then((result) => {
+          if (result.payload?.success) {
+            closeModal();
+          } else {
+            setActionError("Failed to deactivate community");
+          }
+        });
+      } else if (modalAction === "reactivate") {
+        dispatch(reactivateCommunity(selectedComm._id)).then((result) => {
+          if (result.payload?.success) {
+            closeModal();
+          } else {
+            setActionError("Failed to reactivate community");
+          }
+        });
+      }
+    } catch (err) {
+      setActionError(err.message || "An error occurred");
+    }
   };
 
   return (
@@ -159,6 +181,16 @@ const CommunityManagement = () => {
       <div style={styles.header}>
         <h1 style={styles.title}>Community Management</h1>
       </div>
+
+      {error && (
+        <Card
+          padding="lg"
+          shadow="md"
+          style={{ marginBottom: "20px", backgroundColor: "#fee2e2" }}
+        >
+          <p style={{ color: "#991b1b", margin: 0 }}>{error}</p>
+        </Card>
+      )}
 
       <Card padding="lg" shadow="md">
         <div style={styles.controls}>
@@ -197,9 +229,9 @@ const CommunityManagement = () => {
           </div>
         </div>
 
-        {isLoading && communities.data.length === 0 ? (
+        {isLoading && communities.data?.length === 0 ? (
           <Loader text="Loading communities..." />
-        ) : (
+        ) : communities.data?.length > 0 ? (
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
@@ -214,72 +246,69 @@ const CommunityManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {communities.data.map((comm) => {
-                  const tier = calculateTier(comm.communityPoints || 0);
-                  return (
-                    <tr key={comm._id}>
-                      <td style={styles.td}>
-                        <Link
-                          to={`/communities/${comm._id}`}
-                          style={styles.commName}
-                        >
-                          {comm.name}
-                        </Link>
-                      </td>
-                      <td style={styles.td}>{comm.createdBy?.name || "N/A"}</td>
-                      <td style={styles.td}>
-                        <Badge
-                          label={comm.isActive ? "Active" : "Inactive"}
-                          variant={comm.isActive ? "success" : "default"}
-                          size="sm"
-                        />
-                      </td>
-                      <td style={styles.td}>
-                        <Badge
-                          label={comm.verificationStatus}
-                          variant={
-                            comm.verificationStatus === "verified"
-                              ? "success"
-                              : comm.verificationStatus === "pending"
-                              ? "warning"
-                              : "default"
-                          }
-                          size="sm"
-                        />
-                      </td>
-                      <td style={styles.td}>{comm.totalMembers}</td>
-                      <td style={styles.td}>{comm.totalEvents}</td>
-                      <td style={styles.td}>
-                        <div style={styles.actions}>
-                          {comm.isActive ? (
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => openModal("deactivate", comm)}
-                            >
-                              Deactivate
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => openModal("reactivate", comm)}
-                            >
-                              Reactivate
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {communities.data.map((comm) => (
+                  <tr key={comm._id}>
+                    <td style={styles.td}>
+                      <Link
+                        to={`/communities/${comm._id}`}
+                        style={styles.commName}
+                      >
+                        {comm.name || "N/A"}
+                      </Link>
+                    </td>
+                    <td style={styles.td}>{comm.createdBy?.name || "N/A"}</td>
+                    <td style={styles.td}>
+                      <Badge
+                        label={comm.isActive ? "Active" : "Inactive"}
+                        variant={comm.isActive ? "success" : "default"}
+                        size="sm"
+                      />
+                    </td>
+                    <td style={styles.td}>
+                      <Badge
+                        label={comm.verificationStatus || "unverified"}
+                        variant={
+                          comm.verificationStatus === "verified"
+                            ? "success"
+                            : comm.verificationStatus === "pending"
+                            ? "warning"
+                            : "default"
+                        }
+                        size="sm"
+                      />
+                    </td>
+                    <td style={styles.td}>{comm.totalMembers || 0}</td>
+                    <td style={styles.td}>{comm.totalEvents || 0}</td>
+                    <td style={styles.td}>
+                      <div style={styles.actions}>
+                        {comm.isActive ? (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => openModal("deactivate", comm)}
+                            disabled={isUpdating}
+                          >
+                            Deactivate
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => openModal("reactivate", comm)}
+                            disabled={isUpdating}
+                          >
+                            Reactivate
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        )}
-
-        {!isLoading && communities.data.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px" }}>
+        ) : (
+          <div style={styles.emptyState}>
             No communities found matching filters.
           </div>
         )}
@@ -296,9 +325,22 @@ const CommunityManagement = () => {
         )}
       </Card>
 
-      {/* Confirmation Modals */}
+      {/* Confirmation Modal */}
       <Modal isOpen={!!modalAction} onClose={closeModal} title="Confirm Action">
         <div style={styles.modalContent}>
+          {actionError && (
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#ef4444",
+                padding: "10px",
+                backgroundColor: "#fee2e2",
+                borderRadius: "6px",
+              }}
+            >
+              {actionError}
+            </div>
+          )}
           {modalAction === "deactivate" && (
             <p style={styles.modalText}>
               Are you sure you want to deactivate{" "}
@@ -313,14 +355,20 @@ const CommunityManagement = () => {
             </p>
           )}
           <div style={styles.modalActions}>
-            <Button variant="outline" onClick={closeModal}>
+            <Button
+              variant="outline"
+              onClick={closeModal}
+              disabled={isUpdating}
+            >
               Cancel
             </Button>
             <Button
               variant={modalAction === "deactivate" ? "danger" : "primary"}
               onClick={handleConfirmAction}
+              loading={isUpdating}
+              disabled={isUpdating}
             >
-              Confirm
+              {isUpdating ? "Processing..." : "Confirm"}
             </Button>
           </div>
         </div>

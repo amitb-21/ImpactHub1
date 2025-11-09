@@ -4,14 +4,13 @@ import { toast } from 'react-toastify';
 
 // ===== ASYNC THUNKS =====
 
-// User actions
 export const applyAsCommunityManager = createAsyncThunk(
   'communityManager/apply',
   async (data, { rejectWithValue }) => {
     try {
       const response = await communityManagerAPI.apply(data);
       toast.success('Application submitted! Awaiting admin review (3-5 business days).');
-      return response.data.application;
+      return response.data.application || response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to submit application';
       toast.error(message);
@@ -25,9 +24,14 @@ export const getMyApplication = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await communityManagerAPI.getMyApplication();
-      return response.data.application;
+      return response.data.application || response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      // 404 means no application exists - this is NOT an error
+      if (error.response?.status === 404) {
+        return null;
+      }
+      const message = error.response?.data?.message || 'Failed to fetch application';
+      return rejectWithValue(message);
     }
   }
 );
@@ -39,12 +43,12 @@ export const getApplicationHistory = createAsyncThunk(
       const response = await communityManagerAPI.getApplicationHistory(page);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      const message = error.response?.data?.message || 'Failed to fetch history';
+      return rejectWithValue(message);
     }
   }
 );
 
-// Admin actions
 export const getPendingApplications = createAsyncThunk(
   'communityManager/getPending',
   async (page = 1, { rejectWithValue }) => {
@@ -52,7 +56,8 @@ export const getPendingApplications = createAsyncThunk(
       const response = await communityManagerAPI.getPendingApplications(page);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      const message = error.response?.data?.message || 'Failed to fetch pending applications';
+      return rejectWithValue(message);
     }
   }
 );
@@ -62,9 +67,10 @@ export const viewApplication = createAsyncThunk(
   async (applicationId, { rejectWithValue }) => {
     try {
       const response = await communityManagerAPI.viewApplication(applicationId);
-      return response.data.application;
+      return response.data.application || response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      const message = error.response?.data?.message || 'Failed to fetch application';
+      return rejectWithValue(message);
     }
   }
 );
@@ -108,21 +114,21 @@ const initialState = {
     data: [],
     pagination: null
   },
-  
+
   // Admin views
   pendingApplications: {
     data: [],
     pagination: null
   },
   currentApplication: null,
-  
-  // State
+
+  // Loading states
   isLoading: false,
   isSubmitting: false,
   isProcessing: false,
+
+  // Messages
   error: null,
-  
-  // Success message
   successMessage: null
 };
 
@@ -153,7 +159,7 @@ const communityManagerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ===== APPLY =====
+      // ===== APPLY AS COMMUNITY MANAGER =====
       .addCase(applyAsCommunityManager.pending, (state) => {
         state.isSubmitting = true;
         state.error = null;
@@ -163,10 +169,12 @@ const communityManagerSlice = createSlice({
         state.isSubmitting = false;
         state.myApplication = action.payload;
         state.successMessage = 'Application submitted successfully!';
+        state.error = null;
       })
       .addCase(applyAsCommunityManager.rejected, (state, action) => {
         state.isSubmitting = false;
         state.error = action.payload;
+        state.successMessage = null;
       })
 
       // ===== GET MY APPLICATION =====
@@ -176,11 +184,15 @@ const communityManagerSlice = createSlice({
       })
       .addCase(getMyApplication.fulfilled, (state, action) => {
         state.isLoading = false;
+        // action.payload is null if no application exists (this is OK)
         state.myApplication = action.payload;
+        state.error = null;
       })
       .addCase(getMyApplication.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        // Ensure myApplication is null on error so form shows
+        state.myApplication = null;
       })
 
       // ===== GET APPLICATION HISTORY =====
@@ -191,9 +203,10 @@ const communityManagerSlice = createSlice({
       .addCase(getApplicationHistory.fulfilled, (state, action) => {
         state.isLoading = false;
         state.applicationHistory = {
-          data: action.payload.data,
-          pagination: action.payload.pagination
+          data: action.payload.data || [],
+          pagination: action.payload.pagination || null
         };
+        state.error = null;
       })
       .addCase(getApplicationHistory.rejected, (state, action) => {
         state.isLoading = false;
@@ -208,9 +221,10 @@ const communityManagerSlice = createSlice({
       .addCase(getPendingApplications.fulfilled, (state, action) => {
         state.isLoading = false;
         state.pendingApplications = {
-          data: action.payload.data,
-          pagination: action.payload.pagination
+          data: action.payload.data || [],
+          pagination: action.payload.pagination || null
         };
+        state.error = null;
       })
       .addCase(getPendingApplications.rejected, (state, action) => {
         state.isLoading = false;
@@ -225,6 +239,7 @@ const communityManagerSlice = createSlice({
       .addCase(viewApplication.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentApplication = action.payload;
+        state.error = null;
       })
       .addCase(viewApplication.rejected, (state, action) => {
         state.isLoading = false;
@@ -235,46 +250,56 @@ const communityManagerSlice = createSlice({
       .addCase(approveApplication.pending, (state) => {
         state.isProcessing = true;
         state.error = null;
+        state.successMessage = null;
       })
       .addCase(approveApplication.fulfilled, (state, action) => {
         state.isProcessing = false;
-        const { application, community, user } = action.payload;
-        
-        // Remove from pending
-        state.pendingApplications.data = state.pendingApplications.data.filter(
-          a => a._id !== application._id
-        );
-        
-        // Update current
-        state.currentApplication = application;
-        state.successMessage = `Community "${community.name}" created and verified! User promoted to moderator.`;
+        const { application, community } = action.payload;
+
+        // Remove from pending applications
+        if (application?._id) {
+          state.pendingApplications.data = state.pendingApplications.data.filter(
+            (app) => app._id !== application._id
+          );
+        }
+
+        // Update current application
+        state.currentApplication = application || null;
+        state.successMessage = `Community "${community?.name || 'Community'}" created and verified! User promoted to moderator.`;
+        state.error = null;
       })
       .addCase(approveApplication.rejected, (state, action) => {
         state.isProcessing = false;
         state.error = action.payload;
+        state.successMessage = null;
       })
 
       // ===== REJECT APPLICATION =====
       .addCase(rejectApplication.pending, (state) => {
         state.isProcessing = true;
         state.error = null;
+        state.successMessage = null;
       })
       .addCase(rejectApplication.fulfilled, (state, action) => {
         state.isProcessing = false;
         const { application } = action.payload;
-        
-        // Remove from pending
-        state.pendingApplications.data = state.pendingApplications.data.filter(
-          a => a._id !== application._id
-        );
-        
-        // Update current
-        state.currentApplication = application;
+
+        // Remove from pending applications
+        if (application?._id) {
+          state.pendingApplications.data = state.pendingApplications.data.filter(
+            (app) => app._id !== application._id
+          );
+        }
+
+        // Update current application
+        state.currentApplication = application || null;
         state.successMessage = 'Application rejected. User can reapply in 30 days.';
+        state.error = null;
       })
       .addCase(rejectApplication.rejected, (state, action) => {
         state.isProcessing = false;
         state.error = action.payload;
+        state.successMessage = null;
       });
   }
 });

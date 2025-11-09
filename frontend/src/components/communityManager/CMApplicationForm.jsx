@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { applyAsCommunityManager } from "../../store/slices/communityManagerSlice";
+import { refreshPendingCMApplications } from "../../store/slices/adminSlice";
 import { Card } from "../common/Card";
 import { Button } from "../common/Button";
 import {
@@ -179,9 +180,35 @@ const CMApplicationForm = ({ onSuccess }) => {
 
   // Handle form submission
   const onSubmit = async (data) => {
-    const result = await dispatch(applyAsCommunityManager(data));
-    if (result.payload) {
-      onSuccess?.();
+    console.log("📝 Submitting application...", data);
+
+    try {
+      const result = await dispatch(applyAsCommunityManager(data));
+
+      console.log("✅ Application result:", result);
+
+      if (result.payload) {
+        console.log("✅ Application submitted successfully:", result.payload);
+
+        // ✅ REFRESH ADMIN'S PENDING APPLICATIONS
+        console.log("🔄 Refreshing pending CM applications for admin...");
+        try {
+          const refreshResult = await dispatch(refreshPendingCMApplications());
+          console.log("✅ Admin queue refreshed:", refreshResult.payload);
+        } catch (err) {
+          console.warn("⚠️ Could not refresh admin queue:", err);
+          // Don't fail - user app was still submitted
+        }
+
+        // Call success callback
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        console.log("❌ Application submission failed");
+      }
+    } catch (error) {
+      console.error("❌ Error during submission:", error);
     }
   };
 

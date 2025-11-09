@@ -105,7 +105,6 @@ export const calendarAPI = {
   downloadICS: (eventId) => API.get(`/location/calendar/${eventId}/download.ics`, {
     responseType: 'blob'
   }).then(response => {
-    // Create a download link
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
@@ -126,7 +125,6 @@ export const impactAPI = {
     API.get(`/impact/leaderboard?page=${page}&limit=20&metric=${metric}`),
   getRank: (userId) => API.get(`/impact/rank/${userId}`),
   getSummary: () => API.get(`/impact/summary`),
-  // New endpoints for gamification
   getStreak: (userId) => API.get(`/impact/streak/${userId}`),
   getLevelDefinitions: () => API.get('/impact/levels'),
   getLevelRequirements: (level) => API.get(`/impact/level-requirements/${level}`),
@@ -205,12 +203,11 @@ export const activityAPI = {
     API.get(`/activities/community/${communityId}`, { params: { page, limit, ...filters } }),
   getGlobalActivity: (page = 1, limit = 20, filters = {}) =>
     API.get('/activities', { params: { page, limit, ...filters } }),
-  getStats: () => API.get(`/activities/stats`)
+  getStats: () => API.get(`/activities/stats`),
+  createActivity: (data) => API.post('/activities', data),
+  updateActivity: (id, data) => API.put(`/activities/${id}`, data),
+  deleteActivity: (id) => API.delete(`/activities/${id}`)
 };
-// Add create/update/delete helpers (optional convenience)
-activityAPI.createActivity = (data) => API.post('/activities', data);
-activityAPI.updateActivity = (id, data) => API.put(`/activities/${id}`, data);
-activityAPI.deleteActivity = (id) => API.delete(`/activities/${id}`);
 
 // ===== VERIFICATION =====
 export const verificationAPI = {
