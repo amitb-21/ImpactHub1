@@ -170,26 +170,65 @@ export const getEvents = async (req, res) => {
   }
 };
 
+
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, community, startDate, endDate, location, category, image, maxParticipants } =
-      req.body;
-    const userId = req.userId;
+    console.log('📅 Create Event Request');
+    console.log('Body fields:', Object.keys(req.body));
+    console.log('File:', req.file);
 
-    console.log('📅 Create Event Request:', { 
-      title, 
-      community, 
-      createdBy: userId,
-      userRole: req.userRole 
+    const userId = req.userId;
+    const userRole = req.userRole;
+
+    // ✅ Extract fields from req.body (FormData)
+    const {
+      title,
+      description,
+      community,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      category,
+      maxParticipants,
+      location: locationString, // This comes as JSON string
+    } = req.body;
+
+    console.log('📝 Extracted fields:', {
+      title: !!title,
+      description: !!description,
+      community: !!community,
+      startDate: !!startDate,
+      endDate: !!endDate,
+      category: !!category,
+      hasImage: !!req.file,
     });
 
+    // ✅ Validation: Check required fields
+    if (!title || !description || !community || !startDate || !endDate || !category) {
+      console.error('❌ Missing required fields');
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: title, description, community, startDate, endDate, category',
+        received: {
+          title: !!title,
+          description: !!description,
+          community: !!community,
+          startDate: !!startDate,
+          endDate: !!endDate,
+          category: !!category,
+        },
+      });
+    }
+
     // ✅ SECURITY CHECK #1: User must be moderator or admin
-    if (!['moderator', 'admin'].includes(req.userRole)) {
+    if (!['moderator', 'admin'].includes(userRole)) {
+      console.error('❌ User is not moderator or admin:', userRole);
       return res.status(403).json({
         success: false,
         message: 'Only community managers can create events. Please apply to become a community manager.',
         requiredRole: 'moderator',
-        currentRole: req.userRole,
+        currentRole: userRole,
         actionLink: '/apply-community-manager',
       });
     }
@@ -199,9 +238,11 @@ export const createEvent = async (req, res) => {
     // ✅ SECURITY CHECK #2: Community must exist
     const communityExists = await Community.findById(community);
     if (!communityExists) {
+      console.error('❌ Community not found:', community);
       return res.status(404).json({
         success: false,
         message: 'Community not found',
+        communityId: community,
       });
     }
 
@@ -209,6 +250,7 @@ export const createEvent = async (req, res) => {
 
     // ✅ SECURITY CHECK #3: Community must be verified
     if (communityExists.verificationStatus !== 'verified') {
+      console.error('❌ Community is not verified:', communityExists.verificationStatus);
       return res.status(400).json({
         success: false,
         message: 'Community must be verified before creating events',
@@ -220,7 +262,8 @@ export const createEvent = async (req, res) => {
     console.log('✅ Community is verified');
 
     // ✅ SECURITY CHECK #4: User must be the community manager (creator) or admin
-    if (!communityExists.createdBy.equals(userId) && req.userRole !== 'admin') {
+    if (!communityExists.createdBy.equals(userId) && userRole !== 'admin') {
+      console.error('❌ User is not community manager');
       return res.status(403).json({
         success: false,
         message: 'Only the community manager can create events in this community',
@@ -231,24 +274,70 @@ export const createEvent = async (req, res) => {
 
     console.log('✅ User is community manager or admin');
 
-    // ✅ Build location object
-    const locationData = buildLocationObject(location);
+    // ✅ Parse location (comes as JSON string from FormData)
+    let locationData = {
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      coordinates: {
+        type: 'Point',
+        coordinates: [0, 0], // [longitude, latitude]
+      },
+    };
 
-    // ✅ Create event
-    const event = await Event.create({
-      title,
-      description,
+    if (locationString) {
+      try {
+        const parsedLocation = JSON.parse(locationString);
+        console.log('📍 Parsed location:', parsedLocation);
+
+        locationData.address = parsedLocation.address || '';
+        locationData.city = parsedLocation.city || '';
+        locationData.state = parsedLocation.state || '';
+        locationData.zipCode = parsedLocation.zipCode || '';
+
+        // GeoJSON format: [longitude, latitude]
+        if (parsedLocation.latitude && parsedLocation.longitude) {
+          locationData.coordinates.coordinates = [
+            parseFloat(parsedLocation.longitude),
+            parseFloat(parsedLocation.latitude),
+          ];
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse location:', e.message);
+      }
+    }
+
+    // ✅ Generate image URL if file was uploaded
+    let imageUrl = null;
+    if (req.file) {
+      const BASE_URL = process.env.BASE_URL || 'http://localhost:5050';
+      imageUrl = `${BASE_URL}/uploads/${req.file.filename}`;
+      console.log('🖼️ Image URL:', imageUrl);
+    }
+
+    // ✅ Create event object
+    const eventData = {
+      title: title.trim(),
+      description: description.trim(),
       community,
       createdBy: userId,
-      startDate,
-      endDate,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      startTime: startTime || null,
+      endTime: endTime || null,
       location: locationData,
       category: category || 'Other',
-      image,
-      maxParticipants,
+      image: imageUrl,
+      maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
       participants: [userId], // Creator is auto-participant
       status: 'Upcoming',
-    });
+    };
+
+    console.log('📦 Creating event with data:', eventData);
+
+    // ✅ Create event
+    const event = await Event.create(eventData);
 
     console.log('✅ Event created:', event._id);
 
@@ -300,15 +389,27 @@ export const createEvent = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: SUCCESS_MESSAGES.CREATED,
+      message: 'Event created successfully!',
       event: formatEventWithCapacity(populatedEvent),
     });
   } catch (error) {
     console.error('❌ Error creating event:', error);
     logger.error('Error creating event', error);
+
+    // Clean up uploaded file if event creation failed
+    if (req.file) {
+      try {
+        const fs = require('fs');
+        fs.unlinkSync(req.file.path);
+        console.log('🧹 Uploaded file cleaned up after error');
+      } catch (deleteError) {
+        console.error('Could not delete uploaded file:', deleteError);
+      }
+    }
+
     res.status(500).json({
       success: false,
-      message: ERROR_MESSAGES.SERVER_ERROR,
+      message: error.message || 'Failed to create event',
       error: error.message,
     });
   }

@@ -1,75 +1,84 @@
 import { ERROR_MESSAGES } from '../utils/constants.js';
 
 /**
- * Validates location data for creating/updating events and communities
- * Ensures proper structure and coordinate validation
+ * ✅ FIXED: Validates location data for creating/updating events and communities
+ * Now properly handles location as JSON string from FormData
  */
 export const validateLocationData = (req, res, next) => {
-  const { location } = req.body;
+  const { location: locationString } = req.body;
 
-  // Location is optional, but if provided, must be valid
-  if (!location) {
+  // Location is optional for some endpoints, but if provided, must be valid
+  if (!locationString) {
     return next(); // Optional field
   }
 
   const errors = [];
 
-  // Validate city (required if location provided)
-  if (!location.city || location.city.trim().length === 0) {
-    errors.push('City is required in location');
-  } else if (location.city.length > 100) {
-    errors.push('City name must not exceed 100 characters');
-  }
+  try {
+    // ✅ Parse location JSON string (comes from FormData)
+    const location = JSON.parse(locationString);
+    console.log('📍 Validating location:', location);
 
-  // Validate address (optional)
-  if (location.address && location.address.length > 200) {
-    errors.push('Address must not exceed 200 characters');
-  }
+    // Validate city (required if location provided)
+    if (!location.city || location.city.trim().length === 0) {
+      errors.push('City is required in location');
+    } else if (location.city.length > 100) {
+      errors.push('City name must not exceed 100 characters');
+    }
 
-  // Validate state (optional)
-  if (location.state && location.state.length > 50) {
-    errors.push('State must not exceed 50 characters');
-  }
+    // Validate address (optional)
+    if (location.address && location.address.length > 200) {
+      errors.push('Address must not exceed 200 characters');
+    }
 
-  // Validate zip code (optional)
-  if (location.zipCode && location.zipCode.length > 20) {
-    errors.push('Zip code must not exceed 20 characters');
-  }
+    // Validate state (optional)
+    if (location.state && location.state.length > 50) {
+      errors.push('State must not exceed 50 characters');
+    }
 
-  // Validate coordinates if provided
-  if (location.coordinates) {
-    const { lat, lng } = location.coordinates;
+    // Validate zip code (optional)
+    if (location.zipCode && location.zipCode.length > 20) {
+      errors.push('Zip code must not exceed 20 characters');
+    }
 
-    // Check if lat/lng are numbers
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      errors.push('Coordinates must contain numeric lat and lng values');
-    } else {
-      // Validate latitude range (-90 to 90)
-      if (lat < -90 || lat > 90) {
-        errors.push('Latitude must be between -90 and 90');
-      }
+    // ✅ Relaxed coordinate validation - allow 0,0 or empty coordinates
+    // Coordinates are optional and can be set/updated later
+    if (location.latitude || location.longitude) {
+      const lat = parseFloat(location.latitude);
+      const lng = parseFloat(location.longitude);
 
-      // Validate longitude range (-180 to 180)
-      if (lng < -180 || lng > 180) {
-        errors.push('Longitude must be between -180 and 180');
-      }
+      // Only validate if one of them is provided
+      if ((location.latitude && isNaN(lat)) || (location.longitude && isNaN(lng))) {
+        errors.push('Coordinates must be valid numbers');
+      } else {
+        // Validate ranges only if coordinates are valid numbers
+        if (!isNaN(lat) && (lat < -90 || lat > 90)) {
+          errors.push('Latitude must be between -90 and 90');
+        }
 
-      // Check for default/invalid coordinates (0, 0)
-      if (lat === 0 && lng === 0) {
-        errors.push('Please provide valid coordinates. (0, 0) is not a valid location');
+        if (!isNaN(lng) && (lng < -180 || lng > 180)) {
+          errors.push('Longitude must be between -180 and 180');
+        }
       }
     }
-  }
 
-  if (errors.length > 0) {
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: ERROR_MESSAGES.VALIDATION_ERROR,
+        errors,
+      });
+    }
+
+    next();
+  } catch (e) {
+    console.error('❌ Failed to parse location JSON:', e.message);
     return res.status(400).json({
       success: false,
-      message: ERROR_MESSAGES.VALIDATION_ERROR,
-      errors,
+      message: 'Location must be valid JSON format',
+      error: e.message,
     });
   }
-
-  next();
 };
 
 /**

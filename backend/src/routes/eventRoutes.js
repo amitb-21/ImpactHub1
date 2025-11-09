@@ -1,4 +1,7 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import * as eventController from '../controllers/eventController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateId, validatePagination, validateCreateEvent } from '../middleware/validator.js';
@@ -6,6 +9,41 @@ import { validateLocationData } from '../middleware/locationValidator.js';
 import { isModeratorOrAdmin } from '../middleware/roleValidation.js';
 
 const router = express.Router();
+
+// ✅ STEP 1: Configure Multer for file uploads
+const uploadsDir = path.join(process.cwd(), 'uploads');
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    const name = path.basename(file.originalname, ext);
+    cb(null, `event-${uniqueSuffix}${ext}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images allowed.'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 
 // =====================
 // PUBLIC ROUTES (No auth required)
@@ -28,10 +66,7 @@ router.get('/:id', validateId('id'), eventController.getEventById);
 // =====================
 
 /**
- * ✅ NEW: Get events created by current user (community manager)
- * GET /events/my-events?page=1&limit=10&status=Upcoming
- * 
- * IMPORTANT: This MUST come BEFORE the /:id route to avoid shadowing!
+ * ✅ CRITICAL: /my-events MUST come BEFORE /:id routes
  * Otherwise requests to /my-events will be interpreted as /:id with id="my-events"
  */
 router.get(
@@ -42,14 +77,27 @@ router.get(
 );
 
 /**
- * Create event - ONLY MODERATORS (community managers)
+ * ✅ FIXED: Create event with FormData (image upload)
  * POST /events
- * Body: { title, description, community, startDate, endDate, location, category, image, maxParticipants }
+ * 
+ * FormData fields:
+ * - title (string)
+ * - description (string)
+ * - community (ObjectId)
+ * - startDate (ISO date)
+ * - endDate (ISO date)
+ * - startTime (optional, HH:mm format)
+ * - endTime (optional, HH:mm format)
+ * - location (JSON string)
+ * - category (string)
+ * - maxParticipants (number)
+ * - image (optional, file)
  */
 router.post(
   '/',
   verifyToken,
   isModeratorOrAdmin,
+  upload.single('image'), // ✅ Handle image upload
   validateCreateEvent,
   validateLocationData,
   eventController.createEvent
@@ -92,12 +140,14 @@ router.get(
 /**
  * Update event (owner/admin only)
  * PUT /events/:id
- * Body: { title, description, startDate, endDate, location, category, image, status, maxParticipants }
+ * 
+ * Can include image in FormData
  */
 router.put(
   '/:id',
   verifyToken,
   validateId('id'),
+  upload.single('image'), // ✅ Handle image upload in updates too
   validateLocationData,
   eventController.updateEvent
 );

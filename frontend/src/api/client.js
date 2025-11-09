@@ -21,12 +21,17 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // If sending FormData, let the browser set Content-Type with boundary
+
+    // ✅ FIXED: Only set Content-Type for non-FormData requests
     if (config.data instanceof FormData) {
+      // Remove Content-Type header for FormData - let browser set it with boundary
       delete config.headers['Content-Type'];
+      console.log('📤 Sending FormData request:', config.url);
     } else {
+      // For JSON requests, explicitly set Content-Type
       config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
     }
+
     return config;
   },
   (error) => {
@@ -60,8 +65,10 @@ API.interceptors.response.use(
 
     // Handle 500 Server Error
     if (error.response?.status === 500) {
+      console.error('❌ Server Error Details:', error.response.data);
       toast.error('Server error. Please try again later.');
     }
+
     // For responses with a body (server returned an HTTP status), show the server message
     if (error.response) {
       console.error('API Error Response:', error.response);
@@ -111,4 +118,3 @@ API.interceptors.response.use(
 );
 
 export default API;
-

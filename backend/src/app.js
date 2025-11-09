@@ -3,6 +3,8 @@ import passport from 'passport';
 import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import './config/passport.js';
 
 // Routes
@@ -28,6 +30,10 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
+
+// ✅ Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // =====================
 // SECURITY MIDDLEWARE (First!)
@@ -81,6 +87,11 @@ app.use(passport.session());
 // =====================
 app.use('/auth', rateLimiter);
 
+// ✅ CRITICAL: Serve static files (uploads folder)
+const uploadsPath = path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath));
+console.log('📁 Serving uploads from:', uploadsPath);
+
 // =====================
 // HEALTH CHECK
 // =====================
@@ -117,6 +128,9 @@ app.use('/admin', adminRoutes);
 // COMMUNITY MANAGER APPLICATION ROUTES
 app.use('/community-manager', communityManagerRoutes);
 
+// =====================
+// ERROR HANDLING (MUST BE LAST!)
+// =====================
 app.use(notFoundHandler);
 app.use(errorHandler);
 

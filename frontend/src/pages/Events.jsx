@@ -24,15 +24,30 @@ const Events = () => {
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useAuth();
 
-  // Redux selectors
-  const { events, isLoading, error } = useSelector((state) => state.event);
+  // Redux selectors - ✅ Add default values to prevent undefined errors
+  const {
+    events: eventsData = { data: [], pagination: null },
+    isLoading,
+    error,
+  } = useSelector(
+    (state) =>
+      state.event || {
+        events: { data: [], pagination: null },
+        isLoading: false,
+        error: null,
+      }
+  );
 
   // Local state
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewMode, setViewMode] = useState("grid"); // grid | list
-  const [appliedFilters, setAppliedFilters] = useState({}); // ✅ NEW: Track applied filters
+  const [appliedFilters, setAppliedFilters] = useState({});
+
+  // ✅ Safe data extraction with fallback
+  const events = eventsData?.data || [];
+  const pagination = eventsData?.pagination || { total: 0 };
 
   // Pagination hook
   const {
@@ -44,7 +59,7 @@ const Events = () => {
     prevPage,
     canGoNext,
     canGoPrev,
-  } = usePagination(events.pagination?.total || 0, 1, 10);
+  } = usePagination(pagination?.total || 0, 1, 10);
 
   // ✅ FIXED: Fetch events with filters included
   useEffect(() => {
@@ -52,17 +67,16 @@ const Events = () => {
       page,
       limit,
       search: searchQuery || undefined,
-      ...appliedFilters, // ✅ Include applied filters
+      ...appliedFilters,
     };
     dispatch(fetchEvents(filters));
     dispatch(setFilters(filters));
-  }, [page, searchQuery, appliedFilters, dispatch]); // ✅ Add appliedFilters to deps
+  }, [page, searchQuery, appliedFilters, dispatch, limit]);
 
-  // ✅ FIXED: Refresh events when page becomes visible (user comes back from EventDetail)
+  // ✅ Refresh events when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Page is now visible - refetch events with current filters
         const filters = {
           page,
           limit,
@@ -89,11 +103,11 @@ const Events = () => {
     goToPage(1);
   };
 
-  // ✅ NEW: Handle filter changes
+  // Handle filter changes
   const handleFilterChange = (filters) => {
-    setAppliedFilters(filters); // ✅ Store filters in state
+    setAppliedFilters(filters);
     dispatch(setFilters(filters));
-    goToPage(1); // Reset to page 1 when filters change
+    goToPage(1);
   };
 
   // ✅ FIXED: Handle event creation success
@@ -109,7 +123,7 @@ const Events = () => {
     // Reset to page 1
     goToPage(1);
 
-    // ✅ NEW: Add a small delay to ensure backend is ready
+    // Refetch events after small delay
     setTimeout(() => {
       const filters = {
         page: 1,
@@ -231,7 +245,7 @@ const Events = () => {
           {showFilters && (
             <div className={styles.filtersPanel}>
               <EventFilter
-                onFilterChange={handleFilterChange} // ✅ Use the new handler
+                onFilterChange={handleFilterChange}
                 compact={false}
                 showDefaultExpanded={true}
               />
@@ -240,10 +254,10 @@ const Events = () => {
         </Card>
 
         {/* Results Info */}
-        {events.data.length > 0 && (
+        {events && events.length > 0 && (
           <div className={styles.resultsInfo}>
             <p className={styles.resultsText}>
-              Found {events.pagination?.total || 0} events
+              Found {pagination?.total || 0} events
               {searchQuery && ` matching "${searchQuery}"`}
             </p>
           </div>
@@ -255,7 +269,7 @@ const Events = () => {
             <Loader size="md" text="Loading events..." />
           </div>
         ) : error ? (
-          // Error State
+          // ✅ FIXED: Error State with proper error handling
           <Card padding="lg" shadow="md" className={styles.errorCard}>
             <div className={styles.errorContent}>
               <div className={styles.errorIcon}>⚠️</div>
@@ -277,14 +291,14 @@ const Events = () => {
               </Button>
             </div>
           </Card>
-        ) : events.data.length > 0 ? (
-          // Events Display
+        ) : events && events.length > 0 ? (
+          // ✅ FIXED: Events Display with safe check
           <>
             {viewMode === "grid" ? (
               <div className={styles.eventsGrid}>
-                {events.data.map((event) => (
+                {events.map((event) => (
                   <EventCard
-                    key={event._id}
+                    key={event?._id}
                     event={event}
                     onView={handleEventSelect}
                     onJoin={handleEventSelect}
@@ -293,7 +307,7 @@ const Events = () => {
               </div>
             ) : (
               <EventList
-                events={events.data}
+                events={events}
                 onEventSelect={handleEventSelect}
                 onJoin={handleEventSelect}
               />
@@ -327,7 +341,7 @@ const Events = () => {
             )}
           </>
         ) : (
-          // Empty State
+          // ✅ FIXED: Empty State with safe check
           <Card padding="lg" shadow="md" className={styles.emptyState}>
             <div className={styles.emptyContent}>
               <div className={styles.emptyIcon}>📅</div>
