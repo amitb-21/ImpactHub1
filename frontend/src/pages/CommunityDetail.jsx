@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,17 +9,14 @@ import {
   leaveCommunity,
 } from "../store/slices/communitySlice";
 import { fetchCommunityActivities } from "../store/slices/activitySlice";
-// --- (1) IMPORTS ADDED ---
 import { fetchEntityRatings } from "../store/slices/ratingSlice";
 import { getParticipationDetails } from "../store/slices/participationSlice";
 import RatingStats from "../components/rating/RatingStats";
 import RatingList from "../components/rating/RatingList";
 import RatingForm from "../components/rating/RatingForm";
-// --- (End 1) ---
 import Layout from "../components/common/Layout";
 import CommunityStats from "../components/community/CommunityStats";
 import CommunityGallery from "../components/community/CommunityGallery";
-// --- (1) IMPORT NEW ACTIVITY FEED ---
 import ActivityFeed from "../components/activity/ActivityFeed";
 import MembersList from "../components/community/MembersList";
 import CommunityTierBadge from "../components/community/CommunityTierBadge";
@@ -41,6 +37,7 @@ import {
 } from "react-icons/fi";
 import styles from "./styles/CommunityDetail.module.css";
 import { usePagination } from "../hooks/usePagination";
+import { toast } from "react-toastify";
 
 const CommunityDetail = () => {
   const { communityId } = useParams();
@@ -50,7 +47,7 @@ const CommunityDetail = () => {
   const { joinCommunity: joinCommunitySocket } = useSocket();
 
   // Redux selectors
-  const { currentCommunity, isLoading, error } = useSelector(
+  const { currentCommunity, isLoading, error, isJoining } = useSelector(
     (state) => state.community
   );
   const { entityRatings, myRating } = useSelector((state) => state.rating);
@@ -58,14 +55,14 @@ const CommunityDetail = () => {
   const { activities: communityActivities, status: activityStatus } =
     useSelector((state) => state.activities);
 
-  // ✅ LOCAL STATE - KEY FIX
+  // Local state for membership tracking
   const [showEditForm, setShowEditForm] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
   const [participationId, setParticipationId] = useState(null);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  // --- (4) PAGINATION FOR ACTIVITIES ---
+  // Pagination for activities
   const activityPaginationData = communityActivities?.pagination || {
     total: 0,
     limit: 10,
@@ -77,9 +74,8 @@ const CommunityDetail = () => {
     startIndex: activityStartIndex,
     endIndex: activityEndIndex,
   } = usePagination(activityPaginationData.total, 1, 10);
-  // --- (End 4) ---
 
-  // ✅ EFFECT 1: Fetch community data on mount
+  // ✅ EFFECT 1: Fetch community data on mount and refetch trigger
   useEffect(() => {
     if (communityId) {
       console.log("📍 Fetching community:", communityId);
@@ -95,38 +91,48 @@ const CommunityDetail = () => {
         fetchEntityRatings({ entityType: "Community", entityId: communityId })
       );
     }
-  }, [communityId, dispatch, activityPage]);
+  }, [communityId, dispatch, activityPage, refetchTrigger]);
 
-  // ✅ EFFECT 2: Check if current user is member or owner - THIS IS THE KEY FIX
+  // ✅ EFFECT 2: Determine membership status - IMPROVED
   useEffect(() => {
     if (currentCommunity && currentUser) {
-      console.log("👤 Checking membership status...", {
+      console.log("👤 Checking membership...", {
         communityId: currentCommunity._id,
         userId: currentUser._id,
-        members: currentCommunity.members?.map((m) => m._id || m),
+        memberCount: currentCommunity.members?.length,
       });
 
-      // Convert member IDs to strings for comparison
-      const memberIds =
-        currentCommunity.members?.map((m) => {
-          // Handle both ObjectId and populated objects
-          return m._id ? m._id.toString() : m.toString();
-        }) || [];
+      // Safely extract member IDs
+      const memberIds = (currentCommunity.members || []).map((m) => {
+        if (typeof m === "string") return m;
+        if (m._id) return m._id.toString();
+        return m.toString();
+      });
 
-      const isMemberNow = memberIds.includes(currentUser._id);
-      console.log("✅ Is member:", isMemberNow);
+      const userIdStr = currentUser._id.toString();
+      const isMemberNow = memberIds.includes(userIdStr);
+
+      console.log("✅ Member check:", {
+        userIdStr,
+        memberIds,
+        isMemberNow,
+      });
+
       setIsMember(isMemberNow);
 
-      // Check if user is owner
-      const isOwnerNow =
-        currentCommunity.createdBy?._id === currentUser._id ||
-        currentCommunity.createdBy?.toString() === currentUser._id;
-      console.log("✅ Is owner:", isOwnerNow);
+      // Check if owner
+      const creatorId =
+        currentCommunity.createdBy?._id?.toString?.() ||
+        currentCommunity.createdBy?.toString?.() ||
+        currentCommunity.createdBy;
+      const isOwnerNow = creatorId === userIdStr;
+
+      console.log("✅ Owner check:", { creatorId, userIdStr, isOwnerNow });
       setIsOwner(isOwnerNow);
     }
   }, [currentCommunity, currentUser]);
 
-  // Join Socket.io community room
+  // Join Socket room when member
   useEffect(() => {
     if (communityId && isMember) {
       console.log("🔌 Joining socket room:", communityId);
@@ -134,76 +140,80 @@ const CommunityDetail = () => {
     }
   }, [communityId, isMember, joinCommunitySocket]);
 
-  useEffect(() => {
-    if (currentUser && isMember && participationId) {
-      dispatch(getParticipationDetails(participationId));
-    }
-  }, [currentUser, isMember, participationId, dispatch]);
-
-  // ✅ HANDLE JOIN COMMUNITY - IMPROVED WITH LOCAL STATE UPDATE
+  // ✅ HANDLE JOIN - IMPROVED WITH PROPER STATE MANAGEMENT
   const handleJoinCommunity = async () => {
-    console.log("🔄 Joining community...");
-    setIsJoining(true);
+    console.log("🔄 Starting join process...");
+
     try {
       const result = await dispatch(joinCommunity(communityId));
 
       console.log("📦 Join result:", result);
 
-      if (result.payload) {
-        console.log("✅ Join successful! Updating local state...");
+      if (result.payload?.community) {
+        console.log(
+          "✅ Join successful! Community data:",
+          result.payload.community
+        );
 
-        // ✅ CRITICAL: Update local state immediately for instant UI feedback
+        // Immediately update local state
         setIsMember(true);
 
-        // Refetch community data to ensure sync with backend
-        console.log("🔄 Refetching community data...");
-        dispatch(fetchCommunityById(communityId));
+        // Trigger refetch to sync everything
+        setRefetchTrigger((prev) => prev + 1);
 
         // Join socket room
         joinCommunitySocket(communityId);
 
-        console.log('✅ Button should now show "Leave Community"');
+        toast.success("Successfully joined community!");
       } else {
-        console.error("❌ Join failed:", result.error);
+        console.error("❌ Join failed - no community data in response");
+        toast.error("Failed to join community");
       }
     } catch (err) {
-      console.error("❌ Error joining community:", err);
-    } finally {
-      setIsJoining(false);
+      console.error("❌ Error during join:", err);
+      toast.error("Error joining community");
     }
   };
 
-  // ✅ HANDLE LEAVE COMMUNITY - IMPROVED WITH LOCAL STATE UPDATE
+  // ✅ HANDLE LEAVE - IMPROVED
   const handleLeaveCommunity = async () => {
-    if (window.confirm("Are you sure you want to leave this community?")) {
-      console.log("🔄 Leaving community...");
-      try {
-        const result = await dispatch(leaveCommunity(communityId));
+    if (!window.confirm("Are you sure you want to leave this community?")) {
+      return;
+    }
 
-        console.log("📦 Leave result:", result);
+    console.log("🔄 Starting leave process...");
 
-        if (result.payload === communityId) {
-          console.log("✅ Leave successful! Updating local state...");
+    try {
+      const result = await dispatch(leaveCommunity(communityId));
 
-          // ✅ CRITICAL: Update local state immediately for instant UI feedback
-          setIsMember(false);
+      console.log("📦 Leave result:", result);
 
-          // Refetch community data to ensure sync with backend
-          console.log("🔄 Refetching community data...");
-          dispatch(fetchCommunityById(communityId));
+      if (
+        result.payload === communityId ||
+        result.payload?.communityId === communityId
+      ) {
+        console.log("✅ Leave successful!");
 
-          console.log('✅ Button should now show "Join Community"');
-        }
-      } catch (err) {
-        console.error("❌ Error leaving community:", err);
+        // Immediately update local state
+        setIsMember(false);
+
+        // Trigger refetch
+        setRefetchTrigger((prev) => prev + 1);
+
+        toast.success("Successfully left community!");
+      } else {
+        console.error("❌ Leave failed");
+        toast.error("Failed to leave community");
       }
+    } catch (err) {
+      console.error("❌ Error during leave:", err);
+      toast.error("Error leaving community");
     }
   };
 
-  // Handle edit success
   const handleEditSuccess = () => {
     setShowEditForm(false);
-    dispatch(fetchCommunityById(communityId));
+    setRefetchTrigger((prev) => prev + 1);
   };
 
   if (error && !currentCommunity) {
@@ -250,21 +260,15 @@ const CommunityDetail = () => {
   }
 
   const isVerified = currentCommunity.verificationStatus === "verified";
-
-  // --- (5) RATING FORM VISIBILITY LOGIC ---
   const showRatingForm = isAuthenticated && isMember && !myRating;
   const showUpdateForm = isAuthenticated && isMember && myRating;
   const showJoinMessage = isAuthenticated && !isMember;
   const showLoginMessage = !isAuthenticated;
-  // --- (End 5) ---
-
-  // Restrict community management features to community managers
   const isCommunityManager = currentUser?.role === "community_manager";
 
   return (
     <Layout>
       <div className={styles.container}>
-        {/* Back Button */}
         <Button
           size="sm"
           variant="ghost"
@@ -275,9 +279,8 @@ const CommunityDetail = () => {
           Back to Communities
         </Button>
 
-        {/* Community Hero Section */}
+        {/* Hero Section */}
         <div className={styles.heroSection}>
-          {/* Hero Image */}
           <div className={styles.heroImage}>
             {currentCommunity.image ? (
               <img
@@ -295,7 +298,6 @@ const CommunityDetail = () => {
               </div>
             )}
 
-            {/* Verification Badge */}
             {isVerified && (
               <div className={styles.verificationBadge}>
                 <FiCheckCircle size={20} />
@@ -304,7 +306,6 @@ const CommunityDetail = () => {
             )}
           </div>
 
-          {/* Hero Content */}
           <div className={styles.heroContent}>
             <div className={styles.heroHeader}>
               <div>
@@ -330,7 +331,7 @@ const CommunityDetail = () => {
                   icon={FiShare2}
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
-                    alert("Community link copied!");
+                    toast.success("Link copied!");
                   }}
                 >
                   Share
@@ -338,7 +339,6 @@ const CommunityDetail = () => {
               </div>
             </div>
 
-            {/* Meta Information */}
             <div className={styles.metaContainer}>
               {currentCommunity.category && (
                 <Badge
@@ -363,7 +363,7 @@ const CommunityDetail = () => {
               )}
             </div>
 
-            {/* ✅ JOIN/LEAVE BUTTON GROUP - THIS IS THE FIX */}
+            {/* ✅ JOIN/LEAVE BUTTON - FIXED */}
             <div className={styles.buttonGroup}>
               {!isMember ? (
                 <Button
@@ -371,10 +371,14 @@ const CommunityDetail = () => {
                   variant="primary"
                   onClick={handleJoinCommunity}
                   loading={isJoining}
-                  disabled={isJoining}
+                  disabled={isJoining || !isAuthenticated}
                   fullWidth
                 >
-                  {isJoining ? "Joining..." : "Join Community"}
+                  {isJoining
+                    ? "Joining..."
+                    : isAuthenticated
+                    ? "Join Community"
+                    : "Login to Join"}
                 </Button>
               ) : (
                 <Button
@@ -390,7 +394,7 @@ const CommunityDetail = () => {
           </div>
         </div>
 
-        {/* Edit Community Modal */}
+        {/* Edit Modal */}
         <Modal
           isOpen={showEditForm}
           onClose={() => setShowEditForm(false)}
@@ -408,12 +412,10 @@ const CommunityDetail = () => {
         <div className={styles.gridContainer}>
           {/* Left Column */}
           <div className={styles.leftColumn}>
-            {/* Community Stats */}
             <div className={styles.section}>
               <CommunityStats community={currentCommunity} />
             </div>
 
-            {/* Tier Badge */}
             <div className={styles.section}>
               <CommunityTierBadge
                 communityPoints={currentCommunity.communityPoints || 0}
@@ -421,20 +423,18 @@ const CommunityDetail = () => {
               />
             </div>
 
-            {/* --- (5) RATING SECTION --- */}
             <div className={styles.section}>
               <h3 className={styles.cardTitle}>Ratings & Reviews</h3>
               <Card padding="lg" shadow="md">
                 <RatingStats
-                  avgRating={currentCommunity.avgRating}
-                  totalRatings={currentCommunity.totalRatings}
-                  distribution={entityRatings.distribution}
+                  avgRating={currentCommunity.avgRating || 0}
+                  totalRatings={currentCommunity.totalRatings || 0}
+                  distribution={entityRatings.distribution || []}
                 />
               </Card>
             </div>
 
             <div className={styles.section}>
-              {/* Show update form if user has already rated */}
               {showUpdateForm && (
                 <RatingForm
                   entityType="Community"
@@ -443,12 +443,10 @@ const CommunityDetail = () => {
                 />
               )}
 
-              {/* Show create form if user is member but hasn't rated */}
               {showRatingForm && (
                 <RatingForm entityType="Community" entityId={communityId} />
               )}
 
-              {/* Show message if not member */}
               {showJoinMessage && (
                 <Card padding="lg" shadow="md">
                   <p className={styles.participantNote}>
@@ -457,7 +455,6 @@ const CommunityDetail = () => {
                 </Card>
               )}
 
-              {/* Show login message if not authenticated */}
               {showLoginMessage && (
                 <Card padding="lg" shadow="md">
                   <p className={styles.participantNote}>
@@ -480,19 +477,17 @@ const CommunityDetail = () => {
             <div className={styles.section}>
               <RatingList entityType="Community" entityId={communityId} />
             </div>
-            {/* --- (End 5) --- */}
           </div>
 
           {/* Right Column */}
           <div className={styles.rightColumn}>
-            {/* Quick Info Card */}
             <Card padding="lg" shadow="md" className={styles.infoCard}>
               <h3 className={styles.cardTitle}>About</h3>
               <div className={styles.infoGrid}>
                 <InfoItem
                   icon="👥"
                   label="Members"
-                  value={currentCommunity.totalMembers || 0}
+                  value={currentCommunity.members?.length || 0}
                 />
                 <InfoItem
                   icon="📅"
@@ -516,7 +511,6 @@ const CommunityDetail = () => {
               </div>
             </Card>
 
-            {/* Organization Details */}
             {currentCommunity.organizationDetails && (
               <Card padding="lg" shadow="md" className={styles.infoCard}>
                 <h3 className={styles.cardTitle}>Organization</h3>
@@ -548,7 +542,6 @@ const CommunityDetail = () => {
               </Card>
             )}
 
-            {/* Creator Info */}
             {currentCommunity.createdBy && (
               <Card padding="lg" shadow="md" className={styles.infoCard}>
                 <h3 className={styles.cardTitle}>Created By</h3>
@@ -594,7 +587,6 @@ const CommunityDetail = () => {
               </Card>
             )}
 
-            {/* Gallery */}
             <div className={styles.section}>
               <h3 className={styles.cardTitle}>Community Gallery</h3>
               <CommunityGallery
@@ -605,7 +597,7 @@ const CommunityDetail = () => {
           </div>
         </div>
 
-        {/* --- (6) REFACTORED ACTIVITY FEED (Moved outside grid) --- */}
+        {/* Activity Feed - Only for members */}
         {isMember && (
           <div className={styles.section} style={{ marginTop: "24px" }}>
             <ActivityFeed
@@ -642,7 +634,6 @@ const CommunityDetail = () => {
             )}
           </div>
         )}
-        {/* --- (End 6) --- */}
 
         {/* Members Section */}
         {isMember && (
@@ -656,24 +647,11 @@ const CommunityDetail = () => {
             />
           </div>
         )}
-
-        {/* Conditional Rendering for Community Management */}
-        {isCommunityManager && (
-          <Button
-            size="md"
-            variant="primary"
-            icon={FiEdit}
-            onClick={() => navigate(`/communities/${communityId}/edit`)}
-          >
-            Manage Community
-          </Button>
-        )}
       </div>
     </Layout>
   );
 };
 
-// Info Item Component
 const InfoItem = ({ icon, label, value }) => (
   <div className={styles.infoItemContainer}>
     <span className={styles.infoItemIcon}>{icon}</span>
@@ -684,7 +662,6 @@ const InfoItem = ({ icon, label, value }) => (
   </div>
 );
 
-// Detail Item Component
 const DetailItem = ({ label, value }) => (
   <div className={styles.detailItem}>
     <span className={styles.detailLabel}>{label}</span>

@@ -224,10 +224,19 @@ export const leaveCommunity = async (req, res) => {
 
     logger.success(`User ${userId} left community ${id}`);
 
+    const updatedCommunity = await Community.findById(id)
+      .populate('createdBy', 'name profileImage')
+      .populate('members', 'name profileImage email'); // Make sure to populate members
+
     res.json({
       success: true,
       message: 'Left community successfully',
+      community: updatedCommunity, // Return the updated community
+      isMember: false, // Explicitly state they are no longer a member
+      userId: userId,
     });
+    // --- END FIX ---
+
   } catch (error) {
     logger.error('Error leaving community', error);
     res.status(500).json({
@@ -236,6 +245,7 @@ export const leaveCommunity = async (req, res) => {
     });
   }
 };
+
 
 // ✅ CORRECTED: Only community creator can update
 export const updateCommunity = async (req, res) => {

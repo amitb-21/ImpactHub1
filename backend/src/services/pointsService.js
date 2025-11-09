@@ -281,9 +281,6 @@ export const calculateVolunteerRank = (totalPoints) => {
 // COMMUNITY REWARDS SERVICE
 // =====================
 
-/**
- * Award points to community when member joins
- */
 export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
   try {
     validateCommunityIdOrThrow(communityId);
@@ -291,37 +288,41 @@ export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
 
     const points = 5; // Points per member joined
 
-    // Step 1: Get or create community rewards
-    let communityRewards = await CommunityRewards.findOne({ community: communityId });
-    
-    if (!communityRewards) {
-      communityRewards = await CommunityRewards.create({
-        community: communityId,
-      });
-    }
-
-    // Step 2: Update points manually
-    communityRewards.totalPoints = (communityRewards.totalPoints || 0) + points;
-    communityRewards.pointsBreakdown.memberJoined = 
-      (communityRewards.pointsBreakdown.memberJoined || 0) + points;
-    communityRewards.totalMembers = (communityRewards.totalMembers || 0) + 1;
-    communityRewards.lastPointsUpdate = new Date();
-
-    // Step 3: Push single reward object
-    communityRewards.rewardsHistory.push({
+    // This is a plain JavaScript OBJECT
+    const rewardObject = {
       points: points,
       type: 'member_joined',
       description: 'New member joined community',
-      relatedUser: userId,
+      relatedUser: userId, // Mongoose will cast this string to ObjectId
       relatedEntity: {
         entityType: 'User',
-        entityId: userId,
+        entityId: userId, // Mongoose will cast this string to ObjectId
       },
       awardedAt: new Date(),
-    });
+    };
 
-    // Step 4: Save once
-    await communityRewards.save();
+    // Use a single atomic operation
+    const communityRewards = await CommunityRewards.findOneAndUpdate(
+      { community: communityId },
+      {
+        $inc: {
+          totalPoints: points,
+          'pointsBreakdown.memberJoined': points,
+          totalMembers: 1,
+        },
+        $push: {
+          rewardsHistory: rewardObject, // ✅ We are pushing the OBJECT, not a string
+        },
+        $set: {
+          lastPointsUpdate: new Date(),
+        }
+      },
+      { 
+        upsert: true, // Create the document if it doesn't exist
+        new: true, // Return the modified document
+        setDefaultsOnInsert: true // Ensure defaults are set on creation
+      }
+    );
 
     logger.success(`Community ${communityId} awarded ${points} points for new member`);
 
@@ -331,6 +332,7 @@ export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
     throw error;
   }
 };
+
 
 /**
  * Award points to community when event is created

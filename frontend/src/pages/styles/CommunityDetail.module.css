@@ -18,14 +18,14 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  background-color: #FAFAFA;
+  background-color: #FAFAFA; /* Soft White */
 }
 
 .heroImage {
   position: relative;
   width: 100%;
   height: 300px;
-  background-color: #f0f0f0;
+  background-color: #e0f2f1; /* Light teal tint */
   overflow: hidden;
 }
 
@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e0f2f1;
+  background-color: #e0f2f1; /* Light teal tint */
 }
 
 .placeholderIcon {
@@ -55,8 +55,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #10b981;
-  color: #FAFAFA;
+  background-color: #00796B; /* Primary Deep Teal */
+  color: #FAFAFA; /* Soft White */
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 13px;
@@ -71,7 +71,7 @@
 
 .heroContent {
   padding: 32px 40px;
-  background-color: #FAFAFA;
+  background-color: #FAFAFA; /* Soft White */
   border-top: 1px solid #e0e0e0;
 }
 
@@ -86,7 +86,7 @@
 .title {
   font-size: 36px;
   font-weight: 800;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
@@ -169,7 +169,7 @@
 .cardTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   margin: 0 0 16px 0;
   border-bottom: 2px solid #e0e0e0;
   padding-bottom: 12px;
@@ -193,8 +193,8 @@
 }
 
 .infoItemContainer:hover {
-  background-color: #f0f0f0;
-  border-color: #d0d0d0;
+  background-color: #e0f2f1; /* Light teal tint */
+  border-color: #00796B; /* Primary Deep Teal */
 }
 
 .infoItemIcon {
@@ -218,7 +218,7 @@
 
 .infoItemValue {
   font-size: 14px;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   font-weight: 700;
 }
 
@@ -252,7 +252,7 @@
 
 .detailValue {
   font-size: 14px;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   font-weight: 700;
 }
 
@@ -274,10 +274,10 @@
 }
 
 .creatorCard:hover {
-  background-color: #f0f0f0;
+  background-color: #e0f2f1; /* Light teal tint */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
-  border-color: #d0d0d0;
+  border-color: #00796B; /* Primary Deep Teal */
 }
 
 .creatorImage {
@@ -285,7 +285,7 @@
   height: 60px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #00796B;
+  border: 3px solid #00796B; /* Primary Deep Teal */
   flex-shrink: 0;
 }
 
@@ -293,14 +293,14 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #00796B;
+  background-color: #00796B; /* Primary Deep Teal */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   font-weight: 700;
-  color: #FAFAFA;
-  border: 3px solid #00796B;
+  color: #FAFAFA; /* Soft White */
+  border: 3px solid #00796B; /* Primary Deep Teal */
   flex-shrink: 0;
 }
 
@@ -313,7 +313,7 @@
 .creatorName {
   font-size: 14px;
   font-weight: 700;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   margin: 0;
 }
 
@@ -349,7 +349,7 @@
 .errorTitle {
   font-size: 24px;
   font-weight: 700;
-  color: #212121;
+  color: #212121; /* Dark Gray */
   margin: 0;
 }
 
@@ -605,33 +605,51 @@
   }
 }
 
+/* =====================
+   Dark Mode (Based on Palette)
+   ===================== */
+
 @media (prefers-color-scheme: dark) {
   .heroContent {
-    background-color: #1a1a1a;
+    background-color: #1f2937; /* A dark gray, as #212121 is too close to black */
   }
-
-  .title,
+  
   .cardTitle,
   .detailValue,
-  .creatorName {
-    color: #FAFAFA;
+  .creatorName,
+  .infoItemValue,
+  .title {
+    color: #FAFAFA; /* Soft White */
   }
 
   .subtitle,
   .detailLabel,
   .metaItem,
-  .infoItemLabel {
-    color: #b0b0b0;
+  .infoItemLabel,
+  .creatorRole,
+  .errorText {
+    color: #9ca3af; /* A light gray for dark mode */
   }
 
   .infoItemContainer,
   .detailItem,
   .creatorCard {
-    background-color: #242424;
-    border-color: #333;
+    background-color: #374151; /* Darker card elements */
+    border-color: #4b5563; /* Darker borders */
+  }
+  
+  .infoItemContainer:hover,
+  .creatorCard:hover {
+     background-color: #4b5563;
+     border-color: #00796B; /* Primary Deep Teal */
   }
 
   .heroImagePlaceholder {
-    background-color: #1a4d47;
+    background-color: #004D40; /* Secondary Dark Teal */
+  }
+  
+  .heroContent,
+  .cardTitle {
+    border-color: #374151;
   }
 }

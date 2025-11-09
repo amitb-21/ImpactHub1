@@ -24,11 +24,37 @@ const CommunityStats = ({ community, compact = false }) => {
     );
   }
 
+  // ✅ FIX: Safely extract stats with fallbacks
   const tier = calculateTier(community.communityPoints || 0);
-  const memberCount = community.members?.length || 0;
-  const eventCount = community.events?.length || 0;
-  const avgRating = community.averageRating || 0;
-  const totalRatings = community.ratingCount || 0;
+
+  // Get member count - handle both array and count
+  const memberCount = Array.isArray(community.members)
+    ? community.members.length
+    : community.totalMembers || community.memberCount || 0;
+
+  // Get event count
+  const eventCount =
+    community.totalEvents ||
+    (Array.isArray(community.events) ? community.events.length : 0) ||
+    0;
+
+  // Get rating - ensure it's a number
+  const avgRating = parseFloat(community.avgRating) || 0;
+
+  // Get total ratings
+  const totalRatings = community.totalRatings || community.ratingCount || 0;
+
+  // Get community points
+  const communityPoints = parseFloat(community.communityPoints) || 0;
+
+  console.log("📊 CommunityStats data:", {
+    memberCount,
+    eventCount,
+    avgRating,
+    totalRatings,
+    communityPoints,
+    tier: tier?.name,
+  });
 
   const stats = [
     {
@@ -55,7 +81,7 @@ const CommunityStats = ({ community, compact = false }) => {
     {
       icon: FiTrendingUp,
       label: "Community Points",
-      value: formatNumber(community.communityPoints || 0),
+      value: formatNumber(communityPoints),
       color: "#8b5cf6",
       bgColor: "#ede9fe",
     },
@@ -107,17 +133,14 @@ const CommunityStats = ({ community, compact = false }) => {
             </div>
           </div>
           <p className={styles.tierDescription}>
-            Points: {community.communityPoints || 0} /{" "}
-            {getTierThreshold(tier.name)}
+            Points: {communityPoints.toLocaleString()} /{" "}
+            {getTierThreshold(tier.name).toLocaleString()}
           </p>
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
               style={{
-                width: `${calculateTierProgress(
-                  community.communityPoints || 0,
-                  tier.name
-                )}%`,
+                width: `${calculateTierProgress(communityPoints, tier.name)}%`,
                 backgroundColor: tier.color,
               }}
             />
@@ -125,7 +148,7 @@ const CommunityStats = ({ community, compact = false }) => {
         </div>
       )}
 
-      {/* Additional Info */}
+      {/* Verification Status */}
       {community.verificationStatus && (
         <div className={styles.infoSection}>
           <h4 className={styles.infoTitle}>Verification Status</h4>
@@ -198,6 +221,9 @@ const getTierThreshold = (tierName) => {
   return thresholds[tierName] || 10000;
 };
 
+/**
+ * Calculate progress to next tier
+ */
 const calculateTierProgress = (points, tierName) => {
   const current = Math.max(0, getTierThreshold(tierName) - points);
   const total = getTierThreshold(tierName);
