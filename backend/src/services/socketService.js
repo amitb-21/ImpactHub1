@@ -1,15 +1,18 @@
+// backend/src/services/socketService.js
+
 import { getIO } from '../config/socket.js';
 import { logger } from '../utils/logger.js';
 
 /**
  * Emit notification to specific user
+ * ✅ UPDATED: Removed automatic timestamp
  */
 export const emitToUser = (userId, event, data) => {
   try {
     const io = getIO();
     io.to(`user:${userId}`).emit(event, {
       ...data,
-      timestamp: new Date(),
+      // ❌ REMOVED: timestamp: new Date(),
     });
     logger.debug(`Emitted ${event} to user:${userId}`);
   } catch (error) {
@@ -19,13 +22,14 @@ export const emitToUser = (userId, event, data) => {
 
 /**
  * Emit notification to community members
+ * ✅ UPDATED: Removed automatic timestamp
  */
 export const emitToCommunity = (communityId, event, data) => {
   try {
     const io = getIO();
     io.to(`community:${communityId}`).emit(event, {
       ...data,
-      timestamp: new Date(),
+      // ❌ REMOVED: timestamp: new Date(),
     });
     logger.debug(`Emitted ${event} to community:${communityId}`);
   } catch (error) {
@@ -35,13 +39,14 @@ export const emitToCommunity = (communityId, event, data) => {
 
 /**
  * Emit notification to event participants
+ * ✅ UPDATED: Removed automatic timestamp
  */
 export const emitToEvent = (eventId, event, data) => {
   try {
     const io = getIO();
     io.to(`event:${eventId}`).emit(event, {
       ...data,
-      timestamp: new Date(),
+      // ❌ REMOVED: timestamp: new Date(),
     });
     logger.debug(`Emitted ${event} to event:${eventId}`);
   } catch (error) {
@@ -51,13 +56,14 @@ export const emitToEvent = (eventId, event, data) => {
 
 /**
  * Emit notification to all admins
+ * ✅ UPDATED: Removed automatic timestamp
  */
 export const emitToAdmins = (event, data) => {
   try {
     const io = getIO();
     io.to('admin').emit(event, {
       ...data,
-      timestamp: new Date(),
+      // ❌ REMOVED: timestamp: new Date(),
     });
     logger.debug(`Emitted ${event} to admins`);
   } catch (error) {
@@ -67,13 +73,14 @@ export const emitToAdmins = (event, data) => {
 
 /**
  * Broadcast to all connected clients
+ * ✅ UPDATED: Removed automatic timestamp
  */
 export const broadcastToAll = (event, data) => {
   try {
     const io = getIO();
     io.emit(event, {
       ...data,
-      timestamp: new Date(),
+      // ❌ REMOVED: timestamp: new Date(),
     });
     logger.debug(`Broadcasted ${event} to all clients`);
   } catch (error) {
@@ -85,37 +92,42 @@ export const broadcastToAll = (event, data) => {
 // SPECIFIC EVENT EMITTERS
 // =====================
 
-/**
- * Notify user of points earned
- */
 export const notifyPointsEarned = (userId, points, reason, relatedEntity = null) => {
+  // ✅ FIX: Send payload that matches impactSlice expectations
   emitToUser(userId, 'points:earned', {
+    userId,  // ✅ NEW: Include userId
     points,
     reason,
+    type: 'points_earned',  // ✅ NEW: Add type
     relatedEntity,
   });
 };
 
-/**
- * Notify user of level up
- */
 export const notifyLevelUp = (userId, newLevel, newRank = null) => {
+  // ✅ FIX: Match impactSlice expectations
   emitToUser(userId, 'user:levelup', {
-    level: newLevel,
+    userId,  // ✅ NEW: Include userId
+    newLevel,
     rank: newRank,
+    // ❌ REMOVED: timestamp
   });
 };
 
 /**
- * Notify community of new member
+ * Notify community of new member - FIXED PAYLOAD
  */
 export const notifyCommunityNewMember = (communityId, user) => {
+  // ✅ FIX: Add all necessary fields for socket event
   emitToCommunity(communityId, 'community:member_joined', {
+    communityId,  // ✅ NEW: Include communityId
+    communityName: null,  // Will be populated by community service if needed
     user: {
       id: user._id,
       name: user.name,
       profileImage: user.profileImage,
     },
+    points: 5,  // ✅ NEW: Points awarded for joining
+    // ❌ REMOVED: timestamp
   });
 };
 
@@ -223,7 +235,7 @@ export const broadcastActivity = (activityType, userId, data) => {
       type: activityType,
       userId,
       ...data,
-      timestamp: new Date(),
+      timestamp: new Date(), // NOTE: This specific broadcast still has a timestamp, as it's part of the data model.
     });
     logger.debug(`Broadcasted activity: ${activityType}`);
   } catch (error) {

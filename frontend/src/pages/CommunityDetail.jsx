@@ -61,6 +61,9 @@ const CommunityDetail = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [participationId, setParticipationId] = useState(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [localMemberCount, setLocalMemberCount] = useState(0);
+  // ✅ NEW: Manual membership override for workaround
+  const [membershipOverride, setMembershipOverride] = useState(null);
 
   // Pagination for activities
   const activityPaginationData = communityActivities?.pagination || {
@@ -87,50 +90,91 @@ const CommunityDetail = () => {
           limit: 10,
         })
       );
+      // ✅ REFETCH RATINGS AFTER JOIN/LEAVE
       dispatch(
         fetchEntityRatings({ entityType: "Community", entityId: communityId })
       );
     }
   }, [communityId, dispatch, activityPage, refetchTrigger]);
 
-  // ✅ EFFECT 2: Determine membership status - IMPROVED
+  // ✅ EFFECT 2: Determine membership status - WITH WORKAROUND
   useEffect(() => {
     if (currentCommunity && currentUser) {
       console.log("👤 Checking membership...", {
         communityId: currentCommunity._id,
         userId: currentUser._id,
-        memberCount: currentCommunity.members?.length,
+        members: currentCommunity.members,
+        memberCount: currentCommunity.memberCount,
+        totalMembers: currentCommunity.totalMembers,
+        membershipOverride,
       });
 
-      // Safely extract member IDs
-      const memberIds = (currentCommunity.members || []).map((m) => {
-        if (typeof m === "string") return m;
-        if (m._id) return m._id.toString();
-        return m.toString();
-      });
+      // ✅ WORKAROUND: If members array is undefined, use override
+      let isMemberNow = false;
 
-      const userIdStr = currentUser._id.toString();
-      const isMemberNow = memberIds.includes(userIdStr);
+      if (membershipOverride !== null) {
+        // Use manual override if set
+        isMemberNow = membershipOverride;
+        console.log("✅ Using membership override:", isMemberNow);
+      } else if (
+        currentCommunity.members &&
+        Array.isArray(currentCommunity.members)
+      ) {
+        // Try to use members array if it exists
+        const memberIds = currentCommunity.members.map((m) => {
+          if (typeof m === "string") return m;
+          if (m._id) return m._id.toString();
+          return m.toString();
+        });
 
-      console.log("✅ Member check:", {
-        userIdStr,
-        memberIds,
-        isMemberNow,
-      });
+        const userIdStr = currentUser._id.toString();
+        isMemberNow = memberIds.includes(userIdStr);
+
+        console.log("✅ Member check from array:", {
+          userIdStr,
+          memberIds,
+          isMemberNow,
+        });
+      } else {
+        // ✅ FALLBACK: Members array is missing
+        console.warn(
+          "⚠️ Members array is undefined/null - API may not be returning it"
+        );
+        console.warn(
+          "📌 Check backend: GET /communities/:id should return members array"
+        );
+
+        // If no override and no members array, assume not member
+        isMemberNow = false;
+      }
 
       setIsMember(isMemberNow);
+
+      // ✅ UPDATE LOCAL MEMBER COUNT
+      const memberCount =
+        currentCommunity.members?.length ||
+        currentCommunity.totalMembers ||
+        currentCommunity.memberCount ||
+        0;
+      setLocalMemberCount(memberCount);
+
+      console.log("📊 Final member state:", {
+        isMemberNow,
+        memberCount,
+        displayMemberCount: memberCount,
+      });
 
       // Check if owner
       const creatorId =
         currentCommunity.createdBy?._id?.toString?.() ||
         currentCommunity.createdBy?.toString?.() ||
         currentCommunity.createdBy;
-      const isOwnerNow = creatorId === userIdStr;
+      const isOwnerNow = creatorId === currentUser._id.toString();
 
-      console.log("✅ Owner check:", { creatorId, userIdStr, isOwnerNow });
+      console.log("✅ Owner check:", { creatorId, isOwnerNow });
       setIsOwner(isOwnerNow);
     }
-  }, [currentCommunity, currentUser]);
+  }, [currentCommunity, currentUser, membershipOverride]);
 
   // Join Socket room when member
   useEffect(() => {
@@ -140,7 +184,7 @@ const CommunityDetail = () => {
     }
   }, [communityId, isMember, joinCommunitySocket]);
 
-  // ✅ HANDLE JOIN - FIXED WITH BETTER ERROR HANDLING
+  // ✅ HANDLE JOIN - WITH WORKAROUND
   const handleJoinCommunity = async () => {
     console.log("🔄 Starting join process...");
 
@@ -148,30 +192,40 @@ const CommunityDetail = () => {
       const result = await dispatch(joinCommunity(communityId));
 
       console.log("📦 Join result:", result);
+      console.log("📦 Join result payload:", result.payload);
 
-      // ✅ FIX: Handle both success and "already member" cases
-      if (result.payload?.community) {
-        console.log(
-          "✅ Join successful! Community data:",
-          result.payload.community
-        );
-        setIsMember(true);
+      if (result.payload?.success !== false) {
+        // Success case - new member
+        console.log("✅ Join successful!");
+
+        // ✅ WORKAROUND: Set manual override
+        setMembershipOverride(true);
+
+        // Also trigger refetch
         setRefetchTrigger((prev) => prev + 1);
+
         joinCommunitySocket(communityId);
-        toast.success("Successfully joined community!");
+        toast.success(
+          "Successfully joined community! You can now add reviews."
+        );
       } else if (
         result.payload?.success === false &&
         result.payload?.message?.includes("Already a member")
       ) {
-        // ✅ FIX: User is already a member - just update state
+        // Already a member
         console.log("✅ User is already a member!");
-        setIsMember(true);
+
+        // ✅ WORKAROUND: Set manual override
+        setMembershipOverride(true);
+
+        // Still trigger refetch
         setRefetchTrigger((prev) => prev + 1);
+
         joinCommunitySocket(communityId);
-        toast.info("You are already a member of this community");
-      } else if (result.error?.message) {
-        console.error("❌ Join failed:", result.error.message);
-        toast.error(result.error.message);
+        toast.info("You are already a member of this community!");
+      } else if (result.error) {
+        console.error("❌ Join failed:", result.error);
+        toast.error(result.error.message || "Failed to join community");
       } else {
         console.error("❌ Join failed - unexpected response");
         toast.error("Failed to join community");
@@ -182,7 +236,7 @@ const CommunityDetail = () => {
     }
   };
 
-  // ✅ HANDLE LEAVE - IMPROVED
+  // ✅ HANDLE LEAVE
   const handleLeaveCommunity = async () => {
     if (!window.confirm("Are you sure you want to leave this community?")) {
       return;
@@ -197,11 +251,20 @@ const CommunityDetail = () => {
 
       if (
         result.payload === communityId ||
-        result.payload?.communityId === communityId
+        result.payload?.communityId === communityId ||
+        result.payload?.success === true
       ) {
         console.log("✅ Leave successful!");
         setIsMember(false);
+
+        // ✅ WORKAROUND: Clear override
+        setMembershipOverride(false);
+
+        setLocalMemberCount(Math.max(0, localMemberCount - 1));
+
+        // Force refetch to ensure UI is in sync
         setRefetchTrigger((prev) => prev + 1);
+
         toast.success("Successfully left community!");
       } else {
         console.error("❌ Leave failed");
@@ -266,7 +329,10 @@ const CommunityDetail = () => {
   const showUpdateForm = isAuthenticated && isMember && myRating;
   const showJoinMessage = isAuthenticated && !isMember;
   const showLoginMessage = !isAuthenticated;
-  const isCommunityManager = currentUser?.role === "community_manager";
+
+  // ✅ USE LOCAL MEMBER COUNT IF AVAILABLE
+  const displayMemberCount =
+    localMemberCount || currentCommunity.members?.length || 0;
 
   return (
     <Layout>
@@ -365,7 +431,7 @@ const CommunityDetail = () => {
               )}
             </div>
 
-            {/* ✅ JOIN/LEAVE BUTTON - FIXED */}
+            {/* ✅ JOIN/LEAVE BUTTON */}
             <div className={styles.buttonGroup}>
               {!isMember ? (
                 <Button
@@ -442,17 +508,22 @@ const CommunityDetail = () => {
                   entityType="Community"
                   entityId={communityId}
                   myRating={myRating}
+                  onSuccess={() => setRefetchTrigger((prev) => prev + 1)}
                 />
               )}
 
               {showRatingForm && (
-                <RatingForm entityType="Community" entityId={communityId} />
+                <RatingForm
+                  entityType="Community"
+                  entityId={communityId}
+                  onSuccess={() => setRefetchTrigger((prev) => prev + 1)}
+                />
               )}
 
               {showJoinMessage && (
                 <Card padding="lg" shadow="md">
                   <p className={styles.participantNote}>
-                    You must join this community to leave a review.
+                    👆 Join the community above to leave a review!
                   </p>
                 </Card>
               )}
@@ -477,13 +548,16 @@ const CommunityDetail = () => {
             </div>
 
             <div className={styles.section}>
-              <RatingList entityType="Community" entityId={communityId} />
+              <RatingList
+                entityType="Community"
+                entityId={communityId}
+                refetchTrigger={refetchTrigger}
+              />
             </div>
           </div>
 
           {/* Right Column */}
           <div className={styles.rightColumn}>
-
             {currentCommunity.organizationDetails && (
               <Card padding="lg" shadow="md" className={styles.infoCard}>
                 <h3 className={styles.cardTitle}>Organization</h3>
@@ -625,20 +699,21 @@ const CommunityDetail = () => {
   );
 };
 
-const InfoItem = ({ icon, label, value }) => (
-  <div className={styles.infoItemContainer}>
-    <span className={styles.infoItemIcon}>{icon}</span>
-    <div className={styles.infoItemContent}>
-      <span className={styles.infoItemLabel}>{label}</span>
-      <span className={styles.infoItemValue}>{value}</span>
-    </div>
-  </div>
-);
-
 const DetailItem = ({ label, value }) => (
-  <div className={styles.detailItem}>
-    <span className={styles.detailLabel}>{label}</span>
-    <span className={styles.detailValue}>{value}</span>
+  <div style={{ marginBottom: "12px" }}>
+    <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "500" }}>
+      {label}
+    </span>
+    <div
+      style={{
+        fontSize: "14px",
+        color: "#1f2937",
+        fontWeight: "600",
+        marginTop: "4px",
+      }}
+    >
+      {value}
+    </div>
   </div>
 );
 

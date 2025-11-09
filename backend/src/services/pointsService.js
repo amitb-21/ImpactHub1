@@ -12,6 +12,9 @@ import {
 } from '../utils/helpers.js';
 import * as socketService from './socketService.js';
 
+// =====================
+// VALIDATION HELPERS
+// =====================
 
 const validateUserIdOrThrow = (userId) => {
   const error = validateUserId(userId);
@@ -26,6 +29,107 @@ const validateCommunityIdOrThrow = (communityId) => {
 const validatePointsOrThrow = (points) => {
   const error = validatePoints(points);
   if (error) throw new Error(error);
+};
+
+// =====================
+// COMMUNITY MEMBER JOINED POINTS
+// =====================
+
+/**
+ * Award points to community when a new member joins
+ * @param {string} communityId - Community ID
+ * @param {string} userId - User ID of new member
+ * @returns {Object} Updated CommunityRewards document
+ */
+export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
+  try {
+    console.log('🏆 Awarding points for member join:', { communityId, userId });
+    
+    validateCommunityIdOrThrow(communityId);
+    validateUserIdOrThrow(userId);
+
+    const points = 5; // Points per member joined
+
+    // ✅ STEP 1: Update Community Rewards
+    console.log('📝 Updating community rewards...');
+    const communityRewards = await CommunityRewards.findOneAndUpdate(
+      { community: communityId },
+      {
+        $inc: {
+          totalPoints: points,
+          'pointsBreakdown.memberJoined': points,
+          totalMembers: 1,
+        },
+        $push: {
+          rewardsHistory: {
+            points: points,
+            type: 'member_joined',
+            description: 'New member joined community',
+            relatedUser: userId,
+            relatedEntity: {
+              entityType: 'User',
+              entityId: userId,
+            },
+            awardedAt: new Date(),
+          },
+        },
+        $set: {
+          lastPointsUpdate: new Date(),
+        },
+      },
+      { 
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    console.log('✅ Community rewards updated:', {
+      totalPoints: communityRewards.totalPoints,
+      memberJoinedPoints: communityRewards.pointsBreakdown.memberJoined,
+    });
+
+    // ✅ STEP 2: Update User Points
+    console.log('📝 Updating user points...');
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { points: points } },
+      { new: true }
+    );
+
+    console.log('✅ User points updated:', {
+      userId: updatedUser._id,
+      totalPoints: updatedUser.points,
+    });
+
+    logger.success(
+      `✅ Community ${communityId} awarded ${points} points for new member ${userId}`
+    );
+
+    return {
+      success: true,
+      communityRewards,
+      userPoints: updatedUser.points,
+      pointsAwarded: points,
+    };
+  } catch (error) {
+    console.error('❌ Error awarding community member joined points:', error);
+    logger.error('Error awarding community member joined points', error);
+    
+    // ✅ Log the full error
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      communityId,
+      userId,
+    });
+    
+    // Don't throw - just log (so join still works even if points fail)
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 };
 
 // =====================
@@ -122,7 +226,6 @@ export const awardVolunteerEventPoints = async (
     });
 
     // Check for level up
-    // ✅ FIXED: calculateLevel is now imported
     const newLevel = calculateLevel(updatedUser.points);
     if (newLevel > updatedUser.level) {
       await User.findByIdAndUpdate(userId, { level: newLevel });
@@ -281,59 +384,6 @@ export const calculateVolunteerRank = (totalPoints) => {
 // COMMUNITY REWARDS SERVICE
 // =====================
 
-export const awardCommunityMemberJoinedPoints = async (communityId, userId) => {
-  try {
-    validateCommunityIdOrThrow(communityId);
-    validateUserIdOrThrow(userId);
-
-    const points = 5; // Points per member joined
-
-    // This is a plain JavaScript OBJECT
-    const rewardObject = {
-      points: points,
-      type: 'member_joined',
-      description: 'New member joined community',
-      relatedUser: userId, // Mongoose will cast this string to ObjectId
-      relatedEntity: {
-        entityType: 'User',
-        entityId: userId, // Mongoose will cast this string to ObjectId
-      },
-      awardedAt: new Date(),
-    };
-
-    // Use a single atomic operation
-    const communityRewards = await CommunityRewards.findOneAndUpdate(
-      { community: communityId },
-      {
-        $inc: {
-          totalPoints: points,
-          'pointsBreakdown.memberJoined': points,
-          totalMembers: 1,
-        },
-        $push: {
-          rewardsHistory: rewardObject, // ✅ We are pushing the OBJECT, not a string
-        },
-        $set: {
-          lastPointsUpdate: new Date(),
-        }
-      },
-      { 
-        upsert: true, // Create the document if it doesn't exist
-        new: true, // Return the modified document
-        setDefaultsOnInsert: true // Ensure defaults are set on creation
-      }
-    );
-
-    logger.success(`Community ${communityId} awarded ${points} points for new member`);
-
-    return communityRewards;
-  } catch (error) {
-    logger.error('Error awarding community member joined points', error);
-    throw error;
-  }
-};
-
-
 /**
  * Award points to community when event is created
  */
@@ -463,6 +513,10 @@ export const calculateCommunityTier = (totalPoints) => {
   return 'Diamond';
 };
 
+// =====================
+// LEADERBOARD SERVICE
+// =====================
+
 /**
  * Get leaderboard for volunteers (real-time)
  */
@@ -539,7 +593,14 @@ export const getCommunityLeaderboard = async (limit = 20, page = 1) => {
   }
 };
 
+// =====================
+// EXPORTS
+// =====================
+
 export default {
+  // Community Member Joined Points
+  awardCommunityMemberJoinedPoints,
+
   // Volunteer Points
   awardVolunteerEventPoints,
   awardVolunteerEventCreationPoints,
@@ -547,8 +608,8 @@ export default {
   getVolunteerPointsSummary,
   calculateVolunteerRank,
   getVolunteerLeaderboard,
+
   // Community Rewards
-  awardCommunityMemberJoinedPoints,
   awardCommunityEventCreatedPoints,
   awardCommunityVerificationPoints,
   getCommunityRewardsSummary,

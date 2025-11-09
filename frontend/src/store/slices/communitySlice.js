@@ -1,3 +1,5 @@
+// frontend/src/store/slices/communitySlice.js
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { communityAPI } from '../../api/services';
 import { toast } from 'react-toastify';
@@ -58,7 +60,7 @@ export const updateCommunity = createAsyncThunk(
   }
 );
 
-// ✅ JOIN COMMUNITY - FIXED
+// ✅ JOIN COMMUNITY - COMPLETE FIX
 export const joinCommunity = createAsyncThunk(
   'community/join',
   async (communityId, { rejectWithValue }) => {
@@ -69,18 +71,21 @@ export const joinCommunity = createAsyncThunk(
       
       toast.success('Joined community successfully!');
       
-      // Return the full response with community data
+      // ✅ Return the response data as-is (backend returns { community, isMember, etc })
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to join community';
-      console.error('❌ Join error:', message);
+      console.error('❌ Join error:', message, error.response?.data);
       toast.error(message);
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message,
+        error: error.response?.data
+      });
     }
   }
 );
 
-// ✅ LEAVE COMMUNITY - FIXED
+// ✅ LEAVE COMMUNITY - COMPLETE FIX
 export const leaveCommunity = createAsyncThunk(
   'community/leave',
   async (communityId, { rejectWithValue }) => {
@@ -91,16 +96,16 @@ export const leaveCommunity = createAsyncThunk(
       
       toast.success('Left community successfully!');
       
-      // Return communityId for identification
-      return {
-        communityId,
-        success: true
-      };
+      // ✅ Return the response data
+      return response.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to leave community';
       console.error('❌ Leave error:', message);
       toast.error(message);
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message,
+        error: error.response?.data
+      });
     }
   }
 );
@@ -209,56 +214,90 @@ const communitySlice = createSlice({
         state.error = action.payload;
       })
 
-      // ✅ JOIN COMMUNITY - COMPLETELY REWRITTEN
+      // ✅ JOIN COMMUNITY - UPDATED
       .addCase(joinCommunity.pending, (state) => {
         state.isJoining = true;
         state.error = null;
         state.lastAction = 'joinCommunity/pending';
         console.log('🔄 Join pending...');
       })
+      // ✅ JOIN COMMUNITY - COMPLETE FIX
       .addCase(joinCommunity.fulfilled, (state, action) => {
         state.isJoining = false;
         console.log('✅ Join fulfilled! Payload:', action.payload);
 
-        // ✅ CRITICAL: Update currentCommunity with response data
-        if (action.payload.community) {
-          console.log('📝 Updating currentCommunity with:', action.payload.community);
+        // ✅ CRITICAL: action.payload structure from backend:
+        // { success: true, community: {...}, isMember: true, userId, pointsAwarded }
+        
+        if (action.payload?.community) {
+          const community = action.payload.community;
+          console.log('📝 Updating currentCommunity with:', {
+            name: community.name,
+            membersCount: community.members?.length,
+            totalMembers: community.totalMembers
+          });
+
+          // ✅ Update current community with full response
           state.currentCommunity = {
             ...state.currentCommunity,
-            ...action.payload.community,
-            // Ensure members array is properly set
-            members: action.payload.community.members || state.currentCommunity?.members || []
+            ...community,
+            members: community.members || [],
+            totalMembers: community.totalMembers || community.members?.length || 0
           };
-          console.log('✅ Current community updated');
+
+          console.log('✅ Current community updated successfully');
+        } else {
+          console.error('⚠️ No community in response:', action.payload);
         }
 
         state.lastAction = 'joinCommunity/fulfilled';
       })
+
       .addCase(joinCommunity.rejected, (state, action) => {
         state.isJoining = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || action.payload;
         state.lastAction = 'joinCommunity/rejected';
-        console.error('❌ Join rejected:', action.payload);
+        console.error('❌ Join rejected:', state.error);
       })
 
-      // ✅ LEAVE COMMUNITY - REWRITTEN
+      // ✅ LEAVE COMMUNITY - UPDATED
       .addCase(leaveCommunity.pending, (state) => {
         state.isLeaving = true;
         state.error = null;
         state.lastAction = 'leaveCommunity/pending';
         console.log('🔄 Leave pending...');
       })
+      // ✅ LEAVE COMMUNITY - COMPLETE FIX
       .addCase(leaveCommunity.fulfilled, (state, action) => {
         state.isLeaving = false;
-        console.log('✅ Leave fulfilled');
-        // Don't update state here - let component refetch
+        console.log('✅ Leave fulfilled! Payload:', action.payload);
+
+
+        if (action.payload?.community) {
+          const community = action.payload.community;
+          
+          // ✅ Update current community
+          state.currentCommunity = {
+            ...state.currentCommunity,
+            ...community,
+            members: community.members || [],
+            totalMembers: community.totalMembers || community.members?.length || 0
+          };
+
+          console.log('✅ Left community - members updated:', {
+            membersCount: community.members?.length,
+            totalMembers: community.totalMembers
+          });
+        }
+
         state.lastAction = 'leaveCommunity/fulfilled';
       })
+
       .addCase(leaveCommunity.rejected, (state, action) => {
         state.isLeaving = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || action.payload;
         state.lastAction = 'leaveCommunity/rejected';
-        console.error('❌ Leave rejected:', action.payload);
+        console.error('❌ Leave rejected:', state.error);
       });
   }
 });

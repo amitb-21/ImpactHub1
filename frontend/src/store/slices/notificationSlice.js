@@ -35,8 +35,8 @@ const notificationSlice = createSlice({
     // Add a new notification to queue
     addNotification: (state, action) => {
       const notification = {
-        id: Date.now(),
-        timestamp: new Date(),
+        id: Date.now(),  // Use numeric ID instead
+        // ❌ REMOVED: timestamp: new Date(),
         ...action.payload
       };
       state.notifications.unshift(notification);
@@ -86,7 +86,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '🎉 Points Earned!',
         message: `You earned ${points} points for ${reason}`,
         type: 'success',
@@ -99,14 +99,14 @@ const notificationSlice = createSlice({
 
     // Level up notification
     levelUp: (state, action) => {
-      const { level, rank } = action.payload;
+      const { newLevel, rank } = action.payload;
       state.realtimeEvents.levelUp = action.payload;
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '🚀 Level Up!',
-        message: `Congratulations! You reached Level ${level}${rank ? ` (${rank})` : ''}`,
+        message: `Congratulations! You reached Level ${newLevel}${rank ? ` (${rank})` : ''}`,
         type: 'success',
         icon: '🏆',
         read: false,
@@ -122,7 +122,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '✅ Attendance Verified!',
         message: `Your attendance has been verified! You earned ${points} points${hours > 0 ? ` (${hours} hours)` : ''}`,
         type: 'success',
@@ -140,7 +140,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '❌ Participation Rejected',
         message: `Your participation was rejected. Reason: ${reason}`,
         type: 'error',
@@ -161,7 +161,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: `${statusEmoji} Community Verification ${status}`,
         message: message || `Your community verification status is now ${status}`,
         type: typeMap[status] || 'info',
@@ -178,7 +178,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '🎉 Application Approved!',
         message: `Congratulations! You've been approved as a community manager. Your community "${communityName}" is now live and verified!`,
         type: 'success',
@@ -201,7 +201,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '❌ Application Not Approved',
         message: `Your community manager application for "${communityName}" was not approved.\n\nReason: ${reason}\n\nYou can reapply in 30 days.`,
         type: 'error',
@@ -223,7 +223,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '✅ Resource Published!',
         message: `Your resource "${resourceTitle}" has been approved and published!`,
         type: 'success',
@@ -245,7 +245,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '❌ Resource Rejected',
         message: `Your resource "${resourceTitle}" was not approved.\n\nReason: ${reason}`,
         type: 'error',
@@ -263,7 +263,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '👥 New Participant',
         message: `${participant.name} joined your event`,
         type: 'info',
@@ -281,7 +281,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '⭐ New Rating',
         message: `Your ${entityType.toLowerCase()} received a ${rating.rating}-star rating${rating.review ? ': ' + rating.review.substring(0, 50) + '...' : ''}`,
         type: 'info',
@@ -299,7 +299,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '📸 Photo Uploaded',
         message: 'A new photo has been added to your event',
         type: 'info',
@@ -318,7 +318,7 @@ const notificationSlice = createSlice({
       if (isFull) {
         state.notifications.unshift({
           id: Date.now(),
-          timestamp: new Date(),
+          // ❌ REMOVED: timestamp: new Date(),
           title: '🔴 Event Full',
           message: `Your event has reached maximum capacity (${registered}/${registered + available})`,
           type: 'warning',
@@ -337,7 +337,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '👥 New Community Member',
         message: `${user.name} joined your community`,
         type: 'info',
@@ -362,7 +362,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: 'ℹ️ Event Update',
         message: updateMessages[updateType] || 'Event has been updated',
         type: 'info',
@@ -378,7 +378,7 @@ const notificationSlice = createSlice({
       
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: title || 'Notification',
         message: message || '',
         type: type,
@@ -392,7 +392,7 @@ const notificationSlice = createSlice({
     errorNotification: (state, action) => {
       state.notifications.unshift({
         id: Date.now(),
-        timestamp: new Date(),
+        // ❌ REMOVED: timestamp: new Date(),
         title: '❌ Error',
         message: action.payload || 'An error occurred',
         type: 'error',

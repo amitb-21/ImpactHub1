@@ -126,6 +126,8 @@ export const joinCommunity = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
+    console.log('🔄 Join request - Community:', id, 'User:', userId);
+
     const community = await Community.findById(id);
 
     if (!community) {
@@ -142,7 +144,12 @@ export const joinCommunity = async (req, res) => {
       });
     }
 
-    if (community.members.includes(userId)) {
+    const isMember = community.members.some(memberId => 
+      memberId.toString() === userId.toString()
+    );
+
+    if (isMember) {
+      console.log('⚠️ User already a member');
       return res.status(409).json({
         success: false,
         message: 'Already a member of this community',
@@ -155,11 +162,23 @@ export const joinCommunity = async (req, res) => {
     community.totalMembers = community.members.length;
     await community.save();
 
+    console.log('✅ User added to community members');
+
     await User.findByIdAndUpdate(userId, {
       $addToSet: { communitiesJoined: id },
     });
 
-    await pointsService.awardCommunityMemberJoinedPoints(id, userId);
+    console.log('✅ Community added to user\'s joined list');
+
+    // ✅ KEY FIX: Check response from points service
+    console.log('🏆 Calling awardCommunityMemberJoinedPoints...');
+    const pointsResult = await pointsService.awardCommunityMemberJoinedPoints(id, userId);
+    
+    if (pointsResult.success) {
+      console.log('✅ Points awarded successfully:', pointsResult);
+    } else {
+      console.error('⚠️ Points award failed:', pointsResult.error);
+    }
 
     await Activity.create({
       user: userId,
@@ -170,6 +189,8 @@ export const joinCommunity = async (req, res) => {
         entityId: community._id,
       },
     });
+
+    console.log('✅ Activity created');
 
     logger.success(`User ${userId} joined community ${id}`);
 
@@ -184,18 +205,25 @@ export const joinCommunity = async (req, res) => {
       .populate('createdBy', 'name profileImage')
       .populate('members', 'name profileImage email');
 
+    console.log('✅ Returning updated community with members:', {
+      membersCount: updatedCommunity.members?.length
+    });
+
     res.json({
       success: true,
       message: 'Joined community successfully',
       community: updatedCommunity,
       isMember: true,
       userId: userId,
+      pointsAwarded: pointsResult.pointsAwarded || 0,
     });
   } catch (error) {
+    console.error('❌ Error joining community:', error);
     logger.error('Error joining community', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
     });
   }
 };
@@ -226,17 +254,15 @@ export const leaveCommunity = async (req, res) => {
 
     const updatedCommunity = await Community.findById(id)
       .populate('createdBy', 'name profileImage')
-      .populate('members', 'name profileImage email'); // Make sure to populate members
+      .populate('members', 'name profileImage email');
 
     res.json({
       success: true,
       message: 'Left community successfully',
-      community: updatedCommunity, // Return the updated community
-      isMember: false, // Explicitly state they are no longer a member
+      community: updatedCommunity,
+      isMember: false,
       userId: userId,
     });
-    // --- END FIX ---
-
   } catch (error) {
     logger.error('Error leaving community', error);
     res.status(500).json({
@@ -245,7 +271,6 @@ export const leaveCommunity = async (req, res) => {
     });
   }
 };
-
 
 // ✅ CORRECTED: Only community creator can update
 export const updateCommunity = async (req, res) => {
@@ -321,7 +346,7 @@ export const getCommunityVerificationStatus = async (req, res) => {
     if (!verification) {
       return res.json({
         success: true,
-        status: 'verified', // ✅ All communities are now verified
+        status: 'verified',
         verification: null,
       });
     }

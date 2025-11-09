@@ -39,13 +39,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // ✅ ADD THIS FIELD IF MISSING
     points: {
       type: Number,
       default: 0,
+      description: 'Total volunteer points',
     },
     level: {
       type: Number,
       default: 1,
+      description: 'User level based on points',
     },
     communitiesJoined: [
       {
@@ -78,6 +81,8 @@ const userSchema = new mongoose.Schema(
 
 // Add indexes - googleId with sparse only (no index: true)
 userSchema.index({ googleId: 1, sparse: true });
+userSchema.index({ points: -1 }); // ✅ NEW: For leaderboard queries
+userSchema.index({ level: -1 }); // ✅ NEW: For level-based queries
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

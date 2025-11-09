@@ -1,94 +1,203 @@
 .container {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 24px;
-  padding: 20px;
-  background-color: #fafafa;
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  padding: 0;
 }
 
-.summary {
+.ratingDisplay {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding-right: 24px;
-  border-right: 1px solid #e0e0e0;
+  gap: 32px;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.avgRating {
+.scoreSection {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.score {
   font-size: 48px;
   font-weight: 700;
-  color: #212121;
+  color: #fbbf24;
   line-height: 1;
+}
+
+.scoreOutOf {
+  font-size: 20px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.ratingInfo {
+  flex: 1;
 }
 
 .stars {
   display: flex;
   gap: 4px;
-  margin: 8px 0;
+  margin-bottom: 8px;
 }
 
-.totalRatings {
-  font-size: 13px;
-  color: #666;
-  font-weight: 500;
+.star {
+  font-size: 20px;
+  opacity: 0.3;
 }
 
+.starFilled {
+  opacity: 1;
+}
+
+.reviewCount {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Distribution */
 .distribution {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.distributionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.barRow {
-  display: flex;
+.bar {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px;
+  gap: 12px;
   align-items: center;
-  gap: 8px;
 }
 
 .barLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
-  color: #666;
-  width: 60px;
-  text-align: right;
-  flex-shrink: 0;
+  font-weight: 600;
+  color: #374151;
 }
 
-.progressBar {
-  flex: 1;
-  height: 8px;
-  background-color: #e0e0e0;
+.starIcon {
+  font-size: 14px;
+}
+
+.barContainer {
+  background: #f3f4f6;
   border-radius: 4px;
+  height: 8px;
   overflow: hidden;
 }
 
-.progressFill {
+.barFill {
   height: 100%;
-  background-color: #ffb300;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
-.barCount {
-  font-size: 13px;
-  color: #212121;
+.barValue {
+  text-align: right;
+  font-size: 12px;
+  color: #6b7280;
   font-weight: 500;
-  width: 40px;
-  text-align: left;
 }
 
-@media (max-width: 600px) {
-  .container {
-    grid-template-columns: 1fr;
+.emptyDistribution {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* Summary Stats */
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 0 0 8px 8px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Compact View */
+.compactContainer {
+  padding: 8px;
+}
+
+.compactRating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.compactScore {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.compactStars {
+  display: flex;
+  gap: 2px;
+}
+
+.compactCount {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ratingDisplay {
+    flex-direction: column;
     gap: 16px;
+    text-align: center;
   }
-  .summary {
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    padding-right: 0;
-    padding-bottom: 16px;
+
+  .summaryStats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .bar {
+    grid-template-columns: 30px 1fr 60px;
+    gap: 8px;
+    font-size: 12px;
   }
 }

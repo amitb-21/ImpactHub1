@@ -158,24 +158,27 @@ const initialState = {
 const impactSlice = createSlice({
   name: 'impact',
   initialState,
+  // ===================================
+  // ===== UPDATED REDUCERS START ======
+  // ===================================
   reducers: {
-    // ✅ HANDLE POINTS EARNED - Real-time update
+    // Handle points earned - FIXED
     pointsEarned: (state, action) => {
-      const { userId, points, reason, type } = action.payload;
+      const { userId, points, reason, type, relatedEntity } = action.payload;
 
-      console.log('💎 Points earned action:', action.payload);
+      console.log('💎 Points earned action (FIXED):', action.payload);
 
-      // Update metrics if available
+      // ✅ Update metrics if available
       if (state.metrics) {
         state.metrics.totalPoints = (state.metrics.totalPoints || 0) + points;
       }
 
-      // Update progress
+      // ✅ Update progress
       if (state.progress) {
         state.progress.currentPoints = (state.progress.currentPoints || 0) + points;
       }
 
-      // Recalculate level if needed
+      // ✅ Recalculate level if needed
       if (state.levels && state.progress) {
         const currentLevel = state.levels.find(
           (level) =>
@@ -186,37 +189,51 @@ const impactSlice = createSlice({
           state.progress.currentLevel = currentLevel.level;
         }
       }
+
+      console.log('✅ Points updated. New total:', 
+        state.metrics?.totalPoints || state.progress?.currentPoints);
     },
 
-    // ✅ HANDLE LEVEL UP - Real-time update
+    // Handle level up - FIXED
     levelUp: (state, action) => {
-      const { userId, newLevel, points } = action.payload;
+      const { userId, newLevel, rank, points } = action.payload;
 
-      console.log('🎉 Level up action:', action.payload);
+      console.log('🎉 Level up action (FIXED):', action.payload);
 
+      // ✅ Update progress with newLevel (not level)
       if (state.progress) {
         state.progress.currentLevel = newLevel;
-        state.progress.currentPoints = points;
+        if (points) {
+          state.progress.currentPoints = points;
+        }
       }
 
+      // ✅ Update metrics
       if (state.metrics) {
         state.metrics.level = newLevel;
+        if (points) {
+          state.metrics.totalPoints = points;
+        }
       }
+
+      console.log('✅ Level updated to:', newLevel);
     },
 
-    // ✅ HANDLE STREAK UPDATED
+    // Handle streak updated
     streakUpdated: (state, action) => {
-      const { userId, streak, lastActivityDate } = action.payload;
+      const { userId, currentStreak, streak, lastActivityDate } = action.payload;
 
       console.log('🔥 Streak updated:', action.payload);
 
-      if (state.streak) {
-        state.streak.currentStreak = streak;
-        state.streak.lastActivityDate = lastActivityDate;
+      if (!state.streak) {
+        state.streak = {};
       }
+
+      state.streak.currentStreak = currentStreak || streak;
+      state.streak.lastActivityDate = lastActivityDate;
     },
 
-    // ✅ HANDLE ACHIEVEMENT UNLOCKED
+    // Handle achievement unlocked
     achievementUnlocked: (state, action) => {
       const { userId, achievement } = action.payload;
 
@@ -226,14 +243,14 @@ const impactSlice = createSlice({
         state.achievements = [];
       }
 
-      // Add achievement if not already present
+      // ✅ Add achievement if not already present
       const exists = state.achievements.find((a) => a._id === achievement._id);
       if (!exists) {
         state.achievements.push(achievement);
       }
     },
 
-    // ✅ HANDLE BADGE EARNED
+    // Handle badge earned
     badgeEarned: (state, action) => {
       const { userId, badge } = action.payload;
 
@@ -243,18 +260,20 @@ const impactSlice = createSlice({
         state.badges = [];
       }
 
-      // Add badge if not already present
+      // ✅ Add badge if not already present
       const exists = state.badges.find((b) => b._id === badge._id);
       if (!exists) {
         state.badges.push(badge);
       }
     },
 
-    // Clear error
     clearError: (state) => {
       state.error = null;
-    },
+    }
   },
+  // ===================================
+  // ====== UPDATED REDUCERS END =======
+  // ===================================
 
   extraReducers: (builder) => {
     builder
