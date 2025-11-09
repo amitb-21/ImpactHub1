@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../../hooks/useAuth";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import debounce from "lodash/debounce";
 import { createEvent, updateEvent } from "../../store/slices/eventSlice";
@@ -18,6 +19,7 @@ import { toast } from "react-toastify";
 
 const EventForm = ({ event = null, onClose, onSuccess }) => {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const { isCreating, isUpdating, error } = useSelector((state) => state.event);
   const {
     requestLocation,
@@ -26,10 +28,10 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
     error: locationError,
   } = useGeolocation();
 
-  // ✅ Community state
-  const [communities, setCommunities] = useState([]);
+  // ✅ UPDATED: Community state with user filtering
+  const [userCommunities, setUserCommunities] = useState([]);
   const [selectedCommunity, setSelectedCommunity] = useState("");
-  const [loadingCommunities, setLoadingCommunities] = useState(false);
+  const [loadingCommunities, setLoadingCommunities] = useState(true);
 
   // Image state
   const [eventImage, setEventImage] = useState(event?.image || null);
@@ -73,42 +75,55 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
     },
   });
 
-  // ✅ Fetch communities on mount
+  // ✅ INTEGRATED: Fetch user's communities with filtering
   useEffect(() => {
-    const fetchCommunities = async () => {
+    const fetchUserCommunities = async () => {
       try {
         setLoadingCommunities(true);
         console.log("📥 Fetching user's communities");
 
-        // Get all verified communities
-        const response = await communityAPI.getAll({
-          limit: 100,
-          verified: true,
+        // Fetch all communities
+        const response = await communityAPI.getAll({ limit: 100 });
+
+        // 🎯 Filter: Only communities where user is the creator (moderator)
+        const myCommunitiesOnly = response.data.data.filter(
+          (community) => community.createdBy._id === user._id
+        );
+
+        console.log("🎯 User Communities:", {
+          total: response.data.data.length,
+          userManages: myCommunitiesOnly.length,
+          communities: myCommunitiesOnly.map((c) => ({
+            id: c._id,
+            name: c.name,
+          })),
         });
 
-        if (response.data?.data) {
-          console.log("✅ Communities loaded:", response.data.data.length);
-          setCommunities(response.data.data);
+        setUserCommunities(myCommunitiesOnly);
 
-          // Auto-select first community if available and creating new event
-          if (response.data.data.length > 0 && !event) {
-            setSelectedCommunity(response.data.data[0]._id);
-            console.log(
-              "✅ Auto-selected community:",
-              response.data.data[0].name
-            );
-          }
+        // 🎯 Auto-select first community if user has only one
+        if (myCommunitiesOnly.length === 1 && !event) {
+          setSelectedCommunity(myCommunitiesOnly[0]._id);
+          console.log("✅ Auto-selected community:", myCommunitiesOnly[0].name);
+        }
+
+        // 🎯 Set existing community if editing
+        if (event && event.community?._id) {
+          setSelectedCommunity(event.community._id);
+          console.log("✅ Set existing community:", event.community.name);
         }
       } catch (error) {
-        console.error("❌ Failed to load communities:", error);
-        toast.error("Failed to load communities");
+        console.error("❌ Error fetching communities:", error);
+        toast.error("Failed to load your communities");
       } finally {
         setLoadingCommunities(false);
       }
     };
 
-    fetchCommunities();
-  }, [event]);
+    if (user?._id) {
+      fetchUserCommunities();
+    }
+  }, [user?._id, event]);
 
   // Initialize debounced search
   useEffect(() => {
@@ -126,12 +141,12 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert("Image size must be less than 5MB");
+        toast.error("Image size must be less than 5MB");
         return;
       }
 
       if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image file");
+        toast.error("Please select a valid image file");
         return;
       }
 
@@ -386,93 +401,109 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
   }, [locationError]);
 
   // Handle form submission
-  const onSubmit = async (data) => {
-    try {
-      console.log("📝 Submitting form with data:", data);
+const onSubmit = async (data) => {
+  try {
+    // ✅ CRITICAL: Prevent double submission
+    if (isLoading) {
+      console.warn("⚠️ Form submission already in progress");
+      return;
+    }
 
-      // ✅ Validate community is selected
-      if (!selectedCommunity) {
-        toast.error("Please select a community");
-        return;
-      }
+    console.log("📝 Submitting form with data:", data);
 
-      const formData = new FormData();
+    // ✅ Validate community is selected
+    if (!selectedCommunity) {
+      toast.error("Please select a community");
+      return;
+    }
 
-      // ✅ Add all required fields
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("startDate", data.startDate);
-      formData.append("endDate", data.endDate);
-      formData.append("category", data.category);
-      formData.append("maxParticipants", data.maxParticipants);
+    // ✅ Check if community exists in user's communities
+    const communityExists = userCommunities.find(
+      (c) => c._id === selectedCommunity
+    );
+    if (!communityExists) {
+      toast.error("Invalid community selected");
+      return;
+    }
 
-      // ✅ CRITICAL: Add community
-      formData.append("community", selectedCommunity);
-      console.log("✅ Community added:", selectedCommunity);
+    const formData = new FormData();
 
-      // Optional time fields
-      if (data.startTime) {
-        formData.append("startTime", data.startTime);
-      }
-      if (data.endTime) {
-        formData.append("endTime", data.endTime);
-      }
+    // ✅ Add all required fields
+    formData.append("title", data.title);
+    formData.append("description", data.description);
+    formData.append("startDate", data.startDate);
+    formData.append("endDate", data.endDate);
+    formData.append("category", data.category);
+    formData.append("maxParticipants", data.maxParticipants);
 
-      // Location as JSON string
-      const locationData = {
-        address: data.location?.address || "",
-        city: data.location?.city || "",
-        state: data.location?.state || "",
-        zipCode: data.location?.zipCode || "",
-        latitude: data.location?.latitude || 0,
-        longitude: data.location?.longitude || 0,
-      };
-      formData.append("location", JSON.stringify(locationData));
+    // ✅ CRITICAL: Add community
+    formData.append("community", selectedCommunity);
+    console.log("✅ Community added:", selectedCommunity);
 
-      // Image file (only if a new file was selected)
-      if (imageFile) {
-        console.log("📸 Appending image file:", imageFile.name);
-        formData.append("image", imageFile);
-      }
+    // Optional time fields
+    if (data.startTime) {
+      formData.append("startTime", data.startTime);
+    }
+    if (data.endTime) {
+      formData.append("endTime", data.endTime);
+    }
 
-      // ✅ Debug: Log FormData contents
-      console.log("📦 FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        if (value instanceof File) {
-          console.log(`  ${key}: [File] ${value.name}`);
-        } else {
-          console.log(`  ${key}: ${value}`);
-        }
-      }
+    // Location as JSON string
+    const locationData = {
+      address: data.location?.address || "",
+      city: data.location?.city || "",
+      state: data.location?.state || "",
+      zipCode: data.location?.zipCode || "",
+      latitude: data.location?.latitude || 0,
+      longitude: data.location?.longitude || 0,
+    };
+    formData.append("location", JSON.stringify(locationData));
 
-      let result;
+    // Image file (only if a new file was selected)
+    if (imageFile) {
+      console.log("📸 Appending image file:", imageFile.name);
+      formData.append("image", imageFile);
+    }
 
-      if (event) {
-        // Update existing event
-        console.log("✏️ Updating event:", event._id);
-        result = await dispatch(
-          updateEvent({ eventId: event._id, data: formData })
-        ).unwrap();
+    // ✅ Debug: Log FormData contents
+    console.log("📦 FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name}`);
       } else {
-        // Create new event
-        console.log("✨ Creating new event");
-        result = await dispatch(createEvent(formData)).unwrap();
+        console.log(`  ${key}: ${value}`);
       }
+    }
 
-      // ✅ FIXED: Check if result contains the event data
-      console.log("✅ API Response:", result);
+    let result;
 
-      if (result && (result.event || result._id)) {
-        const createdEvent = result.event || result;
-        console.log("✅ Event successfully created/updated:", createdEvent._id);
+    if (event) {
+      // Update existing event
+      console.log("✏️ Updating event:", event._id);
+      result = await dispatch(
+        updateEvent({ eventId: event._id, data: formData })
+      ).unwrap();
+    } else {
+      // Create new event
+      console.log("✨ Creating new event");
+      result = await dispatch(createEvent(formData)).unwrap();
+    }
 
-        // Reset form
-        setEventImage(null);
-        setImagePreview(null);
-        setImageFile(null);
-        setSelectedCommunity("");
+    // ✅ Check if result contains the event data
+    console.log("✅ API Response:", result);
 
-        // Call success callback with event data
+    if (result && (result.event || result._id)) {
+      const createdEvent = result.event || result;
+      console.log("✅ Event successfully created/updated:", createdEvent._id);
+
+      // Reset form
+      setEventImage(null);
+      setImagePreview(null);
+      setImageFile(null);
+      setSelectedCommunity("");
+
+      // ✅ IMPORTANT: Delay callbacks to prevent race conditions
+      setTimeout(() => {
         onSuccess?.(createdEvent);
         onClose?.();
 
@@ -481,33 +512,69 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
             ? "Event updated successfully! ✅"
             : "Event created successfully! 🎉"
         );
-      } else {
-        throw new Error("Invalid response format - missing event data");
-      }
-    } catch (error) {
-      console.error("❌ Error submitting form:", error);
-
-      // ✅ Extract error message from different sources
-      let errorMessage = "Failed to create/update event";
-
-      if (error?.response?.data?.message) {
-        errorMessage = error.response.data.message;
-        console.error("❌ Server error message:", errorMessage);
-      } else if (error?.response?.data?.error) {
-        errorMessage = error.response.data.error;
-        console.error("❌ Server error details:", errorMessage);
-      } else if (error?.message) {
-        errorMessage = error.message;
-        console.error("❌ Error message:", errorMessage);
-      }
-
-      console.error("Full error:", error);
-
-      toast.error(errorMessage);
+      }, 500);
+    } else {
+      throw new Error("Invalid response format - missing event data");
     }
-  };
+  } catch (error) {
+    console.error("❌ Error submitting form:", error);
+
+    let errorMessage = "Failed to create/update event";
+
+    if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+      console.error("❌ Server error message:", errorMessage);
+    } else if (error?.response?.data?.error) {
+      errorMessage = error.response.data.error;
+      console.error("❌ Server error details:", errorMessage);
+    } else if (error?.message) {
+      errorMessage = error.message;
+      console.error("❌ Error message:", errorMessage);
+    }
+
+    console.error("Full error:", error);
+
+    toast.error(errorMessage);
+  }
+};
 
   const isLoading = isCreating || isUpdating || isAddressLoading;
+
+  // ✅ Show loading state while fetching communities
+  if (loadingCommunities) {
+    return (
+      <Card padding="lg">
+        <Loader size="md" />
+        <p style={{ marginTop: "12px", textAlign: "center" }}>
+          Loading your communities...
+        </p>
+      </Card>
+    );
+  }
+
+  // ✅ Show error if user has no communities
+  if (userCommunities.length === 0 && !event) {
+    return (
+      <Card padding="lg">
+        <div style={{ textAlign: "center", color: "#ef4444" }}>
+          <p
+            style={{ marginBottom: "12px", fontSize: "16px", fontWeight: 600 }}
+          >
+            ❌ No communities found
+          </p>
+          <p style={{ fontSize: "14px", color: "#999", marginBottom: "16px" }}>
+            You need to create or manage a community to create events.
+          </p>
+          <a
+            href="/apply-community-manager"
+            style={{ color: "#3b82f6", textDecoration: "underline" }}
+          >
+            Create a Community
+          </a>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card padding="lg" shadow="md" className={styles.card}>
@@ -565,55 +632,53 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        {/* ✅ Community Selection - MUST BE FIRST */}
+        {/* ✅ INTEGRATED: Community Selection with Auto-selection */}
         <div className={styles.formGroup}>
           <label htmlFor="community" className={styles.label}>
-            Community * (Select which community this event belongs to)
-          </label>
-          {loadingCommunities ? (
-            <Loader size="sm" />
-          ) : communities.length > 0 ? (
-            <>
-              <select
-                id="community"
-                value={selectedCommunity}
-                onChange={(e) => {
-                  setSelectedCommunity(e.target.value);
-                  console.log("✅ Community selected:", e.target.value);
+            Community *
+            {userCommunities.length === 1 && (
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "#666",
+                  fontWeight: "normal",
+                  marginLeft: "8px",
                 }}
-                disabled={isLoading}
-                className={`${styles.input} ${
-                  !selectedCommunity ? styles.inputError : ""
-                }`}
               >
-                <option value="">-- Select a Community --</option>
-                {communities.map((community) => (
-                  <option key={community._id} value={community._id}>
-                    {community.name}
-                    {community.verificationStatus === "verified" ? " ✓" : ""}
-                  </option>
-                ))}
-              </select>
-              {!selectedCommunity && (
-                <span className={styles.errorMessage}>
-                  Please select a community
-                </span>
-              )}
-            </>
-          ) : (
-            <div
-              style={{
-                padding: "12px",
-                background: "#f0f0f0",
-                borderRadius: "4px",
-              }}
-            >
-              <p style={{ margin: 0, color: "#666" }}>
-                No verified communities found. Please create or join a community
-                first.
-              </p>
-            </div>
+                (Auto-selected)
+              </span>
+            )}
+          </label>
+          <select
+            id="community"
+            value={selectedCommunity}
+            onChange={(e) => {
+              setSelectedCommunity(e.target.value);
+              console.log("✅ Community selected:", e.target.value);
+            }}
+            disabled={isLoading}
+            className={`${styles.input} ${
+              !selectedCommunity && styles.inputError
+            }`}
+          >
+            <option value="">-- Select a Community --</option>
+            {userCommunities.map((community) => (
+              <option key={community._id} value={community._id}>
+                {community.name}
+                {community.verificationStatus === "verified"
+                  ? " ✓"
+                  : " (Pending Verification)"}
+              </option>
+            ))}
+          </select>
+          {!selectedCommunity && (
+            <span className={styles.errorMessage}>
+              Please select a community
+            </span>
           )}
+          <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+            Only communities you manage are shown here.
+          </p>
         </div>
 
         {/* Title Field */}

@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { useAuth } from "../../hooks/useAuth";
 import { Card } from "../common/Card";
 import { Badge } from "../common/Badge";
@@ -19,6 +18,8 @@ import styles from "./styles/EventCard.module.css";
 const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   if (!event) {
     return (
@@ -43,6 +44,39 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
     event.participants?.length || event.registeredCount || 0;
   const capacity = event.maxParticipants || 0;
 
+  // ✅ FIXED: Better image URL handling
+  const getImageSrc = () => {
+    if (!event.image || imageError) {
+      return null;
+    }
+
+    // If image is a full URL, return as-is
+    if (
+      event.image.startsWith("http://") ||
+      event.image.startsWith("https://")
+    ) {
+      return event.image;
+    }
+
+    // If it's a relative path, prepend the API URL
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5050";
+    return `${apiUrl}${
+      event.image.startsWith("/") ? event.image : "/" + event.image
+    }`;
+  };
+
+  const imageSrc = getImageSrc();
+
+  // ✅ FIXED: Improved error handling for images
+  const handleImageError = (e) => {
+    console.warn("⚠️ Image load failed:", event.image);
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
   if (compact) {
     return (
       <Card
@@ -56,14 +90,13 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
       >
         <div className={styles.compactContainer}>
           <div className={styles.compactImage}>
-            {event.image ? (
+            {imageSrc && !imageError ? (
               <img
-                src={event.image}
+                src={imageSrc}
                 alt={event.title}
                 className={styles.compactImageTag}
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/60?text=Event";
-                }}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
               />
             ) : (
               <div className={styles.compactImagePlaceholder}>📅</div>
@@ -110,13 +143,16 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
     >
       {/* Header Image */}
       <div className={styles.imageContainer}>
-        {event.image ? (
+        {imageSrc && !imageError ? (
           <img
-            src={event.image}
+            src={imageSrc}
             alt={event.title}
             className={styles.image}
-            onError={(e) => {
-              e.target.src = "https://via.placeholder.com/300x180?text=Event";
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            style={{
+              opacity: imageLoaded ? 1 : 0.7,
+              transition: "opacity 0.3s ease-in-out",
             }}
           />
         ) : (
@@ -201,23 +237,27 @@ const EventCard = ({ event, onJoin, onView, style = {}, compact = false }) => {
           </div>
 
           {/* Organizer */}
-          {event.organizer && (
+          {event.createdBy && (
             <div className={styles.metaItem}>
-              <span className={styles.orgLabel}>by {event.organizer.name}</span>
+              <span className={styles.orgLabel}>
+                by {event.createdBy.name || "Unknown"}
+              </span>
             </div>
           )}
         </div>
 
         {/* Capacity Bar */}
-        <div className={styles.capacityBar}>
-          <div
-            className={styles.capacityFill}
-            style={{
-              width: `${Math.min((registeredCount / capacity) * 100, 100)}%`,
-              backgroundColor: isEventFull ? "#ef4444" : "#00796B",
-            }}
-          />
-        </div>
+        {capacity > 0 && (
+          <div className={styles.capacityBar}>
+            <div
+              className={styles.capacityFill}
+              style={{
+                width: `${Math.min((registeredCount / capacity) * 100, 100)}%`,
+                backgroundColor: isEventFull ? "#ef4444" : "#00796B",
+              }}
+            />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className={styles.actionContainer}>

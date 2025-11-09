@@ -170,7 +170,7 @@ export const getEvents = async (req, res) => {
   }
 };
 
-
+// ✅ FIXED: createEvent - Correct populate syntax
 export const createEvent = async (req, res) => {
   try {
     console.log('📅 Create Event Request');
@@ -191,7 +191,7 @@ export const createEvent = async (req, res) => {
       endTime,
       category,
       maxParticipants,
-      location: locationString, // This comes as JSON string
+      location: locationString,
     } = req.body;
 
     console.log('📝 Extracted fields:', {
@@ -349,7 +349,6 @@ export const createEvent = async (req, res) => {
       console.log('✅ Points awarded for event creation');
     } catch (pointsError) {
       logger.warn('⚠️ Could not award points:', pointsError.message);
-      // Don't fail the request if points fail
     }
 
     // ✅ Update community event count
@@ -378,8 +377,9 @@ export const createEvent = async (req, res) => {
 
     console.log('✅ Activity record created');
 
-    // ✅ Populate and format response
-    const populatedEvent = await event
+    // ✅ FIXED: Re-fetch the event from database and then populate
+    // This is the correct way to populate after creating
+    const populatedEvent = await Event.findById(event._id)
       .populate('createdBy', 'name profileImage')
       .populate('community', 'name');
 
@@ -414,6 +414,7 @@ export const createEvent = async (req, res) => {
     });
   }
 };
+
 
 export const getEventById = async (req, res) => {
   try {
@@ -762,7 +763,7 @@ export const leaveEvent = async (req, res) => {
   }
 };
 
-// ✅ CORRECTED: Only event creator can update
+// ✅ FIXED: updateEvent - Correct populate syntax
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -800,6 +801,7 @@ export const updateEvent = async (req, res) => {
       updateData.location = buildLocationObject(location);
     }
 
+    // ✅ FIXED: Use findByIdAndUpdate with populate in the query chain
     const updated = await Event.findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'name profileImage')
       .populate('community', 'name');

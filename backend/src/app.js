@@ -44,14 +44,19 @@ app.use(helmet({
 }));
 
 // =====================
-// CORS CONFIGURATION
+// CORS CONFIGURATION - ✅ FIXED
 // =====================
-app.use(cors({
+const corsOptions = {
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  exposedHeaders: ['Content-Length', 'X-JSON-Response-Size'],
+  optionsSuccessStatus: 200,
+};
+
+// ✅ Apply CORS globally (NOT using app.options('*', ...))
+app.use(cors(corsOptions));
 
 // =====================
 // BODY PARSING
@@ -87,9 +92,40 @@ app.use(passport.session());
 // =====================
 app.use('/auth', rateLimiter);
 
-// ✅ CRITICAL: Serve static files (uploads folder)
+// ✅ CRITICAL: Serve static files (uploads folder) with proper CORS headers
 const uploadsPath = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsPath));
+
+// ✅ FIX: Add CORS headers middleware for uploads BEFORE serving static files
+app.use('/uploads', (req, res, next) => {
+  // Allow cross-origin requests for images
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Range');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Timing-Allow-Origin', '*');
+  
+  // Prevent caching issues
+  res.header('Cache-Control', 'public, max-age=86400');
+  res.header('Pragma', 'public');
+  res.header('Expires', new Date(Date.now() + 86400000).toUTCString());
+  
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
+// ✅ Serve static files from uploads directory
+app.use(
+  '/uploads',
+  express.static(uploadsPath, {
+    dotfiles: 'deny',
+    index: false,
+  })
+);
+
 console.log('📁 Serving uploads from:', uploadsPath);
 
 // =====================
