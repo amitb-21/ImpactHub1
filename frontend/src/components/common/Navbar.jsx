@@ -188,7 +188,7 @@ const Navbar = ({ onMenuClick }) => {
             </>
           ) : (
             <>
-              <Link to="/login" style={styles.authLink}>
+              <Link to="/login" style={styles.registerBtn}>
                 Login
               </Link>
               <Link to="/register" style={styles.registerBtn}>
