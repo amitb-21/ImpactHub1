@@ -7,6 +7,7 @@ import { registerUser } from "../../store/slices/authSlice";
 import { registerSchema } from "../../config/validators";
 import Button from "../common/Button";
 import { API_URL } from "../../config/constants";
+import googleIcon from '../../assets/google.png';
 import {
   FiUser,
   FiMail,
@@ -240,11 +241,20 @@ const RegisterForm = () => {
           size="md"
           fullWidth
           onClick={() => {
-            // use API_URL from config (Vite env)
+            // Redirect to Google OAuth on backend
             window.location.href = `${API_URL}/auth/google`;
           }}
         >
-          <span style={styles.googleIcon}>🔐</span> Google
+          <span style={styles.googleIcon}>
+        <img
+          src={googleIcon}
+          alt="Google Icon"
+          height="24"
+          width="34"
+          style={{ marginRight: '8px' }}
+        />
+          </span>
+          Continue with Google
         </Button>
 
         {/* Footer */}
