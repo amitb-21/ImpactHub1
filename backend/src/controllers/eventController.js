@@ -360,6 +360,9 @@ export const joinEvent = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
+    console.log('🔵 Join Event:', { eventId: id, userId });
+
+    // Validate event exists
     const event = await Event.findById(id)
       .populate('createdBy', 'name')
       .populate('community', 'name');
@@ -371,6 +374,7 @@ export const joinEvent = async (req, res) => {
       });
     }
 
+    // Check if already participant
     if (event.participants.includes(userId)) {
       return res.status(409).json({
         success: false,
@@ -378,6 +382,7 @@ export const joinEvent = async (req, res) => {
       });
     }
 
+    // Check if event is full
     if (event.maxParticipants && event.participants.length >= event.maxParticipants) {
       return res.status(400).json({
         success: false,
@@ -385,42 +390,81 @@ export const joinEvent = async (req, res) => {
       });
     }
 
+    // Get user data
     const user = await User.findById(userId).select('name profileImage email');
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Add user to event participants
     event.participants.push(userId);
     await event.save();
 
+    console.log('✅ User added to participants');
+
+    // Add event to user's events
     await User.findByIdAndUpdate(userId, {
       $addToSet: { eventsParticipated: id },
     });
 
+    console.log('✅ Event added to user events');
+
+    // Delete old participation record if it exists
+    try {
+      await Participation.findOneAndDelete({
+        user: userId,
+        event: id,
+      });
+      console.log('✅ Old participation record deleted');
+    } catch (deleteError) {
+      console.warn('⚠️ Could not delete old participation:', deleteError.message);
+    }
+
+    // Create new participation record
     await Participation.create({
       user: userId,
       event: id,
       community: event.community,
       status: 'Registered',
     });
-    
+
+    console.log('✅ New participation record created');
+
+    // Send calendar invitation (non-blocking)
     try {
       await sendCalendarInvitation(userId, event);
-      logger.success(`Calendar invitation sent to user ${userId} for event ${id}`);
+      console.log('✅ Calendar invitation sent');
     } catch (calendarError) {
-      // Don't fail the request if calendar invitation fails
-      logger.error('Failed to send calendar invitation', calendarError);
+      console.warn('⚠️ Calendar invitation failed (non-critical):', calendarError.message);
     }
 
-    socketService.notifyEventNewParticipant(event.createdBy, event._id, {
+    // Notify event creator via socket
+    socketService.notifyEventNewParticipant(event.createdBy._id, event._id, {
       _id: user._id,
       name: user.name,
       profileImage: user.profileImage,
     });
 
+    console.log('✅ Socket notification sent');
+
+    // Update event capacity via socket
     socketService.updateEventCapacity(event._id, {
       registered: event.participants.length,
-      available: event.maxParticipants ? event.maxParticipants - event.participants.length : null,
-      isFull: event.maxParticipants ? event.participants.length >= event.maxParticipants : false,
+      available: event.maxParticipants
+        ? event.maxParticipants - event.participants.length
+        : null,
+      isFull: event.maxParticipants
+        ? event.participants.length >= event.maxParticipants
+        : false,
     });
 
+    console.log('✅ Capacity updated via socket');
+
+    // Create activity record
     await Activity.create({
       user: userId,
       type: 'event_joined',
@@ -431,18 +475,42 @@ export const joinEvent = async (req, res) => {
       },
     });
 
+    console.log('✅ Activity record created');
+
+    // ✅ FIXED: Re-fetch the event with populate instead of chaining populate
+    const populatedEvent = await Event.findById(event._id)
+      .populate('createdBy', 'name profileImage')
+      .populate('community', 'name');
+
+    console.log('✅ Event re-fetched and populated');
+
+    const eventWithCapacity = {
+      ...populatedEvent.toObject(),
+      capacity: {
+        total: populatedEvent.maxParticipants,
+        registered: populatedEvent.participants.length,
+        available: populatedEvent.maxParticipants
+          ? Math.max(0, populatedEvent.maxParticipants - populatedEvent.participants.length)
+          : null,
+        isFull: populatedEvent.isFull(),
+        capacityPercentage: populatedEvent.getCapacityPercentage(),
+      },
+    };
+
     logger.success(`User ${userId} joined event ${id}`);
 
     res.json({
       success: true,
       message: 'Joined event successfully! Calendar invitation sent.',
-      event: formatEventWithCapacity(event),
+      event: eventWithCapacity,
     });
   } catch (error) {
+    console.error('❌ Error joining event:', error);
     logger.error('Error joining event', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
     });
   }
 };
@@ -452,6 +520,9 @@ export const leaveEvent = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
+    console.log('🔴 Leave Event:', { eventId: id, userId });
+
+    // Find event
     const event = await Event.findById(id);
 
     if (!event) {
@@ -461,17 +532,36 @@ export const leaveEvent = async (req, res) => {
       });
     }
 
-    event.participants = event.participants.filter((p) => !p.equals(userId));
+    // Check if user is participant
+    if (!event.participants.includes(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are not a participant of this event',
+      });
+    }
+
+    // Remove user from participants
+    event.participants = event.participants.filter(
+      (p) => !p.equals(userId)
+    );
     await event.save();
 
+    console.log('✅ User removed from participants');
+
+    // Remove event from user's events
     await User.findByIdAndUpdate(userId, {
       $pull: { eventsParticipated: id },
     });
 
-    await Participation.findOneAndUpdate(
-      { user: userId, event: id },
-      { status: 'Cancelled' }
-    );
+    console.log('✅ Event removed from user events');
+
+    // ✅ FIXED: DELETE the participation record instead of just updating status
+    const result = await Participation.findOneAndDelete({
+      user: userId,
+      event: id,
+    });
+
+    console.log('✅ Participation record deleted:', result ? 'Found and deleted' : 'Not found');
 
     logger.success(`User ${userId} left event ${id}`);
 
@@ -480,10 +570,12 @@ export const leaveEvent = async (req, res) => {
       message: 'Left event successfully',
     });
   } catch (error) {
+    console.error('❌ Error leaving event:', error);
     logger.error('Error leaving event', error);
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.SERVER_ERROR,
+      error: error.message,
     });
   }
 };

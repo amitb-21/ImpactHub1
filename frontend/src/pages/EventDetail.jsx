@@ -1,11 +1,9 @@
-// === FIXES FOR ALL 4 ISSUES ===
-// Replace the relevant sections in EventDetail.jsx
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
 import { useSocket } from "../hooks/useSocket";
+import { toast } from "react-toastify";
 import {
   fetchEventById,
   joinEvent,
@@ -42,7 +40,7 @@ import {
   FiShare2,
   FiUpload,
 } from "react-icons/fi";
-import { formatDate, formatDateTime, truncate } from "../config/helpers";
+import { formatDate, formatDateTime } from "../config/helpers";
 import styles from "./styles/EventDetail.module.css";
 
 const EventDetail = () => {
@@ -64,6 +62,7 @@ const EventDetail = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isParticipant, setIsParticipant] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
@@ -77,23 +76,24 @@ const EventDetail = () => {
     }
   }, [eventId, dispatch]);
 
-  // Check if current user is participant or organizer
+  // Check if current user is participant
   useEffect(() => {
     if (currentEvent && currentUser) {
-      const participant = currentEvent.participants?.find(
-        (p) => p._id === currentUser._id || p.user === currentUser._id
-      );
+      const isUserParticipant = currentEvent.participants?.some((p) => {
+        const pId = p._id || p;
+        const userId = currentUser._id;
+        return pId === userId || pId.toString() === userId.toString();
+      });
 
-      if (participant) {
-        setIsParticipant(true);
-        const participationRecord = currentEvent.participants.find(
-          (p) => p._id === participant._id || p.user === currentUser._id
-        );
-        if (participationRecord) {
-          setParticipationId(participationRecord._id);
-        }
+      setIsParticipant(isUserParticipant);
+
+      // Set participation ID
+      if (isUserParticipant) {
+        const participantId = currentEvent.participants?.find(
+          (p) => (p._id || p).toString() === currentUser._id.toString()
+        )?._id;
+        setParticipationId(participantId);
       } else {
-        setIsParticipant(false);
         setParticipationId(null);
       }
     }
@@ -122,38 +122,62 @@ const EventDetail = () => {
     }
   }, [eventId, isParticipant, joinEventSocket]);
 
-  // === FIX 1: Handle join event with immediate UI update ===
+  // Handle join event
   const handleJoinEvent = async () => {
     setIsJoining(true);
-    const result = await dispatch(joinEvent(eventId));
-    setIsJoining(false);
 
-    if (result.payload) {
-      // Immediately update UI without waiting for full refetch
-      const updatedEvent = result.payload.event || result.payload;
-      const newParticipant = updatedEvent.participants?.find(
-        (p) => p._id === currentUser._id || p.user === currentUser._id
-      );
+    try {
+      const result = await dispatch(joinEvent(eventId));
 
-      setIsParticipant(!!newParticipant);
-      if (newParticipant) {
-        setParticipationId(newParticipant._id);
+      if (result.payload) {
+        setIsParticipant(true);
+        joinEventSocket(eventId);
+        toast.success("Successfully joined event!");
+
+        // Refetch data after small delay to ensure server is updated
+        setTimeout(() => {
+          dispatch(fetchEventById(eventId));
+          dispatch(
+            fetchEntityRatings({ entityType: "Event", entityId: eventId })
+          );
+        }, 300);
+      } else {
+        toast.error("Failed to join event");
       }
-
-      joinEventSocket(eventId);
-      // Refetch to ensure consistency
-      dispatch(fetchEventById(eventId));
+    } catch (error) {
+      toast.error("Failed to join event");
+    } finally {
+      setIsJoining(false);
     }
   };
 
+  // Handle leave event
   const handleLeaveEvent = async () => {
-    if (window.confirm("Are you sure you want to leave this event?")) {
+    if (!window.confirm("Are you sure you want to leave this event?")) {
+      return;
+    }
+
+    setIsLeaving(true);
+
+    try {
       const result = await dispatch(leaveEvent(eventId));
+
       if (result.payload === eventId) {
         setIsParticipant(false);
         setParticipationId(null);
-        dispatch(fetchEventById(eventId));
+        toast.success("Successfully left event!");
+
+        // Refetch data
+        setTimeout(() => {
+          dispatch(fetchEventById(eventId));
+        }, 300);
+      } else {
+        toast.error("Failed to leave event");
       }
+    } catch (error) {
+      toast.error("Failed to leave event");
+    } finally {
+      setIsLeaving(false);
     }
   };
 
@@ -171,17 +195,14 @@ const EventDetail = () => {
     }
   };
 
-  // === FIX 4: Authorization checks ===
+  // Authorization checks
   const isEventCreator = currentEvent?.createdBy?._id === currentUser?._id;
-
   const isCommunityModerator =
     currentUser?.role === "community_manager" &&
     currentEvent?.community?.createdBy?._id === currentUser?._id;
-
-  // Only grant management if creator OR community's moderator
   const canManageEvent = isEventCreator || isCommunityModerator;
 
-  // === FIX 2: Rating form visibility ===
+  // Rating form visibility
   const hasAttended =
     participationDetail &&
     ["Attended", "Completed"].includes(participationDetail.status);
@@ -191,12 +212,13 @@ const EventDetail = () => {
   const showUpdateForm = isAuthenticated && hasAttended && myRating;
   const showAttendedMessage = isAuthenticated && isParticipant && !hasAttended;
 
-  // Handle rating submission - refetch to update average
+  // Handle rating submission
   const handleRatingSubmitted = () => {
     dispatch(fetchEventById(eventId));
     dispatch(fetchEntityRatings({ entityType: "Event", entityId: eventId }));
   };
 
+  // Error state
   if (error && !currentEvent) {
     return (
       <Layout>
@@ -230,6 +252,7 @@ const EventDetail = () => {
     );
   }
 
+  // Loading state
   if (isLoading || !currentEvent) {
     return (
       <Layout>
@@ -262,16 +285,13 @@ const EventDetail = () => {
 
         {/* Event Hero Section */}
         <div className={styles.heroSection}>
+          {/* Hero Image */}
           <div className={styles.heroImage}>
             {currentEvent.image ? (
               <img
                 src={currentEvent.image}
                 alt={currentEvent.title}
                 className={styles.heroImageTag}
-                onError={(e) => {
-                  e.target.src =
-                    "https://via.placeholder.com/1200x300?text=Event";
-                }}
               />
             ) : (
               <div className={styles.heroImagePlaceholder}>
@@ -279,6 +299,7 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Status Badges */}
             <div className={styles.statusBadge}>
               <Badge
                 label={currentEvent.status || "Upcoming"}
@@ -304,14 +325,16 @@ const EventDetail = () => {
             </div>
           </div>
 
+          {/* Hero Content */}
           <div className={styles.heroContent}>
+            {/* Header */}
             <div className={styles.heroHeader}>
               <div>
                 <h1 className={styles.title}>{currentEvent.title}</h1>
                 <p className={styles.subtitle}>{currentEvent.description}</p>
               </div>
 
-              {/* === FIX 4: Show management buttons only to authorized users === */}
+              {/* Management Actions */}
               <div className={styles.actions}>
                 {canManageEvent && (
                   <>
@@ -339,7 +362,7 @@ const EventDetail = () => {
                   icon={FiShare2}
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
-                    alert("Event link copied!");
+                    toast.success("Event link copied!");
                   }}
                 >
                   Share
@@ -347,6 +370,7 @@ const EventDetail = () => {
               </div>
             </div>
 
+            {/* Meta Info */}
             <div className={styles.metaContainer}>
               {currentEvent.category && (
                 <Badge
@@ -373,7 +397,7 @@ const EventDetail = () => {
               )}
             </div>
 
-            {/* === FIX 3: Add discovery buttons for location-based pages === */}
+            {/* Join/Leave Button */}
             <div className={styles.buttonGroup}>
               {!isParticipant && !isClosed ? (
                 <Button
@@ -384,16 +408,22 @@ const EventDetail = () => {
                   disabled={isJoining || isEventFull}
                   fullWidth
                 >
-                  {isEventFull ? "Event Full" : "Join Event"}
+                  {isJoining
+                    ? "Joining..."
+                    : isEventFull
+                    ? "Event Full"
+                    : "Join Event"}
                 </Button>
               ) : isParticipant && !isClosed ? (
                 <Button
                   size="md"
                   variant="outline"
                   onClick={handleLeaveEvent}
+                  loading={isLeaving}
+                  disabled={isLeaving}
                   fullWidth
                 >
-                  Leave Event
+                  {isLeaving ? "Leaving..." : "Leave Event"}
                 </Button>
               ) : (
                 <Button size="md" variant="outline" fullWidth disabled>
@@ -405,8 +435,16 @@ const EventDetail = () => {
               <CalendarShare eventId={eventId} />
             </div>
 
-            {/* === FIX 3: Add discovery CTAs === */}
-            <div className={styles.discoveryButtons}>
+            {/* Discovery Buttons */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "12px",
+                marginTop: "16px",
+                width: "100%",
+              }}
+            >
               <Button
                 size="sm"
                 variant="outline"
@@ -431,7 +469,7 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Edit Event Modal */}
+        {/* Modals */}
         <Modal
           isOpen={showEditForm}
           onClose={() => setShowEditForm(false)}
@@ -445,7 +483,6 @@ const EventDetail = () => {
           />
         </Modal>
 
-        {/* Upload Photo Modal */}
         {showUploadModal && (
           <PhotoUploadModal
             eventId={eventId}
@@ -463,7 +500,6 @@ const EventDetail = () => {
           />
         )}
 
-        {/* Attendance & Rejection Modals */}
         {selectedParticipant && (
           <AttendanceModal
             isOpen={showAttendanceModal}
@@ -492,8 +528,9 @@ const EventDetail = () => {
 
         {/* Main Content Grid */}
         <div className={styles.gridContainer}>
+          {/* Left Column */}
           <div className={styles.leftColumn}>
-            {/* Event Details Card */}
+            {/* Event Details */}
             <Card padding="lg" shadow="md" className={styles.detailsCard}>
               <h3 className={styles.cardTitle}>Event Details</h3>
               <div className={styles.detailsGrid}>
@@ -539,7 +576,7 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Organizer Card */}
+            {/* Organizer Info */}
             {currentEvent.createdBy && (
               <Card padding="lg" shadow="md" className={styles.organizerCard}>
                 <h3 className={styles.cardTitle}>Organized By</h3>
@@ -555,10 +592,6 @@ const EventDetail = () => {
                       src={currentEvent.createdBy.profileImage}
                       alt={currentEvent.createdBy.name}
                       className={styles.organizerImage}
-                      onError={(e) => {
-                        e.target.src =
-                          "https://via.placeholder.com/60?text=User";
-                      }}
                     />
                   ) : (
                     <div className={styles.organizerImagePlaceholder}>
@@ -586,7 +619,7 @@ const EventDetail = () => {
               </Card>
             )}
 
-            {/* === FIX 2: Rating Section with callback === */}
+            {/* Ratings */}
             <div className={styles.section}>
               <h3 className={styles.cardTitle}>Ratings & Reviews</h3>
               <Card padding="lg" shadow="md">
@@ -598,6 +631,7 @@ const EventDetail = () => {
               </Card>
             </div>
 
+            {/* Rating Form */}
             <div className={styles.section}>
               {showUpdateForm && (
                 <RatingForm
@@ -644,6 +678,7 @@ const EventDetail = () => {
               )}
             </div>
 
+            {/* Rating List */}
             <div className={styles.section}>
               <RatingList entityType="Event" entityId={eventId} />
             </div>
@@ -660,6 +695,7 @@ const EventDetail = () => {
 
           {/* Right Column */}
           <div className={styles.rightColumn}>
+            {/* Stats */}
             <Card padding="lg" shadow="md" className={styles.statsCard}>
               <h3 className={styles.cardTitle}>Event Stats</h3>
               <div className={styles.statsGrid}>
@@ -686,6 +722,7 @@ const EventDetail = () => {
               </div>
             </Card>
 
+            {/* Capacity Progress */}
             {capacity > 0 && (
               <Card padding="lg" shadow="md" className={styles.capacityCard}>
                 <h3 className={styles.cardTitle}>Registration</h3>
@@ -715,6 +752,7 @@ const EventDetail = () => {
               </Card>
             )}
 
+            {/* Location */}
             {currentEvent.location && (
               <Card padding="lg" shadow="md" className={styles.locationCard}>
                 <h3 className={styles.cardTitle}>📍 Location</h3>
@@ -743,7 +781,7 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* === FIX 4: Graceful authorization for participant list === */}
+        {/* Participants Section */}
         {canManageEvent && (
           <div className={styles.section}>
             <ParticipantList

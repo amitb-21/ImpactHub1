@@ -44,7 +44,7 @@ const Events = () => {
     canGoPrev,
   } = usePagination(events.pagination?.total || 0, 1, 10);
 
-  // Fetch events on mount and when filters change
+  // ✅ FIXED: Fetch events on mount
   useEffect(() => {
     const filters = {
       page,
@@ -54,6 +54,26 @@ const Events = () => {
     dispatch(fetchEvents(filters));
     dispatch(setFilters(filters));
   }, [page, searchQuery, dispatch]);
+
+  // ✅ NEW: Refresh events when page becomes visible (user comes back from EventDetail)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page is now visible - refetch events
+        const filters = {
+          page,
+          limit,
+          search: searchQuery || undefined,
+        };
+        dispatch(fetchEvents(filters));
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [page, limit, searchQuery, dispatch]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -65,6 +85,15 @@ const Events = () => {
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
     goToPage(1);
+    // ✅ Refetch events after creating
+    setTimeout(() => {
+      const filters = {
+        page: 1,
+        limit,
+        search: searchQuery || undefined,
+      };
+      dispatch(fetchEvents(filters));
+    }, 500);
   };
 
   // Handle event selection
@@ -101,7 +130,7 @@ const Events = () => {
             <Button
               size="md"
               variant="outline"
-              onClick={() => navigate("/become-community-manager")}
+              onClick={() => navigate("/apply-community-manager")}
             >
               Apply to Become a Community Manager
             </Button>
@@ -208,7 +237,14 @@ const Events = () => {
               <Button
                 size="sm"
                 variant="primary"
-                onClick={() => dispatch(fetchEvents())}
+                onClick={() => {
+                  const filters = {
+                    page,
+                    limit,
+                    search: searchQuery || undefined,
+                  };
+                  dispatch(fetchEvents(filters));
+                }}
               >
                 Try Again
               </Button>
