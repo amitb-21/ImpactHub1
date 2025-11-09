@@ -13,6 +13,7 @@ import { Button } from "../common/Button";
 import { Loader } from "../common/Loader";
 import { FiUpload, FiX, FiAlertCircle, FiMapPin } from "react-icons/fi";
 import styles from "./styles/EventForm.module.css";
+import { toast } from "react-toastify";
 
 const EventForm = ({ event = null, onClose, onSuccess }) => {
   const dispatch = useDispatch();
@@ -345,30 +346,57 @@ const EventForm = ({ event = null, onClose, onSuccess }) => {
 
   // Handle form submission
   const onSubmit = async (data) => {
-    const formData = new FormData();
-    formData.append("title", data.title);
-    formData.append("description", data.description);
-    formData.append("startDate", data.startDate);
-    formData.append("endDate", data.endDate);
-    formData.append("startTime", data.startTime || "");
-    formData.append("endTime", data.endTime || "");
-    formData.append("location", JSON.stringify(data.location));
-    formData.append("category", data.category);
-    formData.append("maxParticipants", data.maxParticipants);
+    try {
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("startDate", data.startDate);
+      formData.append("endDate", data.endDate);
+      formData.append("startTime", data.startTime || "");
+      formData.append("endTime", data.endTime || "");
+      formData.append("location", JSON.stringify(data.location));
+      formData.append("category", data.category);
+      formData.append("maxParticipants", data.maxParticipants);
 
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
 
-    const result = await dispatch(
-      event
-        ? updateEvent({ eventId: event._id, data: formData })
-        : createEvent(formData)
-    );
+      let result;
 
-    if (result.payload) {
-      onSuccess?.();
-      onClose?.();
+      if (event) {
+        // Update existing event
+        result = await dispatch(
+          updateEvent({ eventId: event._id, data: formData })
+        ).unwrap();
+      } else {
+        // Create new event
+        result = await dispatch(createEvent(formData)).unwrap();
+      }
+
+      // ✅ FIXED: Check if result contains the event data
+      if (result && (result.event || result._id)) {
+        const createdEvent = result.event || result;
+        console.log("✅ Event created/updated successfully:", createdEvent._id);
+
+        // Reset form
+        setEventImage(null);
+        setImagePreview(null);
+        setImageFile(null);
+
+        // Call success callback with event data
+        onSuccess?.(createdEvent);
+        onClose?.();
+
+        toast.success(
+          event ? "Event updated successfully!" : "Event created successfully!"
+        );
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error) {
+      console.error("❌ Error creating/updating event:", error);
+      toast.error(error.message || "Failed to create/update event");
     }
   };
 

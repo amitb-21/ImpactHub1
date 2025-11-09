@@ -69,11 +69,14 @@ const EventDetail = () => {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [participationId, setParticipationId] = useState(null);
 
-  // Fetch event data on mount
+  // ✅ FIXED: Fetch event data on mount with guard
   useEffect(() => {
-    if (eventId) {
+    if (eventId && eventId !== "create") {
+      console.log("📥 Fetching event:", eventId);
       dispatch(fetchEventById(eventId));
       dispatch(fetchEntityRatings({ entityType: "Event", entityId: eventId }));
+    } else {
+      console.warn("❌ Invalid eventId:", eventId);
     }
   }, [eventId, dispatch]);
 
@@ -102,7 +105,14 @@ const EventDetail = () => {
 
   // Fetch participation status
   useEffect(() => {
-    if (eventId && currentUser && isParticipant && participationId) {
+    if (
+      eventId &&
+      eventId !== "create" &&
+      currentUser &&
+      isParticipant &&
+      participationId
+    ) {
+      console.log("📋 Fetching participation details:", participationId);
       dispatch(getParticipationDetails(participationId));
     }
   }, [eventId, currentUser, isParticipant, participationId, dispatch]);
@@ -110,6 +120,7 @@ const EventDetail = () => {
   // Fetch community gallery
   useEffect(() => {
     if (currentEvent?.community?._id) {
+      console.log("🖼️ Fetching community gallery:", currentEvent.community._id);
       dispatch(
         fetchCommunityGallery({ communityId: currentEvent.community._id })
       );
@@ -118,7 +129,8 @@ const EventDetail = () => {
 
   // Join Socket.io event room
   useEffect(() => {
-    if (eventId && isParticipant) {
+    if (eventId && eventId !== "create" && isParticipant) {
+      console.log("🔗 Joining socket room for event:", eventId);
       joinEventSocket(eventId);
     }
   }, [eventId, isParticipant, joinEventSocket]);
@@ -128,9 +140,9 @@ const EventDetail = () => {
     setIsJoining(true);
 
     try {
-      const result = await dispatch(joinEvent(eventId));
+      const result = await dispatch(joinEvent(eventId)).unwrap();
 
-      if (result.payload) {
+      if (result) {
         setIsParticipant(true);
         joinEventSocket(eventId);
         toast.success("Successfully joined event!");
@@ -148,6 +160,7 @@ const EventDetail = () => {
         toast.error("Failed to join event");
       }
     } catch (error) {
+      console.error("Error joining event:", error);
       toast.error("Failed to join event");
     } finally {
       setIsJoining(false);
@@ -163,9 +176,9 @@ const EventDetail = () => {
     setIsLeaving(true);
 
     try {
-      const result = await dispatch(leaveEvent(eventId));
+      const result = await dispatch(leaveEvent(eventId)).unwrap();
 
-      if (result.payload === eventId) {
+      if (result === eventId) {
         setIsParticipant(false);
         setParticipationId(null);
         toast.success("Successfully left event!");
@@ -180,6 +193,7 @@ const EventDetail = () => {
         toast.error("Failed to leave event");
       }
     } catch (error) {
+      console.error("Error leaving event:", error);
       toast.error("Failed to leave event");
     } finally {
       setIsLeaving(false);
@@ -191,19 +205,10 @@ const EventDetail = () => {
     dispatch(fetchEventById(eventId));
   };
 
-  const handleParticipantAction = (participant, action) => {
-    setSelectedParticipant(participant);
-    if (action === "approve") {
-      setShowAttendanceModal(true);
-    } else if (action === "reject") {
-      setShowRejectionModal(true);
-    }
-  };
-
   // Authorization checks
   const isEventCreator = currentEvent?.createdBy?._id === currentUser?._id;
   const isCommunityModerator =
-    currentUser?.role === "community_manager" &&
+    currentUser?.role === "moderator" &&
     currentEvent?.community?.createdBy?._id === currentUser?._id;
   const canManageEvent = isEventCreator || isCommunityModerator;
 
@@ -297,6 +302,10 @@ const EventDetail = () => {
                 src={currentEvent.image}
                 alt={currentEvent.title}
                 className={styles.heroImageTag}
+                onError={(e) => {
+                  e.target.src =
+                    "https://via.placeholder.com/800x400?text=Event";
+                }}
               />
             ) : (
               <div className={styles.heroImagePlaceholder}>
@@ -437,7 +446,10 @@ const EventDetail = () => {
                     : "Event Cancelled"}
                 </Button>
               )}
-              <CalendarShare eventId={eventId} />
+              <CalendarShare
+                eventId={eventId}
+                eventTitle={currentEvent.title}
+              />
             </div>
 
             {/* Discovery Buttons */}
@@ -597,6 +609,10 @@ const EventDetail = () => {
                       src={currentEvent.createdBy.profileImage}
                       alt={currentEvent.createdBy.name}
                       className={styles.organizerImage}
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/80?text=Organizer";
+                      }}
                     />
                   ) : (
                     <div className={styles.organizerImagePlaceholder}>
@@ -780,6 +796,55 @@ const EventDetail = () => {
                   style={{ marginTop: "12px" }}
                 >
                   View on Map
+                </Button>
+              </Card>
+            )}
+
+            {/* Community Info */}
+            {currentEvent.community && (
+              <Card padding="lg" shadow="md" className={styles.communityCard}>
+                <h3 className={styles.cardTitle}>Community</h3>
+                <div
+                  className={styles.communityContent}
+                  onClick={() =>
+                    navigate(`/communities/${currentEvent.community._id}`)
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  {currentEvent.community.image ? (
+                    <img
+                      src={currentEvent.community.image}
+                      alt={currentEvent.community.name}
+                      className={styles.communityImage}
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/80?text=Community";
+                      }}
+                    />
+                  ) : (
+                    <div className={styles.communityImagePlaceholder}>
+                      {currentEvent.community.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className={styles.communityInfo}>
+                    <p className={styles.communityName}>
+                      {currentEvent.community.name}
+                    </p>
+                    <p className={styles.communityCategory}>
+                      {currentEvent.community.category}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  fullWidth
+                  onClick={() =>
+                    navigate(`/communities/${currentEvent.community._id}`)
+                  }
+                  style={{ marginTop: "12px" }}
+                >
+                  View Community
                 </Button>
               </Card>
             )}

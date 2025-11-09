@@ -36,7 +36,7 @@ import BecomeCommunityManager from "./pages/BecomeCommunityManager";
 // Pages - Events
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
-import MyCommunityEvents from "./pages/MyCommunityEvents"; // ✅ NEW
+import MyCommunityEvents from "./pages/MyCommunityEvents";
 
 // Pages - Location
 import NearbyEvents from "./pages/NearbyEvents";
@@ -128,7 +128,7 @@ const AppContent = () => {
           }
         />
 
-        {/* ✅ NEW: My Community Events (Community Manager Only) */}
+        {/* My Community Events (Community Manager Only) */}
         <Route
           path="/my-events"
           element={
@@ -191,7 +191,7 @@ const AppContent = () => {
           }
         />
 
-        {/* Events */}
+        {/* Events - ✅ IMPORTANT: Put specific routes BEFORE dynamic :eventId route */}
         <Route
           path="/events"
           element={
@@ -200,22 +200,18 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Nearby Events */}
         <Route
-          path="/events/:eventId"
-          element={
-            <ProtectedRoute>
-              <EventDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/nearby-events"
+          path="/events/nearby"
           element={
             <ProtectedRoute>
               <NearbyEvents />
             </ProtectedRoute>
           }
         />
+
+        {/* City-based Events */}
         <Route
           path="/events/city/:cityName"
           element={
@@ -224,11 +220,33 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Today Events */}
         <Route
           path="/events/today"
           element={
             <ProtectedRoute>
               <TodayEvents />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dynamic Event Detail - ✅ MUST BE LAST in events routes */}
+        <Route
+          path="/events/:eventId"
+          element={
+            <ProtectedRoute>
+              <EventDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Old paths for backward compatibility - redirect to new structure */}
+        <Route
+          path="/nearby-events"
+          element={
+            <ProtectedRoute>
+              <NearbyEvents />
             </ProtectedRoute>
           }
         />

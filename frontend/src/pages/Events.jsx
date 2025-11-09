@@ -16,6 +16,7 @@ import { Modal } from "../components/common/Modal";
 import EventForm from "../components/event/EventForm";
 import { FiSearch, FiFilter, FiPlus, FiCalendar } from "react-icons/fi";
 import { EVENT_CATEGORIES } from "../config/constants";
+import { toast } from "react-toastify";
 import styles from "./styles/Events.module.css";
 
 const Events = () => {
@@ -95,20 +96,33 @@ const Events = () => {
     goToPage(1); // Reset to page 1 when filters change
   };
 
-  // Handle event creation success
-  const handleCreateSuccess = () => {
+  // ✅ FIXED: Handle event creation success
+  const handleCreateSuccess = (createdEvent) => {
+    console.log("✅ Event creation successful:", createdEvent);
+
     setShowCreateForm(false);
+
+    // Clear search and filters
+    setSearchQuery("");
+    setAppliedFilters({});
+
+    // Reset to page 1
     goToPage(1);
-    // ✅ Refetch events after creating
+
+    // ✅ NEW: Add a small delay to ensure backend is ready
     setTimeout(() => {
       const filters = {
         page: 1,
         limit,
-        search: searchQuery || undefined,
-        ...appliedFilters,
+        search: undefined,
       };
+
+      console.log("Refetching events after creation:", filters);
       dispatch(fetchEvents(filters));
     }, 500);
+
+    // Show success notification
+    toast.success("Event created successfully! 🎉");
   };
 
   // Handle event selection
@@ -129,7 +143,7 @@ const Events = () => {
           </div>
 
           {/* Conditional Rendering for Community Manager */}
-          {isAuthenticated && user?.role === "community_manager" && (
+          {isAuthenticated && user?.role === "moderator" && (
             <Button
               size="md"
               variant="primary"
@@ -323,16 +337,18 @@ const Events = () => {
                   ? "Try adjusting your search or filters"
                   : "No volunteer events available right now. Check back soon!"}
               </p>
-              {isAuthenticated && !searchQuery && (
-                <Button
-                  size="md"
-                  variant="primary"
-                  onClick={() => setShowCreateForm(true)}
-                  icon={FiPlus}
-                >
-                  Create First Event
-                </Button>
-              )}
+              {isAuthenticated &&
+                !searchQuery &&
+                user?.role === "moderator" && (
+                  <Button
+                    size="md"
+                    variant="primary"
+                    onClick={() => setShowCreateForm(true)}
+                    icon={FiPlus}
+                  >
+                    Create First Event
+                  </Button>
+                )}
             </div>
           </Card>
         )}

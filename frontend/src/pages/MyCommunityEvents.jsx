@@ -1,103 +1,121 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
 import { usePagination } from "../hooks/usePagination";
 import { eventAPI } from "../api/services";
 import Layout from "../components/common/Layout";
+import EventCard from "../components/event/EventCard";
+import EventList from "../components/event/EventList";
 import { Card } from "../components/common/Card";
 import { Button } from "../components/common/Button";
 import { Badge } from "../components/common/Badge";
 import { Loader } from "../components/common/Loader";
 import { Modal } from "../components/common/Modal";
-import {
-  FiEdit,
-  FiTrash2,
-  FiPlus,
-  FiCalendar,
-  FiUsers,
-  FiArrowRight,
-  FiFilter,
-  FiArrowLeft,
-} from "react-icons/fi";
+import EventForm from "../components/event/EventForm";
+import { FiArrowLeft, FiPlus, FiFilter, FiSearch } from "react-icons/fi";
+import { toast } from "react-toastify";
 import styles from "./styles/MyCommunityEvents.module.css";
 
 const MyCommunityEvents = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
+
+  // Local state
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [viewMode, setViewMode] = useState("grid");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [totalEvents, setTotalEvents] = useState(0);
 
-  const { page, totalPages, goToPage } = usePagination(0, 1, 10);
+  // Pagination hook
+  const {
+    page,
+    limit,
+    totalPages,
+    goToPage,
+    nextPage,
+    prevPage,
+    canGoNext,
+    canGoPrev,
+  } = usePagination(totalEvents, 1, 10);
 
-  // Fetch created events
-  useEffect(() => {
-    fetchEvents();
-  }, [page, statusFilter]);
+  // ✅ FIXED: Fetch user's created events using direct API call
+  const fetchMyEvents = async () => {
+    if (!currentUser?._id) return;
 
-  const fetchEvents = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const filters = statusFilter ? { status: statusFilter } : {};
-      const response = await eventAPI.getMyCreatedEvents(page, filters);
 
-      if (response.data?.success) {
-        setEvents(response.data.data || []);
+    try {
+      console.log("📥 Fetching events created by:", currentUser._id);
+
+      // ✅ Use the getMyCreatedEvents API endpoint
+      const response = await eventAPI.getMyCreatedEvents(page, {
+        search: searchQuery || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      });
+
+      console.log("✅ Received events:", response.data);
+
+      if (response.data.data) {
+        setEvents(response.data.data);
+        setTotalEvents(response.data.pagination?.total || 0);
       } else {
-        setError("Failed to load events");
+        setEvents([]);
+        setTotalEvents(0);
       }
     } catch (err) {
-      console.error("Error fetching events:", err);
-      setError(err.message || "Failed to load events");
+      console.error("❌ Error fetching my events:", err);
+      setError(err.response?.data?.message || "Failed to load your events");
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteEvent = async () => {
-    if (!selectedEvent) return;
+  // Fetch events on mount and when filters change
+  useEffect(() => {
+    fetchMyEvents();
+  }, [page, searchQuery, statusFilter, currentUser?._id]);
 
-    try {
-      const response = await eventAPI.delete(selectedEvent._id);
-
-      if (response.data?.success) {
-        setShowDeleteModal(false);
-        setSelectedEvent(null);
-        fetchEvents();
-      } else {
-        setError("Failed to delete event");
-      }
-    } catch (err) {
-      console.error("Error deleting event:", err);
-      setError("Failed to delete event");
-    }
+  // Handle search
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    goToPage(1);
   };
 
-  // Check if user is community manager
-  if (!user || user.role !== "moderator") {
-    return (
-      <Layout>
-        <div className={styles.container}>
-          <Card padding="lg" shadow="md">
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
-              <h3 style={{ marginBottom: "8px" }}>Access Denied</h3>
-              <p style={{ marginBottom: "24px", color: "#666" }}>
-                Only community managers can access this page.
-              </p>
-              <Button variant="primary" onClick={() => navigate("/dashboard")}>
-                Back to Dashboard
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </Layout>
-    );
-  }
+  // Handle status filter
+  const handleStatusFilter = (status) => {
+    setStatusFilter(status);
+    goToPage(1);
+  };
+
+  // Handle event creation success
+  const handleCreateSuccess = (createdEvent) => {
+    console.log("✅ Event created successfully:", createdEvent);
+    setShowCreateForm(false);
+
+    toast.success("Event created successfully! 🎉");
+
+    // Reset filters and refetch
+    setSearchQuery("");
+    setStatusFilter("all");
+    goToPage(1);
+
+    // Refetch events after small delay
+    setTimeout(() => {
+      fetchMyEvents();
+    }, 500);
+  };
+
+  // Handle event selection
+  const handleEventSelect = (event) => {
+    navigate(`/events/${event._id}`);
+  };
 
   return (
     <Layout>
@@ -109,7 +127,7 @@ const MyCommunityEvents = () => {
               size="sm"
               variant="ghost"
               icon={FiArrowLeft}
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/events")}
               style={{ marginBottom: "16px" }}
             >
               Back
@@ -117,215 +135,215 @@ const MyCommunityEvents = () => {
             <h1 className={styles.title}>My Events</h1>
             <p className={styles.subtitle}>Manage all events you've created</p>
           </div>
+
           <Button
             size="md"
             variant="primary"
             icon={FiPlus}
-            onClick={() => navigate("/events/create")}
+            onClick={() => setShowCreateForm(true)}
           >
             Create New Event
           </Button>
         </div>
 
-        {/* Filter */}
-        <Card padding="md" shadow="sm" className={styles.filterCard}>
-          <div className={styles.filterGroup}>
-            <FiFilter size={16} style={{ marginRight: "8px" }} />
-            <label>Filter by Status:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                goToPage(1);
-              }}
-              className={styles.select}
+        {/* Create Event Modal */}
+        <Modal
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          title="Create Event"
+          size="lg"
+        >
+          <EventForm
+            onClose={() => setShowCreateForm(false)}
+            onSuccess={handleCreateSuccess}
+          />
+        </Modal>
+
+        {/* Search & Filter Section */}
+        <Card padding="lg" shadow="md" className={styles.controlsCard}>
+          {/* Search Box */}
+          <div className={styles.searchWrapper}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search your events..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className={styles.searchInput}
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className={styles.filterSection}>
+            <label className={styles.filterLabel}>
+              <FiFilter size={16} />
+              Filter by Status:
+            </label>
+            <div className={styles.filterChips}>
+              <button
+                onClick={() => handleStatusFilter("all")}
+                className={`${styles.chip} ${
+                  statusFilter === "all" ? styles.chipActive : ""
+                }`}
+              >
+                All Events
+              </button>
+              <button
+                onClick={() => handleStatusFilter("Upcoming")}
+                className={`${styles.chip} ${
+                  statusFilter === "Upcoming" ? styles.chipActive : ""
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => handleStatusFilter("Ongoing")}
+                className={`${styles.chip} ${
+                  statusFilter === "Ongoing" ? styles.chipActive : ""
+                }`}
+              >
+                Ongoing
+              </button>
+              <button
+                onClick={() => handleStatusFilter("Completed")}
+                className={`${styles.chip} ${
+                  statusFilter === "Completed" ? styles.chipActive : ""
+                }`}
+              >
+                Completed
+              </button>
+              <button
+                onClick={() => handleStatusFilter("Cancelled")}
+                className={`${styles.chip} ${
+                  statusFilter === "Cancelled" ? styles.chipActive : ""
+                }`}
+              >
+                Cancelled
+              </button>
+            </div>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className={styles.viewToggle}>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`${styles.viewBtn} ${
+                viewMode === "grid" ? styles.viewBtnActive : ""
+              }`}
+              title="Grid view"
             >
-              <option value="">All Statuses</option>
-              <option value="Upcoming">Upcoming</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
+              ⊞ Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`${styles.viewBtn} ${
+                viewMode === "list" ? styles.viewBtnActive : ""
+              }`}
+              title="List view"
+            >
+              ≡ List
+            </button>
           </div>
         </Card>
 
-        {/* Content */}
+        {/* Results Info */}
+        {events.length > 0 && (
+          <div className={styles.resultsInfo}>
+            <p className={styles.resultsText}>
+              Found {totalEvents} events
+              {searchQuery && ` matching "${searchQuery}"`}
+              {statusFilter !== "all" && ` (${statusFilter})`}
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
         {isLoading ? (
-          <Loader size="md" text="Loading your events..." />
+          <div className={styles.loadingContainer}>
+            <Loader size="md" text="Loading your events..." />
+          </div>
         ) : error ? (
-          <Card padding="lg" shadow="md">
-            <div style={{ color: "#ef4444", textAlign: "center" }}>
-              <p style={{ marginBottom: "16px" }}>⚠️ {error}</p>
-              <Button size="sm" variant="primary" onClick={fetchEvents}>
+          // Error State
+          <Card padding="lg" shadow="md" className={styles.errorCard}>
+            <div className={styles.errorContent}>
+              <div className={styles.errorIcon}>⚠️</div>
+              <p className={styles.errorText}>{error}</p>
+              <Button size="sm" variant="primary" onClick={fetchMyEvents}>
                 Try Again
               </Button>
             </div>
           </Card>
-        ) : events.length === 0 ? (
-          <Card padding="lg" shadow="md">
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📭</div>
-              <h3 className={styles.emptyTitle}>No Events Created</h3>
-              <p className={styles.emptyText}>
-                Start by creating your first event
-              </p>
-              <Button
-                size="md"
-                variant="primary"
-                onClick={() => navigate("/events/create")}
-                icon={FiPlus}
-              >
-                Create Event
-              </Button>
-            </div>
-          </Card>
-        ) : (
+        ) : events.length > 0 ? (
+          // Events Display
           <>
-            <div className={styles.eventsList}>
-              {events.map((event) => (
-                <EventManagementCard
-                  key={event._id}
-                  event={event}
-                  onEdit={() => navigate(`/events/${event._id}/edit`)}
-                  onDelete={() => {
-                    setSelectedEvent(event);
-                    setShowDeleteModal(true);
-                  }}
-                  onView={() => navigate(`/events/${event._id}`)}
-                />
-              ))}
-            </div>
+            {viewMode === "grid" ? (
+              <div className={styles.eventsGrid}>
+                {events.map((event) => (
+                  <EventCard
+                    key={event._id}
+                    event={event}
+                    onView={handleEventSelect}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EventList events={events} onEventSelect={handleEventSelect} />
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className={styles.pagination}>
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page === 1}
+                  variant="outline"
+                  onClick={prevPage}
+                  disabled={!canGoPrev}
                 >
                   Previous
                 </Button>
-                <span className={styles.pageInfo}>
+
+                <div className={styles.pageInfo}>
                   Page {page} of {totalPages}
-                </span>
+                </div>
+
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={page === totalPages}
+                  variant="outline"
+                  onClick={nextPage}
+                  disabled={!canGoNext}
                 >
                   Next
                 </Button>
               </div>
             )}
           </>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          title="Delete Event"
-        >
-          <div style={{ padding: "20px" }}>
-            <p>
-              Are you sure you want to delete{" "}
-              <strong>{selectedEvent?.title}</strong>?
-            </p>
-            <p
-              style={{ color: "#666", fontSize: "14px", marginBottom: "20px" }}
-            >
-              This action cannot be undone.
-            </p>
-            <div className={styles.modalActions}>
+        ) : (
+          // Empty State
+          <Card padding="lg" shadow="md" className={styles.emptyState}>
+            <div className={styles.emptyContent}>
+              <div className={styles.emptyIcon}>📅</div>
+              <h3 className={styles.emptyTitle}>No Events Created</h3>
+              <p className={styles.emptyText}>
+                {searchQuery
+                  ? "No events match your search"
+                  : statusFilter !== "all"
+                  ? `No ${statusFilter.toLowerCase()} events`
+                  : "You haven't created any events yet. Get started by creating your first event!"}
+              </p>
               <Button
-                variant="outline"
-                onClick={() => setShowDeleteModal(false)}
+                size="md"
+                variant="primary"
+                onClick={() => setShowCreateForm(true)}
+                icon={FiPlus}
+                style={{ marginTop: "16px" }}
               >
-                Cancel
-              </Button>
-              <Button variant="error" onClick={handleDeleteEvent}>
-                Delete Event
+                Create First Event
               </Button>
             </div>
-          </div>
-        </Modal>
+          </Card>
+        )}
       </div>
     </Layout>
-  );
-};
-
-// Event Management Card Component
-const EventManagementCard = ({ event, onEdit, onDelete, onView }) => {
-  const statusColors = {
-    Upcoming: "#3b82f6",
-    Ongoing: "#10b981",
-    Completed: "#6b7280",
-    Cancelled: "#ef4444",
-  };
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  return (
-    <Card padding="md" shadow="sm" hover className={styles.eventCard}>
-      <div className={styles.eventHeader}>
-        <div className={styles.eventInfo}>
-          <h3 className={styles.eventTitle}>{event.title}</h3>
-          <Badge
-            label={event.status}
-            variant="primary"
-            size="sm"
-            style={{ backgroundColor: statusColors[event.status] }}
-          />
-        </div>
-        <div className={styles.eventDate}>
-          <FiCalendar size={16} />
-          <span>{formatDate(event.startDate)}</span>
-        </div>
-      </div>
-
-      <p className={styles.eventDescription}>{event.description}</p>
-
-      <div className={styles.eventMeta}>
-        <div className={styles.metaItem}>
-          <FiUsers size={16} />
-          <span>{event.participants?.length || 0} participants</span>
-        </div>
-        {event.capacity && (
-          <div className={styles.metaItem}>
-            <span>
-              Capacity: {event.capacity.registered}/
-              {event.capacity.total || "∞"}
-            </span>
-          </div>
-        )}
-        {event.community && (
-          <div className={styles.metaItem}>
-            <span>{event.community.name}</span>
-          </div>
-        )}
-      </div>
-
-      <div className={styles.actions}>
-        <Button size="sm" variant="ghost" onClick={onView} icon={FiArrowRight}>
-          View
-        </Button>
-        <Button size="sm" variant="outline" onClick={onEdit} icon={FiEdit}>
-          Edit
-        </Button>
-        <Button size="sm" variant="error" onClick={onDelete} icon={FiTrash2}>
-          Delete
-        </Button>
-      </div>
-    </Card>
   );
 };
 
