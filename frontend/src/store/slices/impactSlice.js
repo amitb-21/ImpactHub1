@@ -1,7 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { impactAPI, pointsAPI } from '../../api/services';
 
-// Async thunks
+// =====================
+// ASYNC THUNKS
+// =====================
+
 export const fetchUserMetrics = createAsyncThunk(
   'impact/fetchMetrics',
   async (userId, { rejectWithValue }) => {
@@ -50,7 +53,8 @@ export const fetchUserRank = createAsyncThunk(
   }
 );
 
-export const fetchSummary = createAsyncThunk(
+// ✅ ADDED: fetchImpactSummary
+export const fetchImpactSummary = createAsyncThunk(
   'impact/fetchSummary',
   async (_, { rejectWithValue }) => {
     try {
@@ -122,7 +126,10 @@ export const fetchVolunteerLeaderboard = createAsyncThunk(
   }
 );
 
-// Initial state
+// =====================
+// INITIAL STATE
+// =====================
+
 const initialState = {
   metrics: null,
   progress: null,
@@ -143,6 +150,10 @@ const initialState = {
   isLoading: false,
   error: null,
 };
+
+// =====================
+// SLICE
+// =====================
 
 const impactSlice = createSlice({
   name: 'impact',
@@ -244,9 +255,12 @@ const impactSlice = createSlice({
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
-      // Fetch metrics
+      // =====================
+      // FETCH METRICS
+      // =====================
       .addCase(fetchUserMetrics.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -260,7 +274,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch progress
+      // =====================
+      // FETCH PROGRESS
+      // =====================
       .addCase(fetchUserProgress.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -274,7 +290,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch leaderboard
+      // =====================
+      // FETCH LEADERBOARD
+      // =====================
       .addCase(fetchLeaderboard.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -291,7 +309,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch rank
+      // =====================
+      // FETCH RANK
+      // =====================
       .addCase(fetchUserRank.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -305,21 +325,25 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch summary
-      .addCase(fetchSummary.pending, (state) => {
+      // =====================
+      // FETCH SUMMARY - FIXED
+      // =====================
+      .addCase(fetchImpactSummary.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchSummary.fulfilled, (state, action) => {
+      .addCase(fetchImpactSummary.fulfilled, (state, action) => {
         state.isLoading = false;
         state.summary = action.payload;
       })
-      .addCase(fetchSummary.rejected, (state, action) => {
+      .addCase(fetchImpactSummary.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
 
-      // Fetch streak
+      // =====================
+      // FETCH STREAK
+      // =====================
       .addCase(fetchUserStreak.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -333,7 +357,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch levels
+      // =====================
+      // FETCH LEVELS
+      // =====================
       .addCase(fetchLevelDefinitions.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -347,7 +373,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch achievements
+      // =====================
+      // FETCH ACHIEVEMENTS
+      // =====================
       .addCase(fetchUserAchievements.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -361,7 +389,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch badges
+      // =====================
+      // FETCH BADGES
+      // =====================
       .addCase(fetchUserBadges.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -375,7 +405,9 @@ const impactSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch volunteer leaderboard
+      // =====================
+      // FETCH VOLUNTEER LEADERBOARD
+      // =====================
       .addCase(fetchVolunteerLeaderboard.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -393,6 +425,10 @@ const impactSlice = createSlice({
       });
   },
 });
+
+// =====================
+// EXPORTS - FIXED
+// =====================
 
 export const {
   pointsEarned,

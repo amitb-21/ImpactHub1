@@ -140,7 +140,7 @@ const CommunityDetail = () => {
     }
   }, [communityId, isMember, joinCommunitySocket]);
 
-  // ✅ HANDLE JOIN - IMPROVED WITH PROPER STATE MANAGEMENT
+  // ✅ HANDLE JOIN - FIXED WITH BETTER ERROR HANDLING
   const handleJoinCommunity = async () => {
     console.log("🔄 Starting join process...");
 
@@ -149,24 +149,31 @@ const CommunityDetail = () => {
 
       console.log("📦 Join result:", result);
 
+      // ✅ FIX: Handle both success and "already member" cases
       if (result.payload?.community) {
         console.log(
           "✅ Join successful! Community data:",
           result.payload.community
         );
-
-        // Immediately update local state
         setIsMember(true);
-
-        // Trigger refetch to sync everything
         setRefetchTrigger((prev) => prev + 1);
-
-        // Join socket room
         joinCommunitySocket(communityId);
-
         toast.success("Successfully joined community!");
+      } else if (
+        result.payload?.success === false &&
+        result.payload?.message?.includes("Already a member")
+      ) {
+        // ✅ FIX: User is already a member - just update state
+        console.log("✅ User is already a member!");
+        setIsMember(true);
+        setRefetchTrigger((prev) => prev + 1);
+        joinCommunitySocket(communityId);
+        toast.info("You are already a member of this community");
+      } else if (result.error?.message) {
+        console.error("❌ Join failed:", result.error.message);
+        toast.error(result.error.message);
       } else {
-        console.error("❌ Join failed - no community data in response");
+        console.error("❌ Join failed - unexpected response");
         toast.error("Failed to join community");
       }
     } catch (err) {
@@ -193,13 +200,8 @@ const CommunityDetail = () => {
         result.payload?.communityId === communityId
       ) {
         console.log("✅ Leave successful!");
-
-        // Immediately update local state
         setIsMember(false);
-
-        // Trigger refetch
         setRefetchTrigger((prev) => prev + 1);
-
         toast.success("Successfully left community!");
       } else {
         console.error("❌ Leave failed");
@@ -481,35 +483,6 @@ const CommunityDetail = () => {
 
           {/* Right Column */}
           <div className={styles.rightColumn}>
-            <Card padding="lg" shadow="md" className={styles.infoCard}>
-              <h3 className={styles.cardTitle}>About</h3>
-              <div className={styles.infoGrid}>
-                <InfoItem
-                  icon="👥"
-                  label="Members"
-                  value={currentCommunity.members?.length || 0}
-                />
-                <InfoItem
-                  icon="📅"
-                  label="Events"
-                  value={currentCommunity.totalEvents || 0}
-                />
-                <InfoItem
-                  icon="⭐"
-                  label="Rating"
-                  value={(currentCommunity.avgRating || 0).toFixed(1) + " / 5"}
-                />
-                <InfoItem
-                  icon="🏆"
-                  label="Status"
-                  value={
-                    isVerified
-                      ? "Verified"
-                      : currentCommunity.verificationStatus || "Unverified"
-                  }
-                />
-              </div>
-            </Card>
 
             {currentCommunity.organizationDetails && (
               <Card padding="lg" shadow="md" className={styles.infoCard}>
