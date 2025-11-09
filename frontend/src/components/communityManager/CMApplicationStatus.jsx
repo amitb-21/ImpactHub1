@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getMyApplication } from "../../store/slices/communityManagerSlice";
@@ -24,11 +24,15 @@ const CMApplicationStatus = ({ onReapply, onViewCommunity }) => {
   const { socket } = useSocket();
   const [daysUntilReapply, setDaysUntilReapply] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const hasInitialized = useRef(false); // ✅ FIX: Only fetch once
 
-  // Fetch application on mount
+  // ✅ FIX: Only fetch on mount, not repeatedly
   useEffect(() => {
-    dispatch(getMyApplication());
-  }, [dispatch]);
+    if (!hasInitialized.current && !myApplication) {
+      hasInitialized.current = true;
+      dispatch(getMyApplication());
+    }
+  }, []); // Empty dependency - runs once only
 
   // Listen for real-time updates
   useEffect(() => {

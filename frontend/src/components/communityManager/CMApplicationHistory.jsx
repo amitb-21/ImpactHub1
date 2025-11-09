@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getApplicationHistory } from "../../store/slices/communityManagerSlice";
 import { usePagination } from "../../hooks/usePagination";
@@ -28,11 +28,24 @@ const CMApplicationHistory = () => {
 
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const hasInitialized = useRef(false); // ✅ FIX: Only fetch once
 
-  // Fetch history on mount and when page changes
+  // ✅ FIX: Only fetch on mount, then only when page changes
   useEffect(() => {
-    dispatch(getApplicationHistory(page));
-  }, [dispatch, page]);
+    // Only fetch if we haven't initialized yet
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      dispatch(getApplicationHistory(page));
+    }
+  }, []); // Empty dependency - runs once only
+
+  // ✅ FIX: Only refetch when page changes manually
+  useEffect(() => {
+    if (hasInitialized.current) {
+      // Page changed after initial load
+      dispatch(getApplicationHistory(page));
+    }
+  }, [page, dispatch]);
 
   // Get status badge color and icon
   const getStatusBadge = (status) => {

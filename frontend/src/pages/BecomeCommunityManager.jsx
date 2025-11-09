@@ -21,33 +21,44 @@ const BecomeCommunityManager = () => {
   const { myApplication, successMessage, error, isLoading } = useSelector(
     (state) => state.communityManager
   );
-  const [view, setView] = useState("loading"); // Start with loading state
+  const [view, setView] = useState("loading");
   const [showForm, setShowForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const formRef = useRef(null);
   const hasInitialized = useRef(false);
 
-  // Fetch current application on mount ONLY
+  // ✅ FIX 1: Fetch current application on mount ONLY - no dependencies
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
+      console.log("📡 Fetching myApplication...");
       dispatch(getMyApplication());
     }
-  }, [dispatch]);
+  }, []);
 
-  // Determine which view to show based on myApplication - ONLY run once after data loads
+  // ✅ FIX 2: Only depend on isLoading, not myApplication
   useEffect(() => {
+    console.log(
+      "🔍 View effect - isLoading:",
+      isLoading,
+      "myApplication exists:",
+      !!myApplication
+    );
+
     if (isLoading) {
       setView("loading");
       return;
     }
 
     // After loading is complete, determine view
-    if (myApplication) {
+    if (myApplication && myApplication._id) {
+      console.log("✅ Setting view to status");
       setView("status");
     } else {
+      console.log("✅ Setting view to form");
       setView("form");
     }
-  }, [isLoading, myApplication]); // Only depends on loading and application existence
+  }, [isLoading]); // ✅ CRITICAL: Only isLoading, not myApplication
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -60,11 +71,11 @@ const BecomeCommunityManager = () => {
     }
   }, [successMessage, error, dispatch]);
 
-  // Handle form submission success
+  // ✅ FIX 3: Don't refetch on success - let view effect handle it
   const handleFormSuccess = () => {
+    console.log("✅ Form submitted successfully");
     setShowForm(false);
-    // Refetch application after successful submission
-    dispatch(getMyApplication());
+    // Removed: dispatch(getMyApplication());
   };
 
   // Handle reapply button
@@ -179,7 +190,7 @@ const BecomeCommunityManager = () => {
             </section>
           )}
 
-          {/* Application Status or CTA */}
+          {/* Application Status */}
           {view === "status" && !showForm && myApplication && (
             <section className={styles.statusSection}>
               <CMApplicationStatus
@@ -189,6 +200,7 @@ const BecomeCommunityManager = () => {
             </section>
           )}
 
+          {/* CTA to Start Application */}
           {view === "form" && !showForm && !myApplication && (
             <section className={styles.ctaSection}>
               <Card padding="xl" shadow="md" className={styles.ctaCard}>
@@ -242,8 +254,24 @@ const BecomeCommunityManager = () => {
             </section>
           )}
 
-          {/* Application History */}
+          {/* History Toggle Button */}
           {!showForm && (
+            <section className={styles.historyToggleSection}>
+              <Button
+                size="md"
+                variant="outline"
+                onClick={() => setShowHistory(!showHistory)}
+                icon={FiChevronDown}
+              >
+                {showHistory
+                  ? "Hide Application History"
+                  : "View Application History"}
+              </Button>
+            </section>
+          )}
+
+          {/* Application History */}
+          {!showForm && showHistory && (
             <section className={styles.historySection}>
               <CMApplicationHistory />
             </section>
@@ -346,7 +374,7 @@ const BecomeCommunityManager = () => {
   );
 };
 
-// Benefit Item Component
+// Helper Components
 const BenefitItem = ({ icon, title, description }) => (
   <div className={styles.benefitItem}>
     <span className={styles.benefitIcon}>{icon}</span>
@@ -355,7 +383,6 @@ const BenefitItem = ({ icon, title, description }) => (
   </div>
 );
 
-// Requirement Item Component
 const RequirementItem = ({ icon, title, description }) => (
   <div className={styles.requirementItem}>
     <div className={styles.requirementIcon}>{icon}</div>
@@ -366,7 +393,6 @@ const RequirementItem = ({ icon, title, description }) => (
   </div>
 );
 
-// Stat Card Component
 const StatCard = ({ number, label }) => (
   <div className={styles.statCard}>
     <div className={styles.statNumber}>{number}</div>
@@ -374,7 +400,6 @@ const StatCard = ({ number, label }) => (
   </div>
 );
 
-// FAQ Item Component
 const FAQItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 

@@ -1,10 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect } from "react"; // Added useEffect
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { applyAsCommunityManager } from "../../store/slices/communityManagerSlice";
-// ✅ FIX 4: Removed incorrect admin slice import
-// import { refreshPendingCMApplications } from "../../store/slices/adminSlice"; 
 import { Card } from "../common/Card";
 import { Button } from "../common/Button";
 import {
@@ -17,9 +15,8 @@ import {
 import { z } from "zod";
 import debounce from "lodash/debounce";
 import styles from "./styles/CMApplicationForm.module.css";
-import { API_KEYS } from "../../config/api"; // ✅ FIX 3: Import API_KEYS
+import { API_KEYS } from "../../config/api";
 
-// ✅ FIX 2: Updated validation schema to match backend controller
 const cmApplicationSchema = z.object({
   // Step 1
   communityName: z.string().min(3, "Community name is required"),
@@ -33,17 +30,20 @@ const cmApplicationSchema = z.object({
   registrationNumber: z.string().min(1, "Registration number is required"),
   foundedYear: z.preprocess(
     (val) => Number(val),
-    z.number().min(1900, "Invalid year").max(new Date().getFullYear(), "Year cannot be in the future")
+    z
+      .number()
+      .min(1900, "Invalid year")
+      .max(new Date().getFullYear(), "Year cannot be in the future")
   ),
-  memberCount: z.preprocess( // Renamed from totalMembers in backend
+  memberCount: z.preprocess(
     (val) => Number(val),
     z.number().min(1, "Must have at least 1 member")
   ),
-  activeMembers: z.preprocess( // Added
+  activeMembers: z.preprocess(
     (val) => Number(val),
     z.number().min(1, "Must have at least 1 active member")
   ),
-  pastEventsCount: z.preprocess( // Renamed from pastEventsOrganized
+  pastEventsCount: z.preprocess(
     (val) => Number(val),
     z.number().min(0, "Cannot be negative")
   ),
@@ -53,25 +53,32 @@ const cmApplicationSchema = z.object({
     (val) => Number(val),
     z.number().min(0, "Cannot be negative")
   ),
-  previousRoles: z.string().min(30, "Please describe your roles in at least 30 characters"),
+  previousRoles: z
+    .string()
+    .min(30, "Please describe your roles in at least 30 characters"),
   motivation: z.string().min(50, "Motivation must be at least 50 characters"),
   goals: z.string().min(50, "Goals must be at least 50 characters"),
 });
 
-
 const STEPS = [
   {
     title: "Community Details",
-    fields: ["communityName", "description", "category", "city", "contactEmail"], // Added contactEmail
+    fields: [
+      "communityName",
+      "description",
+      "category",
+      "city",
+      "contactEmail",
+    ],
   },
   {
     title: "Organization",
     fields: [
-      "organizationType", // Added
+      "organizationType",
       "registrationNumber",
       "foundedYear",
       "memberCount",
-      "activeMembers", // Added
+      "activeMembers",
       "pastEventsCount",
     ],
   },
@@ -90,13 +97,12 @@ const COMMUNITY_CATEGORIES = [
   "Other",
 ];
 
-// ✅ FIX 2: Added Organization Types
 const ORGANIZATION_TYPES = [
-  'NGO', 
-  'Social Group', 
-  'Community Initiative', 
-  'Non-Profit', 
-  'Other'
+  "NGO",
+  "Social Group",
+  "Community Initiative",
+  "Non-Profit",
+  "Other",
 ];
 
 const CMApplicationForm = ({ onSuccess }) => {
@@ -108,6 +114,7 @@ const CMApplicationForm = ({ onSuccess }) => {
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [cityLoading, setCityLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false); // ✅ NEW: Prevent double submit
   const suggestionsRef = useRef(null);
 
   const {
@@ -133,9 +140,10 @@ const CMApplicationForm = ({ onSuccess }) => {
         return;
       }
 
-      // ✅ FIX 3: Use API_KEYS.GEODB_API_KEY
       if (!API_KEYS.GEODB_API_KEY) {
-        console.error("VITE_GEODB_API_KEY is not set. City search will not work.");
+        console.error(
+          "VITE_GEODB_API_KEY is not set. City search will not work."
+        );
         setCityLoading(false);
         return;
       }
@@ -149,7 +157,6 @@ const CMApplicationForm = ({ onSuccess }) => {
           {
             method: "GET",
             headers: {
-              // ✅ FIX 3: Correct API key usage
               "X-RapidAPI-Key": API_KEYS.GEODB_API_KEY,
               "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com",
             },
@@ -223,31 +230,38 @@ const CMApplicationForm = ({ onSuccess }) => {
     }
   };
 
-  // Handle form submission
+  // ✅ FIX: Prevent double submit
   const onSubmit = async (data) => {
+    // Prevent multiple submissions
+    if (hasSubmitted || isSubmitting) {
+      console.warn("⚠️ Form already submitted or submitting");
+      return;
+    }
+
     console.log("📝 Submitting application...", data);
+    setHasSubmitted(true);
 
     try {
-      // ✅ FIX 1: The `applyAsCommunityManager` thunk now handles restructuring
       const result = await dispatch(applyAsCommunityManager(data));
 
       console.log("✅ Application result:", result);
 
-      if (result.payload) {
+      // ✅ Check the result type instead of just checking payload
+      if (result.type === "communityManager/apply/fulfilled") {
         console.log("✅ Application submitted successfully:", result.payload);
-        
-        // ✅ FIX 4: Removed the incorrect admin thunk call.
-        // The success callback is all that's needed.
 
-        // Call success callback
+        // Call success callback ONLY if submission succeeded
         if (onSuccess) {
+          console.log("🔔 Calling onSuccess callback");
           onSuccess();
         }
-      } else {
-        console.log("❌ Application submission failed");
+      } else if (result.type === "communityManager/apply/rejected") {
+        console.log("❌ Application submission failed:", result.payload);
+        setHasSubmitted(false); // Allow retry
       }
     } catch (error) {
       console.error("❌ Error during submission:", error);
+      setHasSubmitted(false); // Allow retry
     }
   };
 
@@ -369,7 +383,6 @@ const CMApplicationForm = ({ onSuccess }) => {
               )}
             </div>
 
-            {/* ✅ FIX 2: Added Contact Email Field */}
             <FormField
               label="Public Contact Email"
               error={errors.contactEmail}
@@ -388,7 +401,6 @@ const CMApplicationForm = ({ onSuccess }) => {
               Information about your organization
             </p>
 
-            {/* ✅ FIX 2: Added Organization Type Field */}
             <FormField
               label="Organization Type"
               error={errors.organizationType}
@@ -422,7 +434,7 @@ const CMApplicationForm = ({ onSuccess }) => {
                 placeholder="How many events?"
               />
             </div>
-            
+
             <div className={styles.gridTwoColumns}>
               <FormField
                 label="Total Members"
@@ -431,8 +443,7 @@ const CMApplicationForm = ({ onSuccess }) => {
                 type="number"
                 placeholder="Approx. total members"
               />
-              
-              {/* ✅ FIX 2: Added Active Members Field */}
+
               <FormField
                 label="Active Members"
                 error={errors.activeMembers}
@@ -513,7 +524,10 @@ const CMApplicationForm = ({ onSuccess }) => {
               />
               <ReviewRow label="Founded" value={formData.foundedYear} />
               <ReviewRow label="Total Members" value={formData.memberCount} />
-              <ReviewRow label="Active Members" value={formData.activeMembers} />
+              <ReviewRow
+                label="Active Members"
+                value={formData.activeMembers}
+              />
               <ReviewRow label="Past Events" value={formData.pastEventsCount} />
             </ReviewSection>
 
@@ -571,7 +585,7 @@ const CMApplicationForm = ({ onSuccess }) => {
               variant="primary"
               size="md"
               loading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasSubmitted}
             >
               Submit Application
             </Button>
